@@ -1,0 +1,34 @@
+name: Bug report
+description: Something in the app is broken (not a translation-provider issue — use the provider template for those)
+labels: ["bug"]
+body:
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: OpenTranslate version / commit
+    validations:
+      required: false
+  - type: input
+    id: os
+    attributes:
+      label: Windows version
+    validations:
+      required: false

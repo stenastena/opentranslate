@@ -30,14 +30,49 @@ issues #8–#34.
   documented in the adapters' own top comments — re-derive from a fresh
   network capture if either provider starts rejecting requests.
   **Not yet verified against the live services** (the dev sandbox's egress IP
-  is rate-limited/blocked by Google and DeepL) — first real check should be
-  `npm run check-providers` once issue #39 lands, run from the actual
-  Windows dev machine.
+  is rate-limited/blocked by Google and DeepL) — confirmed via `npm run
+  check-providers` that the harness itself works (clean per-provider table,
+  correct non-zero exit), but a real pass/fail read needs the actual Windows
+  dev machine's IP.
+- Issue #39: `npm run check-providers` health-check script. Merged via PR #61.
+- Issue #40 (+ #41, #42): JSON-file settings store (not electron-store —
+  needed to be constructible/testable outside Electron) and IPC scaffolding
+  (contextBridge preload, ipcMain handlers, injectable IpcMain-like interface
+  for testing). Merged via PR #62.
+- Issue #43 (+ #44–#46): tray icon (placeholder generated PNG), global
+  hotkey (default Ctrl+`), and clipboard text capture with guaranteed
+  restore (try/finally). Merged via PR #63. Manually verified the packaged
+  app launches with no crash; the full hotkey→capture flow itself wasn't
+  exercised interactively.
+- Issue #47 (+ #48–#51): popup translation window — Original/Translation/
+  Back-translation, per-provider tabs, Auto-Detect with the classic
+  QTranslate first/second-language heuristic, swap, auto-size, close on
+  blur/Esc. Merged via PR #64 (note: main has one harmless empty extra
+  commit from a transient GitHub API error during that merge — identical
+  file tree, no action needed).
+  **Manually verified against the real app**, not just unit tests: built
+  and ran the packaged app, triggered the popup, dumped its live DOM. This
+  caught two real runtime bugs unit tests/typecheck missed — both fixed
+  before merging:
+  - wrong relative path depth in `src/main/windows/popupWindow.ts` (it's
+    nested one level deeper than sibling `main/` files) to the preload
+    script and renderer HTML
+  - sandboxed preload scripts can't `require()` arbitrary local files, so
+    importing the shared IPC channel map from `main/ipc/channels.ts` failed
+    at runtime despite type-checking fine — fixed by duplicating that small
+    map directly in `preload/index.ts` (documented in both files, keep them
+    in sync by hand)
 
 ## Next planned step
 
-Issue #39 — provider health-check script (`npm run check-providers`), then
-issue #40 (settings persistence + IPC scaffolding).
+Issue #52 (+ #53–#55) — Settings window (Hotkeys / Languages / Services
+tabs), the last piece of UI for v0.1. Then issue #56 (docs finalization).
+
+Given the two real bugs the popup window's manual verification caught,
+repeat the same approach for the settings window: build, run the packaged
+app, and drive it through Electron (executeJavaScript / DOM dump or an
+interactive check) rather than trusting typecheck+unit tests alone —
+IPC/path wiring bugs specifically don't show up in either.
 
 ## Known blockers / needs-decision
 

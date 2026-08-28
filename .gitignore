@@ -1,0 +1,15 @@
+node_modules/
+dist/
+dist-electron/
+release/
+build/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.tsbuildinfo
+coverage/
+.env
+.env.local

@@ -1,6 +1,9 @@
-import { app } from 'electron';
+import { app, ipcMain } from 'electron';
+import { registerIpcHandlers } from './ipc/handlers';
+import { createDefaultRegistry } from './providers';
+import { createSettingsStore } from './settings';
 
-// OpenTranslate lives in the tray. Tray/hotkey/IPC wiring is added by later
+// OpenTranslate lives in the tray. Tray/hotkey wiring is added by later
 // issues (see PROGRESS.md); this is the placeholder entry point that lets
 // the packaging and CI pipeline build something real from day one.
 app.on('window-all-closed', () => {
@@ -8,5 +11,9 @@ app.on('window-all-closed', () => {
 });
 
 app.whenReady().then(() => {
-  // Tray creation, global shortcuts and provider wiring land here.
+  const registry = createDefaultRegistry();
+  const settingsStore = createSettingsStore();
+  registerIpcHandlers(ipcMain, registry, settingsStore);
+
+  // Tray creation and global shortcuts land here.
 });

@@ -68,6 +68,28 @@ describe('captureSelectedText', () => {
     expect(seenDuringPress).toEqual(['']);
   });
 
+  it('polls for the clipboard to update when the OS applies the copy after pressCtrlC resolves', async () => {
+    const clipboard = fakeClipboard('original clipboard contents');
+    const keyEmulator = fakeKeyEmulator(() => {
+      setTimeout(() => clipboard.writeText('arrived late'), 30);
+    });
+
+    const result = await captureSelectedText(clipboard, keyEmulator, 200, 10);
+
+    expect(result).toBe('arrived late');
+  });
+
+  it('gives up and returns empty once the timeout elapses with nothing on the clipboard', async () => {
+    const clipboard = fakeClipboard('original clipboard contents');
+    const keyEmulator = fakeKeyEmulator(() => {
+      // Never writes anything — simulates a selection that never arrives.
+    });
+
+    const result = await captureSelectedText(clipboard, keyEmulator, 30, 10);
+
+    expect(result).toBe('');
+  });
+
   it('restores the clipboard even if the key emulator throws', async () => {
     const clipboard = fakeClipboard('original clipboard contents');
     const keyEmulator: KeyEmulatorLike = {

@@ -29,6 +29,10 @@ interface ElectronAPI {
     getLastSuccessAt(providerId: string): Promise<number | null>;
     listIds(): Promise<string[]>;
   };
+  popup: {
+    onCapturedText(callback: (text: string) => void): void;
+    reportSize(width: number, height: number): void;
+  };
 }
 
 declare global {

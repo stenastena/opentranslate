@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
+    <title>OpenTranslate</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div class="lang-bar">
+        <select id="source-lang" aria-label="Source language">
+          <option value="auto">Auto-Detect</option>
+        </select>
+        <button id="swap-langs" type="button" title="Swap languages">&#8646;</button>
+        <select id="target-lang" aria-label="Target language"></select>
+      </div>
+
+      <div class="tabs" id="provider-tabs"></div>
+
+      <section class="section">
+        <h2>Original</h2>
+        <div id="original-text" class="text-block"></div>
+      </section>
+
+      <section class="section">
+        <h2>Translation</h2>
+        <div id="translation-text" class="text-block"></div>
+      </section>
+
+      <section class="section">
+        <h2>Back-translation</h2>
+        <div id="back-translation-text" class="text-block"></div>
+      </section>
+    </div>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

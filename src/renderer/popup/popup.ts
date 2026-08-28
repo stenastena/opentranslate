@@ -1,4 +1,4 @@
-import { LANGUAGES } from './languages.js';
+import { LANGUAGES } from '../shared/languages.js';
 
 const PROVIDER_LABELS: Record<string, string> = {
   deepl: 'DeepL',

@@ -79,4 +79,14 @@ describe('registerIpcHandlers', () => {
     await ipcMain.invoke(CHANNELS.providerTranslate, 'good', 'hi', 'en', 'de');
     expect(await ipcMain.invoke(CHANNELS.providerLastSuccessAt, 'good')).not.toBeNull();
   });
+
+  it('settings:update invokes the onSettingsUpdated callback with the merged settings', async () => {
+    const onSettingsUpdated = vi.fn();
+    const anotherIpcMain = new FakeIpcMain();
+    registerIpcHandlers(anotherIpcMain, registry, settingsStore, onSettingsUpdated);
+
+    await anotherIpcMain.invoke(CHANNELS.settingsUpdate, { hotkeys: { captureAndTranslate: 'Alt+G' } });
+
+    expect(onSettingsUpdated).toHaveBeenCalledWith(expect.objectContaining({ hotkeys: { captureAndTranslate: 'Alt+G' } }));
+  });
 });

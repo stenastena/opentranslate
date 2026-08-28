@@ -1,0 +1,45 @@
+name: Add/Fix translation provider
+description: A translation service adapter is broken, or a new one should be added
+labels: ["provider"]
+body:
+  - type: dropdown
+    id: service
+    attributes:
+      label: Service
+      options:
+        - DeepL
+        - Yandex Translate
+        - Google Translate
+        - Other (describe below)
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Is this a fix or a new provider?
+      options:
+        - Fix (existing adapter broke)
+        - New provider
+    validations:
+      required: true
+  - type: textarea
+    id: symptom
+    attributes:
+      label: Symptom (for a fix)
+      description: What error or wrong output are you seeing? Include the output of `npm run check-providers` if possible.
+    validations:
+      required: false
+  - type: textarea
+    id: raw-response
+    attributes:
+      label: Raw response / log
+      description: Paste the raw HTTP response body or log line the adapter produced (adapters log the raw body on parse failure — see CONTRIBUTING.md).
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+    validations:
+      required: false

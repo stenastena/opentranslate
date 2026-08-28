@@ -1,6 +1,6 @@
 # OpenTranslate
 
-**Status: in development (pre-v0.1, not yet usable).**
+**Status: v0.1 (MVP) implemented, not yet released/packaged for end users.**
 
 OpenTranslate is a Windows desktop application that brings back the core
 workflow of the abandoned [QTranslate](https://quest-app.appspot.com/) project:
@@ -9,10 +9,24 @@ selected text in *any* Windows application and shows a popup with a
 translation, a back-translation, and quick access to multiple translation
 services.
 
-Project setup, GitHub workflow, and full documentation are being built out
-incrementally — see [PROGRESS.md](PROGRESS.md) for the current state and the
-GitHub [milestones](../../milestones) / [project board](../../projects) for
-detailed task tracking.
+## What works today (v0.1)
+
+- Tray icon with an Open Settings / Exit menu.
+- Global hotkey (default <code>Ctrl+&#96;</code>, rebindable in Settings)
+  that captures the selected text in whichever window has focus, via an
+  emulated Ctrl+C and the clipboard — the clipboard's prior contents are
+  always restored afterward.
+- A popup at the cursor showing Original / Translation / Back-translation,
+  with one tab per translation service — DeepL, Yandex Translate, Google
+  Translate — so a broken or rate-limited service only shows an error in
+  its own tab.
+- Auto-Detect (using a configurable first/second language pair) or manual
+  source/target language selection, with a swap button.
+- A Settings window (Hotkeys / Languages / Services tabs).
+
+See [PROGRESS.md](PROGRESS.md) for exactly which issues/PRs implemented
+each piece, and the GitHub [milestones](../../milestones) /
+[project board](../../projects) for the full roadmap (v0.2 onward).
 
 ## ⚠️ Unofficial endpoints — use at your own risk
 

@@ -20,17 +20,32 @@ app.whenReady().then(() => {
   const settingsStore = createSettingsStore();
 
   const onCapture = async () => {
-    const text = await captureSelectedText(clipboard, nutJsKeyEmulator);
-    if (text.trim()) showPopupWindow(text);
+    console.log('[hotkey] capture triggered');
+    try {
+      const text = await captureSelectedText(clipboard, nutJsKeyEmulator);
+      console.log('[hotkey] captured text:', JSON.stringify(text));
+      if (text.trim()) showPopupWindow(text);
+    } catch (error) {
+      console.error('[hotkey] capture failed:', error);
+    }
   };
 
+  function applyHotkey(accelerator: string): void {
+    const ok = registerCaptureHotkey(accelerator, onCapture);
+    if (!ok) {
+      console.error(`[hotkey] failed to register "${accelerator}" — it's likely already bound by another application.`);
+    } else {
+      console.log(`[hotkey] registered "${accelerator}"`);
+    }
+  }
+
   registerIpcHandlers(ipcMain, registry, settingsStore, (updated) => {
-    registerCaptureHotkey(updated.hotkeys.captureAndTranslate, onCapture);
+    applyHotkey(updated.hotkeys.captureAndTranslate);
   });
   registerPopupIpc(ipcMain);
 
   const settings = settingsStore.load();
-  registerCaptureHotkey(settings.hotkeys.captureAndTranslate, onCapture);
+  applyHotkey(settings.hotkeys.captureAndTranslate);
 
   createTray(() => showSettingsWindow());
 });

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
+    <title>OpenTranslate Settings</title>
+    <link rel="stylesheet" href="settings.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div class="tabs" id="settings-tabs">
+        <button type="button" class="tab active" data-panel="hotkeys">Hotkeys</button>
+        <button type="button" class="tab" data-panel="languages">Languages</button>
+        <button type="button" class="tab" data-panel="services">Services</button>
+      </div>
+
+      <section id="panel-hotkeys" class="panel active">
+        <label for="hotkey-input">Capture &amp; translate hotkey</label>
+        <input id="hotkey-input" type="text" spellcheck="false" placeholder="Control+`" />
+        <p class="hint">Electron accelerator format, e.g. <code>Control+`</code> or <code>Alt+T</code>.</p>
+      </section>
+
+      <section id="panel-languages" class="panel">
+        <label for="lang-first">Auto-Detect: first language</label>
+        <select id="lang-first"></select>
+        <label for="lang-second">Auto-Detect: second language</label>
+        <select id="lang-second"></select>
+        <p class="hint">When the detected language matches the first language, OpenTranslate translates to the second — and vice versa.</p>
+      </section>
+
+      <section id="panel-services" class="panel">
+        <label><input id="service-deepl" type="checkbox" /> DeepL</label>
+        <label><input id="service-yandex" type="checkbox" /> Yandex Translate</label>
+        <label><input id="service-google" type="checkbox" /> Google Translate</label>
+      </section>
+
+      <div class="actions">
+        <span id="status-text" class="status"></span>
+        <button id="save-button" type="button">Save</button>
+      </div>
+    </div>
+    <script type="module" src="settings.js"></script>
+  </body>
+</html>

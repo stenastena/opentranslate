@@ -1,5 +1,5 @@
 import { ProviderRegistry } from '../providers';
-import { SettingsStore } from '../settings';
+import { AppSettings, SettingsStore } from '../settings';
 import { CHANNELS } from './channels';
 
 // Matches the subset of Electron's IpcMain we actually use, so this module
@@ -8,10 +8,19 @@ export interface IpcMainLike {
   handle(channel: string, listener: (event: unknown, ...args: any[]) => unknown): void;
 }
 
-export function registerIpcHandlers(ipcMain: IpcMainLike, registry: ProviderRegistry, settingsStore: SettingsStore): void {
+export function registerIpcHandlers(
+  ipcMain: IpcMainLike,
+  registry: ProviderRegistry,
+  settingsStore: SettingsStore,
+  onSettingsUpdated?: (settings: AppSettings) => void,
+): void {
   ipcMain.handle(CHANNELS.settingsGet, () => settingsStore.load());
 
-  ipcMain.handle(CHANNELS.settingsUpdate, (_event, partial) => settingsStore.update(partial));
+  ipcMain.handle(CHANNELS.settingsUpdate, (_event, partial) => {
+    const updated = settingsStore.update(partial);
+    onSettingsUpdated?.(updated);
+    return updated;
+  });
 
   ipcMain.handle(CHANNELS.providerTranslate, (_event, providerId, text, sourceLang, targetLang) =>
     registry.translate(providerId, text, sourceLang, targetLang),

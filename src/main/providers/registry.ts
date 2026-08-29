@@ -1,4 +1,4 @@
-import { ProviderCallResult, TranslationProvider, TranslationResult } from './types';
+import { ProviderCallResult, TranslateOptions, TranslationProvider, TranslationResult } from './types';
 
 interface ProviderState {
   provider: TranslationProvider;
@@ -45,8 +45,8 @@ export class ProviderRegistry {
     }
   }
 
-  translate(providerId: string, text: string, sourceLang: string, targetLang: string): Promise<ProviderCallResult<TranslationResult>> {
-    return this.run(providerId, (provider) => provider.translate(text, sourceLang, targetLang));
+  translate(providerId: string, text: string, sourceLang: string, targetLang: string, options?: TranslateOptions): Promise<ProviderCallResult<TranslationResult>> {
+    return this.run(providerId, (provider) => provider.translate(text, sourceLang, targetLang, options));
   }
 
   detectLanguage(providerId: string, text: string): Promise<ProviderCallResult<string>> {

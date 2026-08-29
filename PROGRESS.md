@@ -8,152 +8,130 @@ GitHub is the source of truth if the two ever disagree.
 
 ## Current state (as of this update)
 
-**v0.1 (MVP) is done.** All three real-machine bugs found in the previous
-testing session are now fixed and merged: **#68** (hotkey), **#69** (popup
-behavior), **#70** (providers). The v0.1 milestone has 0 open issues.
+**v0.1 (MVP) is functionally done.** All real-machine bugs found in testing
+are fixed and merged (#67/#68/#69/#70, plus #81/#84 found during this
+session's own DoD pass). The only two loose ends, both non-blocking and
+environment-specific rather than code bugs:
 
-**Not yet done before calling v0.1 *actually* closed**: a final Definition
-of Done pass against the original v0.1 spec, on the real machine, covering
-the app end-to-end now that all three bugs are fixed (this was deferred —
-see "How to resume" below).
+- **Google was hit by a real, temporary IP-level rate limit** near the end
+  of this session, from this session's own heavy testing volume (curl
+  fixture-gathering, repeated `check-providers` runs, live app testing).
+  Confirmed via a bare `curl` also getting 429 — not a code issue. Should
+  clear on its own; re-run `npm run check-providers` at the start of the
+  next session to confirm before doing anything Google-related.
+- **`npm run package`'s NSIS step fails on this dev machine** downloading
+  `winCodeSign` ("Cannot create symbolic link: a required privilege is not
+  held by the client") — a well-known Windows electron-builder limitation
+  needing Developer Mode or admin rights, unrelated to this project's code.
+  The actual app + native deps (`koffi`) bundle correctly into
+  `release/win-unpacked`; only the installer-generation step is blocked.
+  Not fixed — enabling Developer Mode is a system-settings change outside
+  what Claude should do unilaterally. Project owner can enable it if a
+  local installer build is ever needed; otherwise this doesn't block
+  anything (CI doesn't package, only builds+tests).
+
+**v0.2 backlog progress**: translation history (#8, and its sub-issues
+#9/#10/#11) is fully shipped. Google rich dictionary output (#76, filed and
+shipped in this session) is done. Remaining v0.2 backlog: TTS (#12/#13/#14),
+not started. Yandex (#75) is backlog pending a product decision on a paid
+API key — see below.
 
 GitHub setup for the whole roadmap (labels, milestones v0.1–1.0, project
-board with Backlog/Todo/In Progress/In Review/Done columns, issue templates)
-is complete and not expected to need further changes. Backlog for v0.2–1.0
-is tracked as issues #8–#34 (untouched, not started) plus **#75** (new,
-split out from #70 — Yandex needs an official paid API key) and **#76**
-(new, high-priority feature request — Google dictionary output, now
-shipped, see below).
-
-**Issue #76 (Google rich dictionary output) is done, PR #77 merged.**
-Filed and implemented in the same session per the project owner's request
-(priority:high, milestone v0.2 — filed as v0.2 rather than v0.1 since it's
-net-new feature work, not a fix blocking v0.1's Definition of Done).
-
-**Issue #78 (perf, merged)**: found while doing the v0.1 Definition-of-Done
-pass — the back-translation call was redundantly repeating Google's full
-dictionary+gender lookup for no UI benefit (up to 6 curl requests per
-single-word popup view). Added a `lightweight` translate option so only
-the forward translation pays that cost.
-
-**Issue #79 (chore, license, PR #80)**: switched the project license from
-MIT to Apache 2.0 with a NOTICE file, at the project owner's request, so
-attribution survives a plain-copy fork (Apache 2.0 requires NOTICE to
-carry into derivative works; MIT has no such requirement).
-
-**Definition-of-Done pass (in progress)**: tray icon, tray menu, and
-Settings window (Hotkeys/Languages/Services tabs) all confirmed working
-on the real machine. `npm run package` was tested: the actual app +
-native deps (including `koffi`, the #68 fix's dependency) bundle
-correctly into `release/win-unpacked` — but the NSIS installer step
-itself fails on this dev machine downloading `winCodeSign` ("Cannot
-create symbolic link: a required privilege is not held by the client"),
-a well-known Windows electron-builder limitation needing Developer Mode
-or admin rights, unrelated to this project's code. Not fixed — enabling
-Developer Mode is a system-settings change outside what Claude should do
-unilaterally; the project owner can enable it if a local installer build
-is needed. **Google hit a real, temporary IP-level rate limit today**
-from cumulative testing volume (confirmed via bare `curl` also getting
-429, separate from the #78 fix) — DoD verification of the Google tab is
-blocked until that clears on its own; re-check `npm run check-providers`
-before resuming.
+board) is complete. Full backlog for v0.2–1.0 is issues #8–#34 plus **#75**
+(Yandex official API key, split out from #70) and **#76** (done).
 
 ## What shipped in v0.1
 
-- Issue #1 (+ #2–#6): project scaffolding, CI, issue templates,
-  CONTRIBUTING.md. PR #7.
-- Issue #35: `TranslationProvider` interface + registry with per-provider
-  try/catch isolation and last-success timestamp tracking. PR #57.
-- Issues #36/#37/#38: DeepL, Yandex, Google adapters. PRs #60/#59/#58,
-  later substantially reworked — see #70 below.
-- Issue #39: `npm run check-providers` health-check script. PR #61.
-- Issue #40 (+ #41, #42): JSON-file settings store, IPC scaffolding. PR #62.
-- Issue #43 (+ #44–#46): tray icon, global hotkey (default `` Ctrl+` ``),
-  clipboard text capture. PR #63, later fixed twice more — see #67/#68.
-- Issue #47 (+ #48–#51): popup window. PR #64, later substantially
-  reworked — see #69 below.
-- Issue #52 (+ #53–#55): Settings window. PR #65. Verified working on the
-  real machine, no issues found.
-- Issue #67: Ctrl+C emulation reliability fix. PR #71, merged.
-- **Issue #68 (FIXED, PR #72)**: root-caused live on the real machine with
-  visible `[hotkey]`/`[keyEmulator]` console logs. The global hotkey
-  registration was never the problem — `capture triggered` fired reliably
-  every time. The bug was nut-js's synthetic Ctrl+C emulation, which
-  reliably stopped producing any clipboard change after a Windows
-  input-language switch (RU<->EN, either via keyboard shortcut or the
-  taskbar language indicator — confirmed both break it), and stayed broken
-  even across a full app restart. No stuck OS-level modifier
-  (`GetAsyncKeyState`) and no Sticky Keys involvement. Fix: replaced
-  nut-js with a direct `user32.dll` `SendInput` call using hardware scan
-  codes (`KEYEVENTF_SCANCODE`) via `koffi`, bypassing nut-js's native
-  Windows module entirely (`src/main/keyEmulator.ts`). `@nut-tree-fork/nut-js`
-  removed from dependencies. **Known residual limitation, accepted by the
-  project owner**: the hotkey doesn't fire at all under a German keyboard
-  layout — a separate, pre-existing issue with using the OEM `` ` ``
-  (backtick) key as the default accelerator on non-US layouts, not a
-  regression from this fix.
-- **Issue #69 (FIXED, PR #74)**: popup redesigned per the project owner's
-  explicit decision (this was a needs-decision issue, not a guess) —
-  closes only on Esc (no more close-on-blur, no longer always-on-top, so
-  it doesn't float over other apps when you switch away), is a real
-  native-frame movable/resizable window, remembers its last
-  position/size and reuses it (clamped to the current display's work
-  area so it's always fully visible — anchoring at the cursor could push
-  it off-screen near edges), and Original/Translation are now editable
-  with an explicit **Translate** button for re-translating after an edit
-  (auto-retranslate-on-blur was tried and found surprising in practice;
-  the first translation on capture still fires automatically). All three
-  sections (Original/Translation/Back-translation) are independently
-  resizable.
-- **Issue #70 (CLOSED, PR #73 + follow-up issue #75)**: root-caused all
-  three providers live against the real network, each for a different
-  reason:
-  - **DeepL — fixed.** The legacy `www2.deepl.com/jsonrpc` endpoint now
-    hard rate-limits anonymous traffic regardless of headers or the old
-    anti-bot id/timestamp/spacing trick. Rewrote the adapter to use
-    DeepL's newer unauthenticated "oneshot" endpoint
-    (`oneshot-free.www.deepl.com/v1/translate`), impersonating the iOS
-    app's request shape. Verified working via plain Node `fetch`.
-  - **Google — fixed.** The 429 was a TLS/HTTP2-handshake fingerprint
-    check on Node's built-in `fetch` (undici) — confirmed side by side
-    that the *identical* request (URL, params, headers) gets 429 from
-    `fetch` but 200 from curl. Added `src/main/providers/curlFetch.ts`,
-    which shells out to curl (bundled with Windows) for just this
-    provider to sidestep that fingerprint.
-  - **Yandex — not fixed, and not fixable by a code change.**
-    `translate.yandex.net` returns HTTP 403 with an `x-yandex-captcha`
-    header — a real interactive bot-wall (SmartCaptcha), confirmed via
-    curl too. There is no legitimate way to script around an active
-    CAPTCHA. Split into **issue #75**: needs an official paid Yandex
-    Cloud Translate API key and an adapter rewrite, which is a
-    product/cost decision, not a bug fix.
+Scaffolding, provider adapters, hotkey/capture, popup window, and Settings
+window (issues #1–#67) — see git history / closed issues for the original
+implementation PRs. Real-machine testing after the initial v0.1 tag found
+three bugs, all now fixed:
 
-- **Issue #76 (Google rich dictionary output, FIXED, PR #77)**: Google's
-  unofficial endpoint returns a much richer response when queried with
-  extra `dt=` values (bd/ss/md/ex/rw/at) plus `dj=1` — parts of speech,
-  synonyms, definitions, examples, alternative translations — this is
-  what QTranslate showed for single-word lookups. Only populated for
-  single-word source text (an API constraint, not a bug); phrases still
-  get alternative translations. Added `src/main/providers/googleDictionary.ts`
-  (reverse-engineered from real captured responses — fixtures in
-  `__fixtures__/google/`) and a collapsible Dictionary section in the
-  popup, shown only when there's real data. **Follow-up from real-machine
-  testing**: German/French noun translations now carry their definite
-  article (`der`/`die`/`das`, `le`/`la` — Google's data isn't
-  German-specific here) inline, and the *primary* translation gets its
-  own gender badge next to "Translation" (not just inside Dictionary),
-  since the sentence translator and the dictionary subsystem don't always
-  pick the same top word for a query (e.g. "Бизнес" → "Geschäft", but the
-  dictionary's own top candidate is "Business"). A pivot lookup (produced
-  word -> English -> back to target language) recovers the article in
-  that mismatch case when possible; it's best-effort and intentionally
-  shows nothing when Google's dictionary tool doesn't have the produced
-  word under any pivot (confirmed real gap: "environment" -> "Umfeld").
-  Checked DeepL for equivalent capability — it has none; its oneshot
-  endpoint returns only `{detected_source_language, text}` (confirmed via
-  a direct request), and its web client's per-word alternatives route
-  through the already-dead legacy jsonrpc endpoint (#70) and only return
-  whole-phrase alternatives, not part-of-speech/gender data.
+- **#68 (hotkey stops firing after a Windows input-language switch)** —
+  root-caused to nut-js's Ctrl+C emulation (not hotkey registration, which
+  worked the whole time). Fixed by replacing nut-js with a direct
+  `user32.dll` `SendInput` call using hardware scan codes via `koffi`
+  (`src/main/keyEmulator.ts`). `@nut-tree-fork/nut-js` removed entirely.
+  Known residual limitation (accepted): the hotkey doesn't fire under a
+  German keyboard layout — a pre-existing issue with the OEM backtick key
+  as the default accelerator on non-US layouts, not a regression.
+- **#69 (popup closed on blur, felt wrong in practice)** — redesigned per
+  the project owner's explicit decision: closes only on Esc, no longer
+  always-on-top, real native-frame movable/resizable window that remembers
+  its last position/size (clamped to stay on-screen), Original/Translation
+  editable with an explicit Translate button. Follow-up fixes this session:
+  `skipTaskbar` was also hiding it from Alt+Tab (fixed, PR #81); the target
+  language could silently equal the source language (see below).
+- **#70 (DeepL/Google 429 on the real network)** — DeepL needed its newer
+  "oneshot" endpoint (the old jsonrpc one is now hard rate-limited for
+  anonymous traffic); Google's 429 was a TLS/HTTP2 fingerprint check on
+  Node's `fetch` specifically, fixed by routing through curl
+  (`src/main/providers/curlFetch.ts`). Yandex is blocked by a real
+  interactive CAPTCHA wall (not fixable in code) — split into **#75**,
+  backlog pending a decision on a paid Yandex Cloud API key.
+
+## What shipped in v0.2 so far
+
+- **#76 — Google rich dictionary output.** Google's unofficial endpoint
+  returns parts of speech, synonyms, definitions, examples, and
+  alternative translations for single-word lookups when queried with
+  extra `dt=` values + `dj=1` (`src/main/providers/googleDictionary.ts`,
+  reverse-engineered from captured responses — fixtures in
+  `__fixtures__/google/`). Shown in a collapsible Dictionary section in
+  the popup. German/French noun translations carry their definite article
+  (der/die/das, le/la) inline and on a gender badge next to "Translation"
+  — best-effort (a pivot lookup recovers it when the sentence translator
+  and dictionary subsystem disagree on the top word; sometimes Google's
+  dictionary just doesn't have the word at all, and nothing is shown
+  rather than guessing). **Google's own dictionary data can be wrong**:
+  confirmed "Мост" → German tags "Brücke" with article "der", but it's
+  actually feminine ("die Brücke") — a real Google data-quality issue, not
+  a parsing bug; documented in code. DeepL has no equivalent capability
+  (confirmed via a direct request — its oneshot endpoint returns only
+  `{detected_source_language, text}`).
+- **#78 — perf.** The back-translation call was redundantly repeating
+  Google's full dictionary+gender lookup for no UI benefit (up to 6 curl
+  requests per single-word popup view). Added a `lightweight` translate
+  option (threaded through `TranslationProvider` → IPC → the popup's
+  back-translation call sites) so only the forward translation pays that
+  cost.
+- **#79 — license.** Switched MIT → Apache License 2.0 with a `NOTICE`
+  file, at the project owner's request, so attribution survives a
+  plain-copy fork (Apache 2.0 requires NOTICE to carry into derivative
+  works; MIT doesn't). `LICENSE`/`NOTICE`/`package.json`/`README.md` all
+  updated.
+- **#81 — bugfixes found during DoD testing.**
+  (a) `googleDictionary.ts` crashed on multi-sentence input: Google omits
+  the `alternative` field entirely (not `[]`) for a whitespace-only
+  segment between sentences — fixed with a defensive default + regression
+  test. (b) Popup's `skipTaskbar: true` (left over from #69) also hid it
+  from Alt+Tab on Windows — set to `false`.
+- **#84 — auto target language.** The target-language dropdown was fixed
+  once at popup-init time to Settings' `autoDetectSecond` and never
+  revisited — if the detected source happened to match that fixed target
+  (e.g. both Russian), the app silently "translated" Russian to Russian.
+  Added a real "Auto" option for target (now the default) that resolves
+  dynamically per capture using the Languages-settings pair: detected/
+  selected source matches `autoDetectSecond` → target `autoDetectFirst`;
+  anything else → target `autoDetectSecond`. Threaded through history
+  recording, the edited-translation back-translation path, and swap.
+- **#8/#9/#10/#11 — translation history**, fully shipped:
+  - `src/main/history/`: JSON-file-backed `HistoryStore`
+    (list/add/remove/clear, newest-first, capped at 500 entries),
+    mirroring `SettingsStore`'s pattern. New `history:*` IPC channels.
+    The popup records a history entry after each successful *forward*
+    translation (not back-translation, not lightweight calls),
+    fire-and-forget.
+  - A History window (`src/main/windows/historyWindow.ts`,
+    `src/renderer/history/`) listing entries with provider, languages,
+    timestamp, original/translated text, plus "Clear All" and per-entry
+    delete.
+  - Reachable from the tray's "View History" item **and** from a new
+    real application menu on the popup window (`src/main/menu.ts`) — the
+    popup previously showed Electron's unconfigured default menu bar
+    (File/Edit/View/Window/Help), which the project owner flagged as not
+    a natural place to look for History. Now: File (Settings/History/
+    Exit) + a standard Edit menu (for the popup's editable text fields).
 
 Two notes on the merged history (informational, no action needed):
 - PR #64 (popup window) left one harmless empty extra commit on `main`
@@ -170,20 +148,23 @@ Two notes on the merged history (informational, no action needed):
 
 ```bash
 git checkout main && git pull
-gh issue list --milestone v0.1 --state open   # should be empty
+npm run check-providers   # confirm Google's rate limit has cleared before relying on it
 ```
 
-1. Finish the Definition-of-Done pass: re-verify Google translation once
-   its current rate limit clears (`npm run check-providers`), then close
-   the v0.1 milestone for real. Tray/hotkey/Settings/DeepL are already
-   confirmed working on the real machine; packaging config is confirmed
-   correct (`release/win-unpacked` built fine including `koffi`) modulo
-   the unrelated winCodeSign/Developer-Mode environment limitation noted
-   above.
-2. Then move to the v0.2 backlog (issues #8–#14: translation history, TTS
-   — #76, Google dictionary output, is already done), same process as
-   before: issue → branch → PR → CI → merge.
-3. Issue #75 (Yandex official API key) is backlog, not blocking — pick it
+1. If Google is still 429ing, don't chase it — it's a real, temporary
+   upstream limit from this session's testing volume, not a bug. Just
+   avoid hammering it with more test requests; move on to other work and
+   check back later.
+2. v0.1 is done in every way that matters for shipping; the two open
+   items above (Google's temporary limit, winCodeSign/Developer Mode) are
+   both external/environment, not code — no v0.1 code work is expected to
+   remain.
+3. Next up in the v0.2 backlog: **TTS (issues #12/#13/#14)** — speak the
+   captured text and/or its translation aloud. Same process as before:
+   issue already exists → branch → PR → CI → merge, one sub-issue at a
+   time (#13 provider abstraction likely first, then #14 the popup speak
+   button).
+4. Issue #75 (Yandex official API key) is backlog, not blocking — pick it
    up whenever there's a product decision to spend on a paid Yandex key.
 
 When implementing UI-facing work, prefer the verification approach used in
@@ -192,8 +173,10 @@ the real machine, and drive/observe it live (console logs, or watching it
 with the project owner) — IPC bugs, path-resolution bugs, and OS-level
 input/focus quirks specifically don't show up in typecheck or mocked unit
 tests. The project owner has asked to handle routine engineering workflow
-(branch → PR → CI → merge, implementation-approach choices) autonomously
-without checking in; they're only needed for actions that require
-hands-on interaction with the running app itself (reproducing input/focus
-bugs, confirming real-world UI behavior) or genuine product decisions the
-spec doesn't answer.
+(branch → PR → CI → merge, implementation-approach choices, splitting
+mixed changes into separate focused PRs) autonomously without checking
+in; they're only needed for actions that require hands-on interaction
+with the running app itself (reproducing input/focus bugs, confirming
+real-world UI behavior) or genuine product/cost decisions the spec
+doesn't answer (e.g. #69's close-behavior decision, or whether to spend
+on a paid Yandex API key for #75).

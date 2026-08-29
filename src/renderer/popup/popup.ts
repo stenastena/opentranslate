@@ -61,6 +61,14 @@ const translateButton = document.getElementById('translate-btn') as HTMLButtonEl
 const dictionarySection = document.getElementById('dictionary-section') as HTMLDetailsElement;
 const dictionaryContentEl = document.getElementById('dictionary-content')!;
 const translationGenderEl = document.getElementById('translation-gender')!;
+const speakOriginalButton = document.getElementById('speak-original-btn') as HTMLButtonElement;
+const speakTranslationButton = document.getElementById('speak-translation-btn') as HTMLButtonElement;
+
+// Only one utterance should ever play at a time; this tracks which of the
+// two speak buttons (if any) is the one currently driving playback, so a
+// click on it stops playback instead of restarting it, and so its icon can
+// be reset back once playback ends (naturally or via stop()).
+let activeSpeakButton: HTMLButtonElement | null = null;
 
 function populateLanguageSelects(): void {
   targetLangSelect.appendChild(new Option('Auto', 'auto'));
@@ -96,6 +104,7 @@ function renderActiveResult(): void {
   if (document.activeElement !== originalTextEl) {
     originalTextEl.value = state.originalText;
   }
+  speakOriginalButton.disabled = !originalTextEl.value.trim();
 
   const providerId = state.activeProviderId;
   const result = providerId ? state.resultsByProvider.get(providerId) : undefined;
@@ -126,6 +135,8 @@ function renderActiveResult(): void {
     renderDictionary(result.dictionary);
     renderGenderBadge(result.genderArticle);
   }
+
+  speakTranslationButton.disabled = !result || result.status !== 'ok' || !translationTextEl.value.trim();
 }
 
 // Shows the definite article for the current translation right next to
@@ -137,6 +148,58 @@ function renderActiveResult(): void {
 function renderGenderBadge(genderArticle: string | undefined): void {
   translationGenderEl.hidden = !genderArticle;
   translationGenderEl.textContent = genderArticle ?? '';
+}
+
+interface SpeakData {
+  text: string;
+  lang?: string;
+}
+
+function getOriginalSpeakData(): SpeakData | null {
+  const text = originalTextEl.value.trim();
+  if (!text) return null;
+  const lang = state.sourceLang !== 'auto' ? state.sourceLang : state.lastDetectedLang;
+  return { text, lang };
+}
+
+function getTranslationSpeakData(): SpeakData | null {
+  const providerId = state.activeProviderId;
+  const result = providerId ? state.resultsByProvider.get(providerId) : undefined;
+  if (!result || result.status !== 'ok') return null;
+  const text = translationTextEl.value.trim();
+  if (!text) return null;
+  const lang = result.targetLang ?? (state.targetLang !== 'auto' ? state.targetLang : state.lastResolvedTargetLang);
+  return { text, lang };
+}
+
+function setSpeakButtonActive(button: HTMLButtonElement, active: boolean): void {
+  button.classList.toggle('speaking', active);
+  button.textContent = active ? '⏹' : '\u{1F50A}';
+}
+
+async function handleSpeakClick(button: HTMLButtonElement, getData: () => SpeakData | null): Promise<void> {
+  if (activeSpeakButton === button) {
+    await window.electronAPI.tts.stop();
+    return;
+  }
+
+  const data = getData();
+  if (!data) return;
+
+  if (activeSpeakButton) {
+    await window.electronAPI.tts.stop();
+  }
+
+  activeSpeakButton = button;
+  setSpeakButtonActive(button, true);
+  try {
+    await window.electronAPI.tts.speak(data.text, data.lang);
+  } catch (error) {
+    console.error('[popup] failed to speak text', error);
+  } finally {
+    if (activeSpeakButton === button) activeSpeakButton = null;
+    setSpeakButtonActive(button, false);
+  }
 }
 
 // Only Google ever returns dictionary data (issue #76); every other
@@ -375,8 +438,14 @@ async function init(): Promise<void> {
   targetLangSelect.addEventListener('change', () => void handleLanguageChange());
   swapButton.addEventListener('click', () => void handleSwap());
   translateButton.addEventListener('click', () => void handleTranslateClick());
+  speakOriginalButton.addEventListener('click', () => void handleSpeakClick(speakOriginalButton, getOriginalSpeakData));
+  speakTranslationButton.addEventListener('click', () => void handleSpeakClick(speakTranslationButton, getTranslationSpeakData));
+  originalTextEl.addEventListener('input', () => {
+    speakOriginalButton.disabled = !originalTextEl.value.trim();
+  });
 
   window.electronAPI.popup.onCapturedText((text) => {
+    if (activeSpeakButton) void window.electronAPI.tts.stop();
     state.originalText = text;
     invalidateAllResults();
     renderTabs();

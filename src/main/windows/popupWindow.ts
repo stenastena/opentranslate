@@ -4,16 +4,39 @@ import { CHANNELS } from '../ipc/channels';
 
 let popupWindow: BrowserWindow | null = null;
 
+// Where the user last moved/resized the popup to. Reused as the anchor for
+// the next popup instead of always defaulting back to the cursor position —
+// once the user has settled on a spot/size they like, keep opening there.
+let lastBounds: { x: number; y: number; width: number; height: number } | null = null;
+
+const DEFAULT_WIDTH = 480;
+const DEFAULT_HEIGHT = 360;
+
+// Anchoring the window directly at the cursor pushed part or all of it
+// off-screen when the selected text was near a screen edge (issue #69
+// follow-up). Clamp against the work area of whichever display the anchor
+// point is on so the whole window always stays visible.
+function clampToWorkArea(x: number, y: number, width: number, height: number): { x: number; y: number } {
+  const { x: areaX, y: areaY, width: areaWidth, height: areaHeight } = screen.getDisplayNearestPoint({ x, y }).workArea;
+  return {
+    x: Math.min(Math.max(x, areaX), areaX + areaWidth - width),
+    y: Math.min(Math.max(y, areaY), areaY + areaHeight - height),
+  };
+}
+
 export function showPopupWindow(capturedText: string): BrowserWindow {
   popupWindow?.close();
 
-  const cursor = screen.getCursorScreenPoint();
+  const width = lastBounds?.width ?? DEFAULT_WIDTH;
+  const height = lastBounds?.height ?? DEFAULT_HEIGHT;
+  const anchor = lastBounds ?? screen.getCursorScreenPoint();
+  const { x, y } = clampToWorkArea(anchor.x, anchor.y, width, height);
 
   const win = new BrowserWindow({
-    x: cursor.x,
-    y: cursor.y,
-    width: 480,
-    height: 360,
+    x,
+    y,
+    width,
+    height,
     frame: true,
     resizable: true,
     // Per issue #69: the popup must behave like a normal window — it
@@ -44,6 +67,12 @@ export function showPopupWindow(capturedText: string): BrowserWindow {
   win.webContents.on('before-input-event', (_event, input) => {
     if (input.key === 'Escape') win.close();
   });
+
+  const persistBounds = () => {
+    lastBounds = win.getBounds();
+  };
+  win.on('resize', persistBounds);
+  win.on('move', persistBounds);
 
   win.on('closed', () => {
     if (popupWindow === win) popupWindow = null;

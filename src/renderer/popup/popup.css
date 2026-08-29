@@ -50,6 +50,20 @@ body {
   background: #e6e6e6;
 }
 
+#translate-btn {
+  border: 1px solid #2b6cb0;
+  background: #2b6cb0;
+  color: #ffffff;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+#translate-btn:hover {
+  background: #235a94;
+}
+
 .tabs {
   display: flex;
   gap: 4px;
@@ -97,6 +111,15 @@ body {
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   padding: 4px 6px;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  background: #ffffff;
+}
+
+.text-block[readonly] {
+  background: #f7f7f7;
+  color: #555;
 }
 
 .text-block.loading {

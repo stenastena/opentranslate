@@ -14,18 +14,19 @@
         </select>
         <button id="swap-langs" type="button" title="Swap languages">&#8646;</button>
         <select id="target-lang" aria-label="Target language"></select>
+        <button id="translate-btn" type="button">Translate</button>
       </div>
 
       <div class="tabs" id="provider-tabs"></div>
 
       <section class="section">
         <h2>Original</h2>
-        <div id="original-text" class="text-block"></div>
+        <textarea id="original-text" class="text-block" spellcheck="false"></textarea>
       </section>
 
       <section class="section">
         <h2>Translation</h2>
-        <div id="translation-text" class="text-block"></div>
+        <textarea id="translation-text" class="text-block" spellcheck="false" readonly></textarea>
       </section>
 
       <section class="section">

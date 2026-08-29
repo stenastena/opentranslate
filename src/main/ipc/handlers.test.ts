@@ -6,6 +6,7 @@ import { HistoryStore } from '../history/store';
 import { ProviderRegistry } from '../providers/registry';
 import { TranslationProvider } from '../providers/types';
 import { SettingsStore } from '../settings/store';
+import { TTSProvider } from '../tts';
 import { CHANNELS } from './channels';
 import { IpcMainLike, registerIpcHandlers } from './handlers';
 
@@ -38,6 +39,7 @@ describe('registerIpcHandlers', () => {
   let historyStore: HistoryStore;
   let registry: ProviderRegistry;
   let ipcMain: FakeIpcMain;
+  let ttsProvider: TTSProvider;
 
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'opentranslate-ipc-'));
@@ -45,8 +47,9 @@ describe('registerIpcHandlers', () => {
     historyStore = new HistoryStore(join(dir, 'history.json'));
     registry = new ProviderRegistry();
     registry.register(fakeProvider('good'));
+    ttsProvider = { id: 'fake', speak: vi.fn().mockResolvedValue(undefined), stop: vi.fn().mockResolvedValue(undefined), isHealthy: vi.fn().mockResolvedValue(true) };
     ipcMain = new FakeIpcMain();
-    registerIpcHandlers(ipcMain, registry, settingsStore, historyStore);
+    registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, ttsProvider);
   });
 
   afterEach(() => {
@@ -129,10 +132,20 @@ describe('registerIpcHandlers', () => {
   it('settings:update invokes the onSettingsUpdated callback with the merged settings', async () => {
     const onSettingsUpdated = vi.fn();
     const anotherIpcMain = new FakeIpcMain();
-    registerIpcHandlers(anotherIpcMain, registry, settingsStore, historyStore, onSettingsUpdated);
+    registerIpcHandlers(anotherIpcMain, registry, settingsStore, historyStore, ttsProvider, onSettingsUpdated);
 
     await anotherIpcMain.invoke(CHANNELS.settingsUpdate, { hotkeys: { captureAndTranslate: 'Alt+G' } });
 
     expect(onSettingsUpdated).toHaveBeenCalledWith(expect.objectContaining({ hotkeys: { captureAndTranslate: 'Alt+G' } }));
+  });
+
+  it('tts:speak delegates to the TTS provider', async () => {
+    await ipcMain.invoke(CHANNELS.ttsSpeak, 'hello', 'en');
+    expect(ttsProvider.speak).toHaveBeenCalledWith('hello', 'en');
+  });
+
+  it('tts:stop delegates to the TTS provider', async () => {
+    await ipcMain.invoke(CHANNELS.ttsStop);
+    expect(ttsProvider.stop).toHaveBeenCalled();
   });
 });

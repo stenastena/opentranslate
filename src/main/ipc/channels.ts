@@ -12,4 +12,6 @@ export const CHANNELS = {
   historyAdd: 'history:add',
   historyRemove: 'history:remove',
   historyClear: 'history:clear',
+  ttsSpeak: 'tts:speak',
+  ttsStop: 'tts:stop',
 } as const;

@@ -13,7 +13,6 @@ const CHANNELS = {
   providerLastSuccessAt: 'provider:last-success-at',
   providerListIds: 'provider:list-ids',
   popupCapturedText: 'popup:captured-text',
-  popupResize: 'popup:resize',
 } as const;
 
 const electronAPI = {
@@ -32,7 +31,6 @@ const electronAPI = {
     onCapturedText: (callback: (text: string) => void) => {
       ipcRenderer.on(CHANNELS.popupCapturedText, (_event, text: string) => callback(text));
     },
-    reportSize: (width: number, height: number) => ipcRenderer.send(CHANNELS.popupResize, width, height),
   },
 };
 

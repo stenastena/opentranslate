@@ -90,8 +90,6 @@ function renderActiveResult(): void {
     translationTextEl.textContent = result.translatedText ?? '';
     backTranslationTextEl.textContent = result.backTranslatedText ?? '(back-translation unavailable)';
   }
-
-  reportSizeToMain();
 }
 
 async function ensureActiveResultLoaded(): Promise<void> {
@@ -168,14 +166,6 @@ async function handleSwap(): Promise<void> {
   targetLangSelect.value = newTarget;
 
   await handleLanguageChange();
-}
-
-function reportSizeToMain(): void {
-  requestAnimationFrame(() => {
-    const width = Math.max(document.body.scrollWidth, 360);
-    const height = document.body.scrollHeight;
-    window.electronAPI.popup.reportSize(width, height);
-  });
 }
 
 async function init(): Promise<void> {

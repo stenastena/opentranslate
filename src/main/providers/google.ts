@@ -1,3 +1,5 @@
+import { CHROME_USER_AGENT } from './browserHeaders';
+import { curlGet } from './curlFetch';
 import { logProviderParseError } from './logger';
 import { ProviderError, TranslationProvider, TranslationResult } from './types';
 
@@ -37,12 +39,16 @@ async function callGoogle(text: string, sourceLang: string, targetLang: string):
     q: text,
   });
 
-  const response = await fetch(`${ENDPOINT}?${params.toString()}`);
-  const raw = await response.text();
-  if (!response.ok) {
+  // Plain `fetch` gets a 429 "automated queries" response from this
+  // endpoint's TLS/HTTP2-handshake fingerprinting regardless of headers —
+  // confirmed side by side with curl, which passes with the exact same
+  // headers (see curlFetch.ts). Shelling out to curl for just this
+  // provider sidesteps that fingerprint check.
+  const response = await curlGet(`${ENDPOINT}?${params.toString()}`, { 'User-Agent': CHROME_USER_AGENT });
+  if (response.status !== 200) {
     throw new ProviderError('google', `Google Translate request failed with status ${response.status}`);
   }
-  return parseResponse(raw);
+  return parseResponse(response.body);
 }
 
 export const googleProvider: TranslationProvider = {

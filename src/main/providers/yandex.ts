@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { CHROME_USER_AGENT } from './browserHeaders';
 import { logProviderParseError } from './logger';
 import { ProviderError, TranslationProvider, TranslationResult } from './types';
 
@@ -23,13 +24,26 @@ interface RawDetectResponse {
 // The public tr-text service, used here, only needs a syntactically-valid
 // "ucid"-shaped id (see CONTRIBUTING.md for how to re-derive this if Yandex
 // starts rejecting synthetic ids).
+//
+// As of issue #70, this endpoint returns HTTP 403 with an
+// `x-yandex-captcha: 403` response header — Yandex's SmartCaptcha bot
+// wall, confirmed both via this adapter's headers and via a bare curl
+// request with the same headers. That's a real interactive challenge, not
+// a missing/stale header or request-signing issue, and there is no
+// legitimate way to script around it. Getting this provider working again
+// needs an official Yandex Cloud Translate API key (paid), not a code fix.
 function newRequestId(): string {
   return `${randomUUID().replace(/-/g, '')}-0-0`;
 }
 
 async function callYandex<T>(url: string, params: Record<string, string>, parse: (raw: string) => T): Promise<T> {
   const query = new URLSearchParams({ id: newRequestId(), srv: 'tr-text', ...params });
-  const response = await fetch(`${url}?${query.toString()}`);
+  const response = await fetch(`${url}?${query.toString()}`, {
+    headers: {
+      'User-Agent': CHROME_USER_AGENT,
+      Referer: 'https://translate.yandex.com/',
+    },
+  });
   const raw = await response.text();
   if (!response.ok) {
     throw new ProviderError('yandex', `Yandex Translate request failed with status ${response.status}`);

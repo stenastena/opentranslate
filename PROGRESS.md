@@ -31,10 +31,18 @@ environment-specific rather than code bugs:
   anything (CI doesn't package, only builds+tests).
 
 **v0.2 backlog progress**: translation history (#8, and its sub-issues
-#9/#10/#11) is fully shipped. Google rich dictionary output (#76, filed and
-shipped in this session) is done. Remaining v0.2 backlog: TTS (#12/#13/#14),
-not started. Yandex (#75) is backlog pending a product decision on a paid
-API key — see below.
+#9/#10/#11) is fully shipped. Google rich dictionary output (#76) is done.
+Text-to-speech (#12/#13/#14) is fully shipped — see below. Remaining v0.2
+backlog: Appearance settings (#15–20), Advanced settings (#25–29), Yandex
+(#75, needs a product decision), and #88 (higher-quality free TTS voices,
+non-blocking follow-up).
+
+The old "dictionary provider subsystem" issues (#21/#22/#23/#24) were closed
+this session as superseded: they asked for a generic multi-provider
+`DictionaryProvider` interface + registry, but #76 already ships the one
+dictionary source in use (Google) directly, with no second source to
+justify the abstraction. Reopen/re-file if a genuine second dictionary
+source (e.g. Wiktionary) is ever wanted.
 
 GitHub setup for the whole roadmap (labels, milestones v0.1–1.0, project
 board) is complete. Full backlog for v0.2–1.0 is issues #8–#34 plus **#75**
@@ -132,6 +140,34 @@ three bugs, all now fixed:
     (File/Edit/View/Window/Help), which the project owner flagged as not
     a natural place to look for History. Now: File (Settings/History/
     Exit) + a standard Edit menu (for the popup's editable text fields).
+- **#12/#13/#14 — text-to-speech**, fully shipped:
+  - `src/main/tts/`: a `TTSProvider` interface (`speak`/`stop`/`isHealthy`)
+    and `systemTtsProvider`, its first implementation — Windows' built-in
+    SAPI voices via PowerShell's `System.Speech.Synthesis.SpeechSynthesizer`
+    (offline, no unofficial endpoint, no rate-limit risk unlike the
+    translation providers). Text/lang are passed through environment
+    variables rather than interpolated into the PowerShell script string,
+    to avoid a PowerShell-injection vector on arbitrary captured clipboard
+    text. Wired through new `tts:speak`/`tts:stop` IPC channels the same
+    way #9 wired history's persistence layer ahead of its UI (PR #86).
+  - A speaker-icon button next to the Original and Translation section
+    headings in the popup (PR #87). Only one utterance plays at a time —
+    starting one stops whichever was already playing; each button's icon
+    toggles speak (🔊) / stop (⏹) and resets once playback ends, whether
+    naturally or via stop(). The Translation button is disabled until its
+    tab has an actual "ok" result, so a loading placeholder or error
+    message never gets read aloud.
+  - **Confirmed working via live interactive testing on the real
+    machine** (2026-08-29): selecting text, capturing via the hotkey,
+    clicking Speak on both Original and Translation, and switching
+    between them mid-playback. Two real, non-blocking findings from that
+    session: the built-in SAPI voices are noticeably low quality, and
+    German text is read with an English accent (no German SAPI voice is
+    installed on this dev machine, so the language-matching in
+    `systemProvider.ts` finds nothing and silently falls back to the
+    default voice — working as designed, just a poor result). Filed as a
+    follow-up, **#88** (backlog, not blocking): explore a genuinely free,
+    higher-quality alternative voice engine.
 
 Two notes on the merged history (informational, no action needed):
 - PR #64 (popup window) left one harmless empty extra commit on `main`
@@ -146,37 +182,64 @@ Two notes on the merged history (informational, no action needed):
 
 ## How to resume
 
-```bash
-git checkout main && git pull
-npm run check-providers   # confirm Google's rate limit has cleared before relying on it
-```
+Paste this (or just "continue OpenTranslate") to pick the session back up:
 
-1. If Google is still 429ing, don't chase it — it's a real, temporary
-   upstream limit from this session's testing volume, not a bug. Just
-   avoid hammering it with more test requests; move on to other work and
-   check back later.
-2. v0.1 is done in every way that matters for shipping; the two open
-   items above (Google's temporary limit, winCodeSign/Developer Mode) are
-   both external/environment, not code — no v0.1 code work is expected to
-   remain.
-3. Next up in the v0.2 backlog: **TTS (issues #12/#13/#14)** — speak the
-   captured text and/or its translation aloud. Same process as before:
-   issue already exists → branch → PR → CI → merge, one sub-issue at a
-   time (#13 provider abstraction likely first, then #14 the popup speak
-   button).
-4. Issue #75 (Yandex official API key) is backlog, not blocking — pick it
-   up whenever there's a product decision to spend on a paid Yandex key.
+> Продолжаем OpenTranslate. Прочитай PROGRESS.md в корне репозитория, затем
+> сверь с реальным состоянием GitHub:
+>
+> ```bash
+> git checkout main && git pull
+> gh issue list --state open
+> npm run check-providers
+> ```
+>
+> v0.1 is fully shipped, and v0.2's translation history, Google dictionary
+> output, and text-to-speech (#8–#11, #76, #12–#14) are all done and merged.
+> Everything in this paragraph is backlog, not blocking anything — pick
+> whichever makes sense, autonomously:
+>
+> 1. **#88 — higher-quality free TTS voices.** The current
+>    `systemTtsProvider` (Windows SAPI) works but is low-fidelity and falls
+>    back to an English accent for languages with no matching installed
+>    voice (confirmed live for German on this machine). Worth exploring
+>    before building more TTS-adjacent UI on top of a voice engine that
+>    might get replaced. See the issue body for candidate directions (Edge's
+>    unofficial neural-TTS endpoint, etc.) — no committed answer yet, this
+>    needs research first.
+> 2. **Appearance settings (#15–20)** — theme, opacity, auto-position/size,
+>    border customization, pin-when-dragged. Next in backlog order after
+>    TTS.
+> 3. **Advanced settings (#25–29)** — default browser, copy action, OCR API
+>    key, mouse interaction modes.
+> 4. **#75 (Yandex paid API key)** — needs a product/cost decision, not a
+>    coding task; raise it rather than picking a default.
+>
+> Same process as every prior session: issue already exists (or file one) →
+> branch → PR → CI → merge, one sub-issue at a time. Handle the routine
+> engineering workflow (branch/PR/merge, implementation choices, splitting
+> mixed changes into separate PRs, project-board status) autonomously
+> without checking in — only surface things that need hands-on interaction
+> with the running app (reproducing input/focus/audio bugs, confirming
+> real-world UI or audio behavior) or a genuine product/cost decision the
+> spec doesn't answer (e.g. #75, or #88's eventual choice of voice engine
+> if it has a cost/quality/complexity tradeoff worth flagging).
 
-When implementing UI-facing work, prefer the verification approach used in
-past sessions over trusting typecheck+tests alone: build, run the app on
-the real machine, and drive/observe it live (console logs, or watching it
-with the project owner) — IPC bugs, path-resolution bugs, and OS-level
-input/focus quirks specifically don't show up in typecheck or mocked unit
-tests. The project owner has asked to handle routine engineering workflow
-(branch → PR → CI → merge, implementation-approach choices, splitting
-mixed changes into separate focused PRs) autonomously without checking
-in; they're only needed for actions that require hands-on interaction
-with the running app itself (reproducing input/focus bugs, confirming
-real-world UI behavior) or genuine product/cost decisions the spec
-doesn't answer (e.g. #69's close-behavior decision, or whether to spend
-on a paid Yandex API key for #75).
+### Notes for whoever picks this up
+
+- If `check-providers` shows Google 429ing, don't chase it — treat it the
+  same way past sessions have: a real but temporary upstream limit from
+  testing volume, not a bug. Move on and check back later.
+- The two long-standing non-blocking environment issues (Google's
+  temporary rate limit already covered above, and `npm run package`'s NSIS
+  step needing Developer Mode on this machine) are unrelated to CI and
+  don't need attention unless a local installer build is actually needed.
+- For UI/OS-integration work (popup UI, audio, hotkey/capture), prefer the
+  verification approach used throughout this project over trusting
+  typecheck+tests alone: build, run the app for real, and drive/observe it
+  live — IPC bugs, path-resolution bugs, and OS-level input/audio/focus
+  quirks don't show up in typecheck or mocked unit tests. For anything
+  needing real audio output or the actual hotkey-driven capture flow
+  (not just button click-through logic), that means asking the project
+  owner to test interactively rather than trusting a stubbed browser
+  preview alone — as happened with #14, where live testing surfaced the
+  SAPI voice-quality issue (#88) that a mocked test never would have.

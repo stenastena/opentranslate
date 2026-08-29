@@ -29,6 +29,13 @@ root-cause writeups.
 - An explicit "Auto" target-language option (now the default), resolved
   per capture from the Languages-settings pair based on the detected/
   selected source (#84).
+- Text-to-speech: a `TTSProvider` abstraction with a first implementation
+  using Windows' built-in SAPI voices (offline, no unofficial endpoint),
+  plus a speaker-icon button next to the Original and Translation sections
+  in the popup (#12/#13/#14). Only one utterance plays at a time. Confirmed
+  working via live testing; the built-in SAPI voices are low quality and
+  fall back to an English accent for languages with no matching installed
+  voice — tracked as a follow-up (#88), not a blocker.
 
 ### Fixed
 - Capture reliability: the first several hotkey presses after launch

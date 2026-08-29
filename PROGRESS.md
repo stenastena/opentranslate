@@ -30,6 +30,34 @@ Filed and implemented in the same session per the project owner's request
 (priority:high, milestone v0.2 — filed as v0.2 rather than v0.1 since it's
 net-new feature work, not a fix blocking v0.1's Definition of Done).
 
+**Issue #78 (perf, merged)**: found while doing the v0.1 Definition-of-Done
+pass — the back-translation call was redundantly repeating Google's full
+dictionary+gender lookup for no UI benefit (up to 6 curl requests per
+single-word popup view). Added a `lightweight` translate option so only
+the forward translation pays that cost.
+
+**Issue #79 (chore, license, PR #80)**: switched the project license from
+MIT to Apache 2.0 with a NOTICE file, at the project owner's request, so
+attribution survives a plain-copy fork (Apache 2.0 requires NOTICE to
+carry into derivative works; MIT has no such requirement).
+
+**Definition-of-Done pass (in progress)**: tray icon, tray menu, and
+Settings window (Hotkeys/Languages/Services tabs) all confirmed working
+on the real machine. `npm run package` was tested: the actual app +
+native deps (including `koffi`, the #68 fix's dependency) bundle
+correctly into `release/win-unpacked` — but the NSIS installer step
+itself fails on this dev machine downloading `winCodeSign` ("Cannot
+create symbolic link: a required privilege is not held by the client"),
+a well-known Windows electron-builder limitation needing Developer Mode
+or admin rights, unrelated to this project's code. Not fixed — enabling
+Developer Mode is a system-settings change outside what Claude should do
+unilaterally; the project owner can enable it if a local installer build
+is needed. **Google hit a real, temporary IP-level rate limit today**
+from cumulative testing volume (confirmed via bare `curl` also getting
+429, separate from the #78 fix) — DoD verification of the Google tab is
+blocked until that clears on its own; re-check `npm run check-providers`
+before resuming.
+
 ## What shipped in v0.1
 
 - Issue #1 (+ #2–#6): project scaffolding, CI, issue templates,
@@ -145,10 +173,13 @@ git checkout main && git pull
 gh issue list --milestone v0.1 --state open   # should be empty
 ```
 
-1. Do a full Definition of Done pass against the original v0.1 spec on
-   the real machine (capture → translate across all working providers →
-   popup interactions → settings), now that #68/#69/#70 are all fixed,
-   then close the v0.1 milestone for real.
+1. Finish the Definition-of-Done pass: re-verify Google translation once
+   its current rate limit clears (`npm run check-providers`), then close
+   the v0.1 milestone for real. Tray/hotkey/Settings/DeepL are already
+   confirmed working on the real machine; packaging config is confirmed
+   correct (`release/win-unpacked` built fine including `koffi`) modulo
+   the unrelated winCodeSign/Developer-Mode environment limitation noted
+   above.
 2. Then move to the v0.2 backlog (issues #8–#14: translation history, TTS
    — #76, Google dictionary output, is already done), same process as
    before: issue → branch → PR → CI → merge.

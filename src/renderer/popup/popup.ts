@@ -12,6 +12,7 @@ interface TabResult {
   translatedText?: string;
   backTranslatedText?: string;
   detectedLang?: string;
+  targetLang?: string;
   error?: string;
   dictionary?: GoogleDictionary;
   genderArticle?: string;
@@ -20,8 +21,15 @@ interface TabResult {
 interface State {
   originalText: string;
   sourceLang: string; // 'auto' or a language code
-  targetLang: string;
+  targetLang: string; // 'auto' or a language code
   lastDetectedLang?: string;
+  lastResolvedTargetLang?: string;
+  // The Languages settings pair used to resolve targetLang when it's
+  // 'auto': whichever of the two ISN'T the (detected or selected) source
+  // becomes the target. E.g. with first=en/second=ru: source ru -> target
+  // en; source anything else (including a third language) -> target ru.
+  autoDetectFirst: string;
+  autoDetectSecond: string;
   providerIds: string[];
   activeProviderId: string | null;
   resultsByProvider: Map<string, TabResult>;
@@ -30,11 +38,17 @@ interface State {
 const state: State = {
   originalText: '',
   sourceLang: 'auto',
-  targetLang: 'en',
+  targetLang: 'auto',
+  autoDetectFirst: 'en',
+  autoDetectSecond: 'de',
   providerIds: [],
   activeProviderId: null,
   resultsByProvider: new Map(),
 };
+
+function resolveAutoTargetLang(effectiveSourceLang: string): string {
+  return effectiveSourceLang === state.autoDetectSecond ? state.autoDetectFirst : state.autoDetectSecond;
+}
 
 const originalTextEl = document.getElementById('original-text') as HTMLTextAreaElement;
 const translationTextEl = document.getElementById('translation-text') as HTMLTextAreaElement;
@@ -49,6 +63,7 @@ const dictionaryContentEl = document.getElementById('dictionary-content')!;
 const translationGenderEl = document.getElementById('translation-gender')!;
 
 function populateLanguageSelects(): void {
+  targetLangSelect.appendChild(new Option('Auto', 'auto'));
   for (const lang of LANGUAGES) {
     sourceLangSelect.appendChild(new Option(lang.label, lang.code));
     targetLangSelect.appendChild(new Option(lang.label, lang.code));
@@ -202,6 +217,11 @@ async function ensureActiveResultLoaded(): Promise<void> {
       state.lastDetectedLang = effectiveSourceLang;
     }
 
+    if (effectiveTargetLang === 'auto') {
+      effectiveTargetLang = resolveAutoTargetLang(effectiveSourceLang);
+      state.lastResolvedTargetLang = effectiveTargetLang;
+    }
+
     const translateResult = await window.electronAPI.providers.translate(providerId, state.originalText, effectiveSourceLang, effectiveTargetLang);
     if (!translateResult.ok) throw new Error(translateResult.error);
 
@@ -224,6 +244,7 @@ async function ensureActiveResultLoaded(): Promise<void> {
       translatedText: translateResult.value.translatedText,
       backTranslatedText: backResult.ok ? backResult.value.translatedText : undefined,
       detectedLang: effectiveSourceLang,
+      targetLang: effectiveTargetLang,
       dictionary: translateResult.value.dictionary,
       genderArticle: translateResult.value.genderArticle,
     });
@@ -295,7 +316,7 @@ async function retranslateFromEditedTranslation(): Promise<void> {
   if (!effectiveSourceLang) return;
 
   try {
-    const backResult = await window.electronAPI.providers.translate(providerId, editedTranslation, state.targetLang, effectiveSourceLang, { lightweight: true });
+    const backResult = await window.electronAPI.providers.translate(providerId, editedTranslation, result.targetLang ?? state.targetLang, effectiveSourceLang, { lightweight: true });
     const current = state.resultsByProvider.get(providerId);
     if (!current) return;
     state.resultsByProvider.set(providerId, {
@@ -326,7 +347,8 @@ async function handleSwap(): Promise<void> {
   const effectiveSource = state.sourceLang === 'auto' ? state.lastDetectedLang : state.sourceLang;
   if (!effectiveSource) return;
 
-  const newSource = state.targetLang;
+  const newSource = state.targetLang === 'auto' ? state.lastResolvedTargetLang : state.targetLang;
+  if (!newSource) return;
   const newTarget = effectiveSource;
 
   state.sourceLang = newSource;
@@ -342,8 +364,8 @@ async function init(): Promise<void> {
 
   const [settings, providerIds] = await Promise.all([window.electronAPI.settings.get(), window.electronAPI.providers.listIds()]);
 
-  state.targetLang = settings.languages.autoDetectSecond;
-  targetLangSelect.value = state.targetLang;
+  state.autoDetectFirst = settings.languages.autoDetectFirst;
+  state.autoDetectSecond = settings.languages.autoDetectSecond;
 
   state.providerIds = PROVIDER_ORDER.filter((id) => providerIds.includes(id) && settings.services[id as keyof typeof settings.services]);
   state.activeProviderId = state.providerIds[0] ?? null;

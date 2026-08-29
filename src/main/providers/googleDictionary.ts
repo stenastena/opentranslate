@@ -13,6 +13,14 @@
 // le/la, so the prefixing isn't German-specific even though that's the
 // motivating case.
 //
+// This is only ever as accurate as Google's own (undocumented, unofficial)
+// data — confirmed on the real machine that it can be flat wrong: querying
+// "Мост" (ru) -> German returns the noun candidate "Brücke" tagged with
+// `previous_word: "der"`, but "Brücke" is grammatically feminine ("die
+// Brücke") in real German. There's no local correction for this; a wrong
+// article shown to the user is Google's dictionary data being wrong, not a
+// parsing bug here.
+//
 // Per issue #76: the dict/synsets/definitions fields are only populated when
 // the source text is a single word (no spaces) — for phrases/sentences they're
 // absent, which is expected API behavior, not a parsing bug. `synsets` (English
@@ -60,7 +68,11 @@ export interface RawGoogleExamples {
 }
 
 export interface RawGoogleAlternativeTranslation {
-  alternative: Array<{ word_postproc: string }>;
+  // Absent (not just empty) for a segment Google had no alternative for —
+  // observed for a whitespace-only "segment" between sentences in a
+  // multi-sentence translation (e.g. the "\r\n\r\n" between two
+  // paragraphs) — confirmed via a real crash on exactly that input.
+  alternative?: Array<{ word_postproc: string }>;
 }
 
 export interface RawGoogleFullResponse {
@@ -138,7 +150,7 @@ export function parseGoogleDictionary(data: RawGoogleFullResponse): GoogleDictio
   const examples = dedupe((data.examples?.example ?? []).map((e) => stripHtmlTags(e.text))).slice(0, MAX_EXAMPLES);
 
   const alternativeTranslations = dedupe(
-    (data.alternative_translations ?? []).flatMap((group) => group.alternative.map((a) => a.word_postproc)),
+    (data.alternative_translations ?? []).flatMap((group) => (group.alternative ?? []).map((a) => a.word_postproc)),
   ).slice(0, MAX_ALTERNATIVES);
 
   const entries = posOrder.map((pos) => byPos.get(pos)!);

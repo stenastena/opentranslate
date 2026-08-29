@@ -1,0 +1,255 @@
+{
+  "dict": [
+    {
+      "pos": "noun",
+      "terms": [
+        "Unternehmen",
+        "Geschäft",
+        "Firma",
+        "Betrieb",
+        "Branche",
+        "Sache",
+        "Handel",
+        "Angelegenheit",
+        "Aufgabe",
+        "Handwerk",
+        "Verkehr",
+        "Kram",
+        "Chose",
+        "Geschichte",
+        "Problem"
+      ],
+      "entry": [
+        {
+          "word": "Unternehmen",
+          "reverse_translation": [
+            "business",
+            "enterprise",
+            "undertaking",
+            "organization",
+            "attempt",
+            "venture"
+          ],
+          "score": 0.094479255,
+          "previous_word": "das"
+        },
+        {
+          "word": "Geschäft",
+          "reverse_translation": [
+            "business",
+            "shop",
+            "store",
+            "transaction",
+            "office",
+            "deal"
+          ],
+          "score": 0.054680396,
+          "previous_word": "das"
+        },
+        {
+          "word": "Firma",
+          "reverse_translation": [
+            "company",
+            "firm",
+            "business",
+            "corporation"
+          ],
+          "score": 0.008651695,
+          "previous_word": "die"
+        },
+        {
+          "word": "Betrieb",
+          "reverse_translation": [
+            "operation",
+            "business",
+            "running",
+            "enterprise",
+            "factory",
+            "works"
+          ],
+          "score": 0.002638618,
+          "previous_word": "der"
+        },
+        {
+          "word": "Branche",
+          "reverse_translation": [
+            "business",
+            "trade",
+            "field",
+            "branch of industry",
+            "line",
+            "department"
+          ],
+          "score": 0.0019304542,
+          "previous_word": "die"
+        },
+        {
+          "word": "Sache",
+          "reverse_translation": [
+            "thing",
+            "matter",
+            "cause",
+            "case",
+            "object",
+            "affair"
+          ],
+          "score": 0.0011708796,
+          "previous_word": "die"
+        },
+        {
+          "word": "Handel",
+          "reverse_translation": [
+            "trade",
+            "trading",
+            "commerce",
+            "trafficking",
+            "business",
+            "bargain"
+          ],
+          "score": 0.0009706933,
+          "previous_word": "der"
+        },
+        {
+          "word": "Angelegenheit",
+          "reverse_translation": [
+            "matter",
+            "affair",
+            "issue",
+            "case",
+            "business",
+            "concern"
+          ],
+          "score": 0.0005195747,
+          "previous_word": "die"
+        },
+        {
+          "word": "Aufgabe",
+          "reverse_translation": [
+            "task",
+            "duty",
+            "mission",
+            "job",
+            "function",
+            "purpose"
+          ],
+          "score": 0.0003861151,
+          "previous_word": "die"
+        },
+        {
+          "word": "Handwerk",
+          "reverse_translation": [
+            "trade",
+            "craft",
+            "business",
+            "handiwork"
+          ],
+          "score": 0.00009611165,
+          "previous_word": "das"
+        },
+        {
+          "word": "Verkehr",
+          "reverse_translation": [
+            "traffic",
+            "transport",
+            "transportation",
+            "circulation",
+            "intercourse",
+            "communication"
+          ],
+          "score": 0.00003647987,
+          "previous_word": "der"
+        },
+        {
+          "word": "Kram",
+          "reverse_translation": [
+            "junk",
+            "stuff",
+            "business",
+            "things",
+            "clutter",
+            "odds and ends"
+          ],
+          "score": 0.000029312398,
+          "previous_word": "der"
+        },
+        {
+          "word": "Chose",
+          "reverse_translation": [
+            "thing",
+            "business",
+            "stuff"
+          ],
+          "score": 0.000001136565,
+          "previous_word": "die"
+        },
+        {
+          "word": "Geschichte",
+          "reverse_translation": [
+            "history",
+            "story",
+            "tale",
+            "narrative",
+            "saga"
+          ],
+          "score": 5.4532984e-7,
+          "previous_word": "die"
+        },
+        {
+          "word": "Problem",
+          "reverse_translation": [
+            "problem",
+            "issue",
+            "trouble",
+            "challenge",
+            "hitch",
+            "snag"
+          ],
+          "score": 1.8266262e-7,
+          "previous_word": "das"
+        }
+      ],
+      "base_form": "business",
+      "pos_enum": 1
+    },
+    {
+      "pos": "adjective",
+      "terms": [
+        "geschäftlich",
+        "kaufmännisch",
+        "dienstlich"
+      ],
+      "entry": [
+        {
+          "word": "geschäftlich",
+          "reverse_translation": [
+            "commercial",
+            "businesslike",
+            "managerial"
+          ],
+          "score": 0.0038391664
+        },
+        {
+          "word": "kaufmännisch",
+          "reverse_translation": [
+            "commercial",
+            "business",
+            "mercantile"
+          ],
+          "score": 0.00006205434
+        },
+        {
+          "word": "dienstlich",
+          "reverse_translation": [
+            "official",
+            "business"
+          ],
+          "score": 0.000060145136
+        }
+      ],
+      "base_form": "business",
+      "pos_enum": 3
+    }
+  ],
+  "src": "en",
+  "spell": {}
+}

@@ -16,6 +16,8 @@ type ProviderCallResult<T> = { ok: true; value: T } | { ok: false; error: string
 interface TranslationResult {
   translatedText: string;
   detectedSourceLang?: string;
+  dictionary?: GoogleDictionary;
+  genderArticle?: string;
 }
 
 interface ElectronAPI {
@@ -37,5 +39,18 @@ interface ElectronAPI {
 declare global {
   interface Window {
     electronAPI: ElectronAPI;
+  }
+
+  interface GoogleDictionaryEntry {
+    partOfSpeech: string;
+    translations: string[];
+    synonyms: string[];
+    definitions: string[];
+  }
+
+  interface GoogleDictionary {
+    entries: GoogleDictionaryEntry[];
+    examples: string[];
+    alternativeTranslations: string[];
   }
 }

@@ -1,6 +1,18 @@
+import { GoogleDictionary } from './googleDictionary';
+
 export interface TranslationResult {
   translatedText: string;
   detectedSourceLang?: string;
+  // Only ever populated by the Google provider (issue #76) — its unofficial
+  // endpoint can return a dictionary breakdown (parts of speech, synonyms,
+  // definitions, examples) that DeepL/Yandex have no equivalent for.
+  dictionary?: GoogleDictionary;
+  // The definite article for translatedText specifically (e.g. "das" for
+  // "Geschäft") when the target language uses grammatical articles — see
+  // google.ts's findTranslationGender. Undefined when the target language
+  // has no articles, translatedText isn't a single word, or no article
+  // could be found for that exact word.
+  genderArticle?: string;
 }
 
 /**

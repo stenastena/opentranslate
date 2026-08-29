@@ -1,0 +1,290 @@
+{
+  "sentences": [
+    {
+      "trans": "красивый",
+      "orig": "beautiful",
+      "backend": 10
+    },
+    {
+      "translit": "krasivyy",
+      "src_translit": "ˈbyo͞odəfəl"
+    }
+  ],
+  "dict": [
+    {
+      "pos": "adjective",
+      "terms": [
+        "прекрасный",
+        "красивый",
+        "превосходный"
+      ],
+      "entry": [
+        {
+          "word": "прекрасный",
+          "reverse_translation": [
+            "beautiful",
+            "fine",
+            "great",
+            "glorious",
+            "lovely",
+            "beauteous"
+          ],
+          "score": 0.39777252
+        },
+        {
+          "word": "красивый",
+          "reverse_translation": [
+            "beautiful",
+            "handsome",
+            "nice",
+            "lovely",
+            "goodly",
+            "fair"
+          ],
+          "score": 0.14183016
+        },
+        {
+          "word": "превосходный",
+          "reverse_translation": [
+            "excellent",
+            "superb",
+            "superior",
+            "superlative",
+            "fine",
+            "beautiful"
+          ],
+          "score": 0.00017403573
+        }
+      ],
+      "base_form": "beautiful",
+      "pos_enum": 3
+    },
+    {
+      "pos": "noun",
+      "terms": [
+        "прекрасное",
+        "красотка",
+        "красивые люди"
+      ],
+      "entry": [
+        {
+          "word": "прекрасное",
+          "reverse_translation": [
+            "beautiful"
+          ],
+          "score": 0.01720595
+        },
+        {
+          "word": "красотка",
+          "reverse_translation": [
+            "babe",
+            "beautiful",
+            "cutie",
+            "lovely",
+            "bombshell",
+            "peach"
+          ],
+          "score": 0.00014655277
+        },
+        {
+          "word": "красивые люди",
+          "reverse_translation": [
+            "beautiful"
+          ],
+          "score": 0.000004785117
+        }
+      ],
+      "base_form": "beautiful",
+      "pos_enum": 1
+    }
+  ],
+  "src": "en",
+  "alternative_translations": [
+    {
+      "src_phrase": "beautiful",
+      "alternative": [
+        {
+          "word_postproc": "красивый",
+          "has_preceding_space": true,
+          "attach_to_next_token": false,
+          "backends": [
+            10
+          ]
+        },
+        {
+          "word_postproc": "красивая",
+          "has_preceding_space": true,
+          "attach_to_next_token": false,
+          "backends": [
+            8
+          ]
+        }
+      ],
+      "srcunicodeoffsets": [
+        {
+          "begin": 0,
+          "end": 9
+        }
+      ],
+      "raw_src_segment": "beautiful",
+      "start_pos": 0,
+      "end_pos": 0
+    }
+  ],
+  "confidence": 0.9837732,
+  "spell": {},
+  "ld_result": {
+    "srclangs": [
+      "en"
+    ],
+    "srclangs_confidences": [
+      0.9837732
+    ],
+    "extended_srclangs": [
+      "en"
+    ]
+  },
+  "synsets": [
+    {
+      "pos": "adjective",
+      "entry": [
+        {
+          "synonym": [
+            "beauteous"
+          ],
+          "definition_id": "m_en_gbus0081680.006",
+          "label_info": {
+            "register": [
+              "formal"
+            ]
+          }
+        },
+        {
+          "synonym": [
+            "comely",
+            "fair"
+          ],
+          "definition_id": "m_en_gbus0081680.006",
+          "label_info": {
+            "register": [
+              "archaic"
+            ]
+          }
+        },
+        {
+          "synonym": [
+            "hot",
+            "tasty",
+            "divine",
+            "knockout",
+            "drop-dead gorgeous",
+            "fanciable",
+            "beddable",
+            "easy on the eye",
+            "fit",
+            "smashing",
+            "cute",
+            "foxy",
+            "beaut",
+            "spunky"
+          ],
+          "definition_id": "m_en_gbus0081680.006",
+          "label_info": {
+            "register": [
+              "informal"
+            ]
+          }
+        },
+        {
+          "synonym": [
+            "attractive",
+            "pretty",
+            "handsome",
+            "good-looking",
+            "nice-looking",
+            "pleasing",
+            "alluring",
+            "prepossessing",
+            "as pretty as a picture",
+            "lovely",
+            "charming",
+            "delightful",
+            "appealing",
+            "engaging",
+            "winsome",
+            "ravishing",
+            "gorgeous",
+            "heavenly",
+            "stunning",
+            "arresting",
+            "glamorous",
+            "irresistible",
+            "bewitching",
+            "beguiling",
+            "graceful",
+            "elegant",
+            "exquisite",
+            "aesthetic",
+            "artistic",
+            "decorative",
+            "magnificent",
+            "bonny"
+          ],
+          "definition_id": "m_en_gbus0081680.006"
+        },
+        {
+          "synonym": [
+            "sightly",
+            "pulchritudinous"
+          ],
+          "definition_id": "m_en_gbus0081680.006",
+          "label_info": {
+            "register": [
+              "rare"
+            ]
+          }
+        }
+      ],
+      "base_form": "beautiful",
+      "pos_enum": 3
+    }
+  ],
+  "definitions": [
+    {
+      "pos": "adjective",
+      "entry": [
+        {
+          "gloss": "pleasing the senses or mind aesthetically.",
+          "definition_id": "m_en_gbus0081680.006",
+          "example": "beautiful poetry"
+        }
+      ],
+      "base_form": "beautiful",
+      "pos_enum": 3
+    }
+  ],
+  "examples": {
+    "example": [
+      {
+        "text": "the house had been left in <b>beautiful</b> order",
+        "definition_id": "m_en_gbus0081680.008"
+      },
+      {
+        "text": "the mountains were calm and <b>beautiful</b>",
+        "definition_id": "m_en_gbus0081680.006"
+      },
+      {
+        "text": "<b>beautiful</b> poetry",
+        "definition_id": "m_en_gbus0081680.006"
+      },
+      {
+        "text": "she spoke in <b>beautiful</b> English",
+        "definition_id": "m_en_gbus0081680.008"
+      },
+      {
+        "text": "a <b>beautiful</b> young woman",
+        "definition_id": "m_en_gbus0081680.006"
+      }
+    ]
+  }
+}

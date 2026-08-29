@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const curlGetMock = vi.fn();
@@ -9,29 +11,46 @@ function mockCurlOnce(body: string, status = 200) {
   curlGetMock.mockResolvedValue({ status, body });
 }
 
+function loadFixture(name: string): string {
+  return readFileSync(join(__dirname, '__fixtures__', 'google', name), 'utf8');
+}
+
 describe('googleProvider', () => {
   afterEach(() => {
     curlGetMock.mockReset();
   });
 
-  it('translates text using the unofficial gtx endpoint response shape', async () => {
-    mockCurlOnce('[[["Hallo","hello",null,null,3]],null,"en"]');
+  it('translates text using the dj=1 object response shape', async () => {
+    mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'Hallo' }], src: 'en' }));
 
     const result = await googleProvider.translate('hello', 'en', 'de');
 
-    expect(result).toEqual({ translatedText: 'Hallo', detectedSourceLang: 'en' });
+    expect(result.translatedText).toBe('Hallo');
+    expect(result.detectedSourceLang).toBe('en');
   });
 
-  it('joins multiple segments in order', async () => {
-    mockCurlOnce('[[["Hallo ","hello ",null,null,1],["Welt","world",null,null,1]],null,"en"]');
+  it('joins multiple sentence segments in order', async () => {
+    mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'Hallo ' }, { trans: 'Welt' }], src: 'en' }));
 
     const result = await googleProvider.translate('hello world', 'en', 'de');
 
     expect(result.translatedText).toBe('Hallo Welt');
   });
 
+  it('requests every dictionary dt value plus dj=1', async () => {
+    mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'Hallo' }], src: 'en' }));
+
+    await googleProvider.translate('hello', 'en', 'de');
+
+    const [url] = curlGetMock.mock.calls[0];
+    for (const dt of ['t', 'bd', 'ex', 'ld', 'md', 'qca', 'rw', 'rm', 'ss', 'at']) {
+      expect(url).toContain(`dt=${dt}`);
+    }
+    expect(url).toContain('dj=1');
+  });
+
   it('detects the source language', async () => {
-    mockCurlOnce('[[["hello","bonjour",null,null,3]],null,"fr"]');
+    mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'hello' }], src: 'fr' }));
 
     const lang = await googleProvider.detectLanguage('bonjour');
 
@@ -51,8 +70,75 @@ describe('googleProvider', () => {
   });
 
   it('reports healthy when a translation comes back', async () => {
-    mockCurlOnce('[[["Hallo","hello",null,null,3]],null,"en"]');
+    mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'Hallo' }], src: 'en' }));
 
     await expect(googleProvider.isHealthy()).resolves.toBe(true);
+  });
+
+  it('has no part-of-speech dictionary entries for a translated phrase (real fixture)', async () => {
+    mockCurlOnce(loadFixture('phrase-en-de.json'));
+
+    const result = await googleProvider.translate('hello world, how are you', 'en', 'de');
+
+    expect(result.translatedText).toBe('Hallo Welt, wie geht es dir?');
+    expect(result.dictionary?.entries).toEqual([]);
+  });
+
+  it('includes dictionary data for a single-word lookup (real fixture)', async () => {
+    mockCurlOnce(loadFixture('run-en-de.json'));
+
+    const result = await googleProvider.translate('run', 'en', 'de');
+
+    expect(result.dictionary).toBeDefined();
+    expect(result.dictionary!.entries.some((e) => e.partOfSpeech === 'verb')).toBe(true);
+  });
+
+  it('finds the gender article directly when the translated word matches a dict entry (real fixture)', async () => {
+    // "house" -> "maison" (fr): the sentence-level translation happens to
+    // match the dict's own top noun candidate exactly, so this exercises
+    // the free/no-extra-request path, not the pivot fallback.
+    mockCurlOnce(loadFixture('house-en-fr.json'));
+
+    const result = await googleProvider.translate('house', 'en', 'fr');
+
+    expect(result.translatedText).toBe('maison');
+    expect(result.genderArticle).toBe('la');
+    expect(curlGetMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to a pivot lookup when the translated word is absent from the direct dict response (real fixtures)', async () => {
+    // Translating "Бизнес" (ru) gives the sentence-level translation
+    // "Geschäft", but the dict's own top noun candidate for that query is
+    // "Business" — findArticleForWord finds nothing directly, so this
+    // exercises the two-hop pivot: gloss "Geschäft" to English ("Business"),
+    // then look up *that* word's German dict entry and find "Geschäft"
+    // listed there with its article.
+    curlGetMock
+      .mockResolvedValueOnce({ status: 200, body: loadFixture('biznes-ru-de.json') })
+      .mockResolvedValueOnce({ status: 200, body: loadFixture('geschaeft-gloss-de-en.json') })
+      .mockResolvedValueOnce({ status: 200, body: loadFixture('business-en-de.json') });
+
+    const result = await googleProvider.translate('Бизнес', 'ru', 'de');
+
+    expect(result.translatedText).toBe('Geschäft');
+    expect(result.genderArticle).toBe('das');
+    expect(curlGetMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not attempt a gender lookup for non-article target languages or multi-word translations', async () => {
+    mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'привет' }], src: 'en' }));
+    await googleProvider.translate('hello', 'en', 'ru');
+    expect(curlGetMock).toHaveBeenCalledTimes(1);
+
+    curlGetMock.mockReset();
+    mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'guten Tag' }], src: 'en' }));
+    await googleProvider.translate('good day', 'en', 'de');
+    expect(curlGetMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not attempt a gender lookup for detectLanguage or isHealthy calls', async () => {
+    mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'Hallo' }], src: 'en' }));
+    await googleProvider.isHealthy();
+    expect(curlGetMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,0 +1,1457 @@
+{
+  "sentences": [
+    {
+      "trans": "laufen",
+      "orig": "run",
+      "backend": 10
+    },
+    {
+      "src_translit": "rən"
+    }
+  ],
+  "dict": [
+    {
+      "pos": "noun",
+      "terms": [
+        "Run",
+        "Lauf",
+        "Auflage",
+        "Fahrt",
+        "Laufzeit",
+        "Strecke",
+        "Serie",
+        "Ansturm",
+        "Folge",
+        "Reihe",
+        "Sequenz",
+        "Gehege",
+        "Hühnerhof",
+        "Masche",
+        "Laufmasche",
+        "Spielzeit",
+        "Ausflug",
+        "Tendenz",
+        "Flug"
+      ],
+      "entry": [
+        {
+          "word": "Run",
+          "reverse_translation": [
+            "run"
+          ],
+          "score": 0.18211353,
+          "previous_word": "der"
+        },
+        {
+          "word": "Lauf",
+          "reverse_translation": [
+            "running",
+            "run",
+            "course",
+            "barrel",
+            "race",
+            "operation"
+          ],
+          "score": 0.0505711,
+          "previous_word": "der"
+        },
+        {
+          "word": "Auflage",
+          "reverse_translation": [
+            "edition",
+            "circulation",
+            "rest",
+            "run",
+            "overlay",
+            "condition"
+          ],
+          "score": 0.0050860695,
+          "previous_word": "die"
+        },
+        {
+          "word": "Fahrt",
+          "reverse_translation": [
+            "ride",
+            "trip",
+            "journey",
+            "tour",
+            "run",
+            "voyage"
+          ],
+          "score": 0.0038996246,
+          "previous_word": "die"
+        },
+        {
+          "word": "Laufzeit",
+          "reverse_translation": [
+            "term",
+            "period of validity",
+            "operational time",
+            "running time",
+            "run-time"
+          ],
+          "score": 0.0024403227,
+          "previous_word": "die"
+        },
+        {
+          "word": "Strecke",
+          "reverse_translation": [
+            "route",
+            "distance",
+            "track",
+            "line",
+            "stretch",
+            "run"
+          ],
+          "score": 0.0021201891,
+          "previous_word": "die"
+        },
+        {
+          "word": "Serie",
+          "reverse_translation": [
+            "series",
+            "serial",
+            "set",
+            "run",
+            "string",
+            "succession"
+          ],
+          "score": 0.0021201891,
+          "previous_word": "die"
+        },
+        {
+          "word": "Ansturm",
+          "reverse_translation": [
+            "rush",
+            "stampede",
+            "onslaught",
+            "run",
+            "onrush",
+            "crowd"
+          ],
+          "score": 0.000779974,
+          "previous_word": "der"
+        },
+        {
+          "word": "Folge",
+          "reverse_translation": [
+            "episode",
+            "result",
+            "sequence",
+            "consequence",
+            "order",
+            "succession"
+          ],
+          "score": 0.0005980268,
+          "previous_word": "die"
+        },
+        {
+          "word": "Reihe",
+          "reverse_translation": [
+            "series",
+            "row",
+            "number",
+            "range",
+            "set",
+            "line"
+          ],
+          "score": 0.0004514143,
+          "previous_word": "die"
+        },
+        {
+          "word": "Sequenz",
+          "reverse_translation": [
+            "sequence",
+            "progression",
+            "run",
+            "flush"
+          ],
+          "score": 0.000041337105,
+          "previous_word": "die"
+        },
+        {
+          "word": "Gehege",
+          "reverse_translation": [
+            "enclosure",
+            "reserve",
+            "pen",
+            "preserve",
+            "compound",
+            "run"
+          ],
+          "score": 0.000026275464,
+          "previous_word": "das"
+        },
+        {
+          "word": "Hühnerhof",
+          "reverse_translation": [
+            "run"
+          ],
+          "score": 0.0000044255103,
+          "previous_word": "der"
+        },
+        {
+          "word": "Masche",
+          "reverse_translation": [
+            "mesh",
+            "stitch",
+            "ploy",
+            "trick",
+            "pitch",
+            "run"
+          ],
+          "score": 0.0000033405504,
+          "previous_word": "die"
+        },
+        {
+          "word": "Laufmasche",
+          "reverse_translation": [
+            "run",
+            "ladder"
+          ],
+          "score": 0.0000027264778,
+          "previous_word": "die"
+        },
+        {
+          "word": "Spielzeit",
+          "reverse_translation": [
+            "season",
+            "playing time",
+            "period",
+            "run",
+            "inning"
+          ],
+          "score": 0.0000012878969,
+          "previous_word": "die"
+        },
+        {
+          "word": "Ausflug",
+          "reverse_translation": [
+            "tour",
+            "trip",
+            "excursion",
+            "outing",
+            "flight",
+            "hike"
+          ],
+          "score": 9.276373e-7,
+          "previous_word": "der"
+        },
+        {
+          "word": "Tendenz",
+          "reverse_translation": [
+            "trend",
+            "tendency",
+            "bias",
+            "direction",
+            "drift",
+            "run"
+          ],
+          "score": 6.893615e-7,
+          "previous_word": "die"
+        },
+        {
+          "word": "Flug",
+          "reverse_translation": [
+            "flight"
+          ],
+          "score": 5.539175e-7,
+          "previous_word": "der"
+        }
+      ],
+      "base_form": "run",
+      "pos_enum": 1
+    },
+    {
+      "pos": "verb",
+      "terms": [
+        "laufen",
+        "verlaufen",
+        "starten",
+        "führen",
+        "ablaufen",
+        "fahren",
+        "rennen",
+        "durchführen",
+        "leiten",
+        "verkehren",
+        "auslaufen",
+        "fließen",
+        "unterhalten",
+        "verwalten",
+        "ausgehen",
+        "rinnen",
+        "halten",
+        "steuern",
+        "abwickeln",
+        "schmeißen",
+        "zerfließen",
+        "färben",
+        "verfließen",
+        "tropfen",
+        "einlassen",
+        "tröpfeln",
+        "triefen",
+        "plagen"
+      ],
+      "entry": [
+        {
+          "word": "laufen",
+          "reverse_translation": [
+            "run",
+            "walk",
+            "go",
+            "operate",
+            "work",
+            "race"
+          ],
+          "score": 0.13963129
+        },
+        {
+          "word": "verlaufen",
+          "reverse_translation": [
+            "run",
+            "proceed",
+            "go off"
+          ],
+          "score": 0.04901519
+        },
+        {
+          "word": "starten",
+          "reverse_translation": [
+            "start",
+            "launch",
+            "take off",
+            "set off",
+            "power up",
+            "blast off"
+          ],
+          "score": 0.03758125
+        },
+        {
+          "word": "führen",
+          "reverse_translation": [
+            "lead",
+            "run",
+            "carry",
+            "guide",
+            "conduct",
+            "keep"
+          ],
+          "score": 0.03214495
+        },
+        {
+          "word": "ablaufen",
+          "reverse_translation": [
+            "run",
+            "expire",
+            "drain off",
+            "run out",
+            "pass",
+            "go off"
+          ],
+          "score": 0.00477792
+        },
+        {
+          "word": "fahren",
+          "reverse_translation": [
+            "drive",
+            "ride",
+            "run",
+            "move",
+            "pass",
+            "motor"
+          ],
+          "score": 0.004703845
+        },
+        {
+          "word": "rennen",
+          "reverse_translation": [
+            "race",
+            "run",
+            "sprint"
+          ],
+          "score": 0.0043503456
+        },
+        {
+          "word": "durchführen",
+          "reverse_translation": [
+            "lead through",
+            "take through",
+            "run through",
+            "carry out",
+            "implement",
+            "run"
+          ],
+          "score": 0.002328572
+        },
+        {
+          "word": "leiten",
+          "reverse_translation": [
+            "guide",
+            "conduct",
+            "lead",
+            "direct",
+            "manage",
+            "run"
+          ],
+          "score": 0.0013688969
+        },
+        {
+          "word": "verkehren",
+          "reverse_translation": [
+            "operate",
+            "run",
+            "associate",
+            "have intercourse",
+            "consort",
+            "haunt"
+          ],
+          "score": 0.0006267267
+        },
+        {
+          "word": "auslaufen",
+          "reverse_translation": [
+            "leak",
+            "run out",
+            "run",
+            "drain",
+            "leak out",
+            "sail"
+          ],
+          "score": 0.0005445096
+        },
+        {
+          "word": "fließen",
+          "reverse_translation": [
+            "flow",
+            "pass",
+            "run",
+            "move",
+            "stream",
+            "circulate"
+          ],
+          "score": 0.00034611137
+        },
+        {
+          "word": "unterhalten",
+          "reverse_translation": [
+            "support",
+            "maintain",
+            "keep",
+            "operate",
+            "entertain",
+            "amuse"
+          ],
+          "score": 0.00033026177
+        },
+        {
+          "word": "verwalten",
+          "reverse_translation": [
+            "manage",
+            "administer",
+            "maintain",
+            "govern",
+            "hold",
+            "conduct"
+          ],
+          "score": 0.00026537277
+        },
+        {
+          "word": "ausgehen",
+          "reverse_translation": [
+            "go out",
+            "go",
+            "start",
+            "assume",
+            "emanate",
+            "run out"
+          ],
+          "score": 0.00022000176
+        },
+        {
+          "word": "rinnen",
+          "reverse_translation": [
+            "run",
+            "stream",
+            "pour"
+          ],
+          "score": 0.0001795602
+        },
+        {
+          "word": "halten",
+          "reverse_translation": [
+            "keep",
+            "hold",
+            "maintain",
+            "stop",
+            "stick",
+            "stay"
+          ],
+          "score": 0.00016349142
+        },
+        {
+          "word": "steuern",
+          "reverse_translation": [
+            "control",
+            "manage",
+            "steer",
+            "drive",
+            "navigate",
+            "run"
+          ],
+          "score": 0.00008093413
+        },
+        {
+          "word": "abwickeln",
+          "reverse_translation": [
+            "unwind",
+            "complete",
+            "carry out",
+            "transact",
+            "unroll",
+            "uncoil"
+          ],
+          "score": 0.000058294663
+        },
+        {
+          "word": "schmeißen",
+          "reverse_translation": [
+            "throw",
+            "chuck",
+            "fling",
+            "sling",
+            "slam",
+            "bung"
+          ],
+          "score": 0.000020146097
+        },
+        {
+          "word": "zerfließen",
+          "reverse_translation": [
+            "melt away",
+            "run"
+          ],
+          "score": 0.000019526267
+        },
+        {
+          "word": "färben",
+          "reverse_translation": [
+            "color",
+            "dye",
+            "colour"
+          ],
+          "score": 0.000005093731
+        },
+        {
+          "word": "verfließen",
+          "reverse_translation": [
+            "pass",
+            "run",
+            "go by",
+            "become blurred"
+          ],
+          "score": 0.000004710931
+        },
+        {
+          "word": "tropfen",
+          "reverse_translation": [
+            "drop",
+            "drip",
+            "leak"
+          ],
+          "score": 0.0000036688768
+        },
+        {
+          "word": "einlassen",
+          "reverse_translation": [
+            "admit",
+            "let in",
+            "embed",
+            "set",
+            "run",
+            "bed in"
+          ],
+          "score": 0.0000022252862
+        },
+        {
+          "word": "tröpfeln",
+          "reverse_translation": [
+            "dribble",
+            "trickle",
+            "drip",
+            "run"
+          ],
+          "score": 0.0000022252862
+        },
+        {
+          "word": "triefen",
+          "reverse_translation": [
+            "drip",
+            "ooze",
+            "run",
+            "water",
+            "be dripping wet"
+          ],
+          "score": 0.0000018738789
+        },
+        {
+          "word": "plagen",
+          "reverse_translation": [
+            "plague",
+            "afflict",
+            "torment",
+            "infest",
+            "harass",
+            "run"
+          ],
+          "score": 0.0000011189442
+        }
+      ],
+      "base_form": "run",
+      "pos_enum": 2
+    }
+  ],
+  "src": "en",
+  "confidence": 1,
+  "spell": {},
+  "ld_result": {
+    "srclangs": [
+      "en"
+    ],
+    "srclangs_confidences": [
+      1
+    ],
+    "extended_srclangs": [
+      "en"
+    ]
+  },
+  "synsets": [
+    {
+      "pos": "verb",
+      "entry": [
+        {
+          "synonym": [
+            "tear",
+            "pelt",
+            "scoot",
+            "hotfoot it",
+            "belt",
+            "zip",
+            "whip",
+            "go like a bat out of hell",
+            "step on it",
+            "get a move on",
+            "get cracking",
+            "put on some speed",
+            "stir one's stumps",
+            "hop it",
+            "bomb",
+            "leg it",
+            "boogie",
+            "hightail it",
+            "barrel",
+            "get the lead out",
+            "cut along"
+          ],
+          "definition_id": "m_en_gbus0888500.013",
+          "label_info": {
+            "register": [
+              "informal"
+            ]
+          }
+        },
+        {
+          "synonym": [
+            "sprint",
+            "race",
+            "dart",
+            "rush",
+            "dash",
+            "hasten",
+            "hurry",
+            "scurry",
+            "scuttle",
+            "scamper",
+            "hare",
+            "bolt",
+            "bound",
+            "fly",
+            "gallop",
+            "career",
+            "charge",
+            "pound",
+            "shoot",
+            "hurtle",
+            "speed",
+            "streak",
+            "whiz",
+            "zoom",
+            "sweep",
+            "go like lightning",
+            "go hell for leather",
+            "go like the wind",
+            "flash",
+            "double",
+            "jog",
+            "lope",
+            "trot",
+            "jogtrot",
+            "dogtrot"
+          ],
+          "definition_id": "m_en_gbus0888500.013"
+        },
+        {
+          "synonym": [
+            "post",
+            "hie"
+          ],
+          "definition_id": "m_en_gbus0888500.013",
+          "label_info": {
+            "register": [
+              "archaic"
+            ]
+          }
+        },
+        {
+          "synonym": [
+            "beat it",
+            "clear off",
+            "clear out",
+            "vamoose",
+            "skedaddle",
+            "split",
+            "cut and run",
+            "show a clean pair of heels",
+            "turn tail",
+            "scram",
+            "do a runner",
+            "scarper",
+            "do a bunk",
+            "leg it",
+            "light out",
+            "bug out",
+            "cut out",
+            "peel out",
+            "take a powder",
+            "skiddoo",
+            "go through",
+            "shoot through"
+          ],
+          "definition_id": "m_en_gbus0888500.013",
+          "label_info": {
+            "register": [
+              "informal"
+            ]
+          }
+        },
+        {
+          "synonym": [
+            "flee",
+            "run away",
+            "run off",
+            "make a run for it",
+            "run for it",
+            "take flight",
+            "make off",
+            "take off",
+            "take to one's heels",
+            "make a break for it",
+            "bolt",
+            "beat a (hasty) retreat",
+            "make a quick exit",
+            "make one's getaway",
+            "escape",
+            "head for the hills",
+            "do a disappearing act"
+          ],
+          "definition_id": "m_en_gbus0888500.013"
+        },
+        {
+          "synonym": [
+            "fly"
+          ],
+          "definition_id": "m_en_gbus0888500.013",
+          "label_info": {
+            "register": [
+              "archaic"
+            ]
+          }
+        },
+        {
+          "synonym": [
+            "compete",
+            "take part",
+            "participate",
+            "enter",
+            "be in"
+          ],
+          "definition_id": "m_en_gbus0888500.020"
+        },
+        {
+          "synonym": [
+            "go",
+            "pass",
+            "move",
+            "travel",
+            "roll",
+            "coast"
+          ],
+          "definition_id": "m_en_gbus0888500.029"
+        },
+        {
+          "synonym": [
+            "cast",
+            "pass",
+            "skim",
+            "flick",
+            "slide"
+          ],
+          "definition_id": "m_en_gbus0888500.029"
+        },
+        {
+          "synonym": [
+            "sloosh"
+          ],
+          "definition_id": "m_en_gbus0888500.034",
+          "label_info": {
+            "register": [
+              "informal"
+            ]
+          }
+        },
+        {
+          "synonym": [
+            "flow",
+            "pour",
+            "stream",
+            "gush",
+            "flood",
+            "glide",
+            "cascade",
+            "spurt",
+            "jet",
+            "issue",
+            "roll",
+            "course",
+            "slide",
+            "spill",
+            "trickle",
+            "seep",
+            "drip",
+            "dribble",
+            "leak"
+          ],
+          "definition_id": "m_en_gbus0888500.034"
+        },
+        {
+          "synonym": [
+            "stream",
+            "drip",
+            "exude/secrete/ooze liquid"
+          ],
+          "definition_id": "m_en_gbus0888500.038"
+        },
+        {
+          "synonym": [
+            "extend",
+            "stretch",
+            "reach",
+            "range",
+            "continue",
+            "go"
+          ],
+          "definition_id": "m_en_gbus0888500.043"
+        },
+        {
+          "synonym": [
+            "travel",
+            "ply",
+            "shuttle",
+            "go",
+            "make a regular journey"
+          ],
+          "definition_id": "m_en_gbus0888500.046"
+        },
+        {
+          "synonym": [
+            "drive",
+            "give someone a lift",
+            "take",
+            "bring",
+            "ferry",
+            "chauffeur",
+            "transport",
+            "convey"
+          ],
+          "definition_id": "m_en_gbus0888500.048"
+        },
+        {
+          "synonym": [
+            "be in charge of",
+            "manage",
+            "administer",
+            "direct",
+            "control",
+            "be in control of",
+            "be the boss of",
+            "boss",
+            "head",
+            "lead",
+            "govern",
+            "supervise",
+            "superintend",
+            "oversee",
+            "look after",
+            "organize",
+            "coordinate",
+            "regulate",
+            "operate",
+            "conduct",
+            "carry on",
+            "own",
+            "preside over",
+            "officiate at"
+          ],
+          "definition_id": "m_en_gbus0888500.050"
+        },
+        {
+          "synonym": [
+            "carry out",
+            "do",
+            "perform",
+            "fulfill",
+            "execute"
+          ],
+          "definition_id": "m_en_gbus0888500.052"
+        },
+        {
+          "synonym": [
+            "maintain",
+            "keep",
+            "own",
+            "possess",
+            "have",
+            "drive"
+          ],
+          "definition_id": "m_en_gbus0888500.054"
+        },
+        {
+          "synonym": [
+            "operate",
+            "function",
+            "work",
+            "go",
+            "be in operation",
+            "tick over",
+            "idle",
+            "perform",
+            "behave"
+          ],
+          "definition_id": "m_en_gbus0888500.056"
+        },
+        {
+          "synonym": [
+            "be valid",
+            "last",
+            "be in effect",
+            "operate",
+            "be in operation",
+            "be operative",
+            "be current",
+            "continue",
+            "be effective",
+            "have force",
+            "have effect"
+          ],
+          "definition_id": "m_en_gbus0888500.059"
+        },
+        {
+          "synonym": [
+            "be staged",
+            "be presented",
+            "be performed",
+            "be on",
+            "be put on",
+            "be produced",
+            "be mounted",
+            "be screened",
+            "last"
+          ],
+          "definition_id": "m_en_gbus0888500.061"
+        },
+        {
+          "synonym": [
+            "stand for",
+            "stand for election as",
+            "stand as a candidate for",
+            "be a contender for",
+            "put oneself forward for",
+            "put oneself up for"
+          ],
+          "definition_id": "m_en_gbus0888500.063"
+        },
+        {
+          "synonym": [
+            "publish",
+            "print",
+            "feature",
+            "carry",
+            "put out",
+            "release",
+            "issue"
+          ],
+          "definition_id": "m_en_gbus0888500.066"
+        },
+        {
+          "synonym": [
+            "smuggle",
+            "traffic in",
+            "deal in"
+          ],
+          "definition_id": "m_en_gbus0888500.069"
+        }
+      ],
+      "base_form": "run",
+      "pos_enum": 2
+    },
+    {
+      "pos": "noun",
+      "entry": [
+        {
+          "synonym": [
+            "sprint",
+            "race",
+            "dash",
+            "gallop",
+            "rush",
+            "spurt",
+            "jog",
+            "trot"
+          ],
+          "definition_id": "m_en_gbus0888500.079"
+        },
+        {
+          "synonym": [
+            "route",
+            "way",
+            "course",
+            "journey",
+            "circuit",
+            "round",
+            "beat"
+          ],
+          "definition_id": "m_en_gbus0888500.086"
+        },
+        {
+          "synonym": [
+            "spin",
+            "joyride",
+            "tootle",
+            "hurl"
+          ],
+          "definition_id": "m_en_gbus0888500.087",
+          "label_info": {
+            "register": [
+              "informal"
+            ]
+          }
+        },
+        {
+          "synonym": [
+            "drive",
+            "ride",
+            "turn",
+            "trip",
+            "excursion",
+            "outing",
+            "jaunt",
+            "short journey",
+            "airing"
+          ],
+          "definition_id": "m_en_gbus0888500.087"
+        },
+        {
+          "synonym": [
+            "period",
+            "spell",
+            "stretch",
+            "spate",
+            "bout",
+            "patch",
+            "interval",
+            "time",
+            "series",
+            "succession",
+            "sequence",
+            "string",
+            "chain",
+            "streak"
+          ],
+          "definition_id": "m_en_gbus0888500.095"
+        },
+        {
+          "synonym": [
+            "demand for",
+            "rush for",
+            "sudden request for",
+            "clamor for"
+          ],
+          "definition_id": "m_en_gbus0888500.103"
+        },
+        {
+          "synonym": [
+            "type",
+            "kind",
+            "sort",
+            "variety",
+            "class",
+            "category",
+            "order"
+          ],
+          "definition_id": "m_en_gbus0888500.105"
+        },
+        {
+          "synonym": [
+            "slope",
+            "piste",
+            "track",
+            "bump run",
+            "trail"
+          ],
+          "definition_id": "m_en_gbus0888500.108"
+        },
+        {
+          "synonym": [
+            "enclosure",
+            "pen",
+            "coop",
+            "compound"
+          ],
+          "definition_id": "m_en_gbus0888500.111"
+        },
+        {
+          "synonym": [
+            "unrestricted/free use of",
+            "unrestricted access to",
+            "a free hand in",
+            "a free rein in"
+          ],
+          "definition_id": "m_en_gbus0888500.114"
+        },
+        {
+          "synonym": [
+            "the flux",
+            "lax"
+          ],
+          "definition_id": "m_en_gbus0888500.124",
+          "label_info": {
+            "register": [
+              "informal",
+              "archaic"
+            ]
+          }
+        },
+        {
+          "synonym": [
+            "diarrhea",
+            "loose motions",
+            "looseness of the bowels",
+            "the skitters",
+            "the trots",
+            "Spanish tummy",
+            "Delhi belly",
+            "Montezuma's revenge",
+            "Aztec revenge",
+            "Aztec two-step",
+            "the squits",
+            "gippy tummy",
+            "holiday tummy",
+            "turista",
+            "dysentery",
+            "lientery"
+          ],
+          "definition_id": "m_en_gbus0888500.124",
+          "label_info": {
+            "register": [
+              "informal"
+            ]
+          }
+        }
+      ],
+      "base_form": "run",
+      "pos_enum": 1
+    }
+  ],
+  "definitions": [
+    {
+      "pos": "verb",
+      "entry": [
+        {
+          "gloss": "move at a speed faster than a walk, never having both or all the feet on the ground at the same time.",
+          "definition_id": "m_en_gbus0888500.013",
+          "example": "the dog ran across the road"
+        },
+        {
+          "gloss": "pass or cause to pass quickly or smoothly in a particular direction.",
+          "definition_id": "m_en_gbus0888500.029",
+          "example": "the rumor ran through the pack of photographers"
+        },
+        {
+          "gloss": "(with reference to a liquid) flow or cause to flow.",
+          "definition_id": "m_en_gbus0888500.034",
+          "example": "a small river runs into the sea at one side of the castle"
+        },
+        {
+          "gloss": "extend or cause to extend in a particular direction.",
+          "definition_id": "m_en_gbus0888500.043",
+          "example": "cobbled streets run down to a tiny harbor"
+        },
+        {
+          "gloss": "(of a bus, train, ferry, or other form of transportation) make a regular journey on a particular route.",
+          "definition_id": "m_en_gbus0888500.046",
+          "example": "buses run into town every half hour"
+        },
+        {
+          "gloss": "be in charge of; manage.",
+          "definition_id": "m_en_gbus0888500.050",
+          "example": "Andrea runs her own catering business"
+        },
+        {
+          "gloss": "be in or cause to be in operation; function or cause to function.",
+          "definition_id": "m_en_gbus0888500.056",
+          "example": "the car runs on unleaded fuel"
+        },
+        {
+          "gloss": "continue or be valid or operative for a particular period of time.",
+          "definition_id": "m_en_gbus0888500.059",
+          "example": "the course ran for two days"
+        },
+        {
+          "gloss": "be a candidate in a political election.",
+          "definition_id": "m_en_gbus0888500.063"
+        },
+        {
+          "gloss": "publish or be published in a newspaper or magazine.",
+          "definition_id": "m_en_gbus0888500.066",
+          "example": "the tabloids ran the story"
+        },
+        {
+          "gloss": "bring (goods) into a country illegally and secretly; smuggle.",
+          "definition_id": "m_en_gbus0888500.069",
+          "example": "they run drugs for the cocaine cartels"
+        }
+      ],
+      "base_form": "run",
+      "pos_enum": 2
+    },
+    {
+      "pos": "noun",
+      "entry": [
+        {
+          "gloss": "an act or spell of running.",
+          "definition_id": "m_en_gbus0888500.079",
+          "example": "I usually go for a run in the morning"
+        },
+        {
+          "gloss": "a journey accomplished or route taken by a vehicle, aircraft, or boat, especially on a regular basis.",
+          "definition_id": "m_en_gbus0888500.086",
+          "example": "the New York-Washington run"
+        },
+        {
+          "gloss": "an opportunity or attempt to achieve something.",
+          "definition_id": "m_en_gbus0888500.091",
+          "example": "their absence means the Russians will have a clear run at the title"
+        },
+        {
+          "gloss": "a continuous spell of a particular situation or condition.",
+          "definition_id": "m_en_gbus0888500.095",
+          "example": "he's had a run of bad luck"
+        },
+        {
+          "gloss": "a widespread and sudden or continuous demand for (a particular currency or commodity).",
+          "definition_id": "m_en_gbus0888500.102",
+          "example": "there's been a big run on nostalgia toys this year"
+        },
+        {
+          "gloss": "the average or usual type of person or thing.",
+          "definition_id": "m_en_gbus0888500.105",
+          "example": "she stood out from the general run of varsity cheerleaders"
+        },
+        {
+          "gloss": "a sloping snow-covered course or track used for skiing, bobsledding, or tobogganing.",
+          "definition_id": "m_en_gbus0888500.108",
+          "example": "a ski run"
+        },
+        {
+          "gloss": "an enclosed area in which domestic animals or birds can run freely in the open.",
+          "definition_id": "m_en_gbus0888500.111",
+          "example": "a chicken run"
+        },
+        {
+          "gloss": "free and unrestricted use of or access to.",
+          "definition_id": "m_en_gbus0888500.114",
+          "example": "her cats were given the run of the house"
+        },
+        {
+          "gloss": "a point scored when a base runner reaches home plate after touching the other bases.",
+          "definition_id": "m_en_gbus0888500.456",
+          "label_info": {
+            "subject": [
+              "Baseball"
+            ]
+          }
+        },
+        {
+          "gloss": "a downward trickle of paint or a similar substance when applied too thickly.",
+          "definition_id": "m_en_gbus0888500.121",
+          "example": "varnish should be applied with care to avoid runs and an uneven surface"
+        },
+        {
+          "gloss": "diarrhea.",
+          "definition_id": "m_en_gbus0888500.124",
+          "label_info": {
+            "register": [
+              "informal"
+            ]
+          }
+        },
+        {
+          "gloss": "the after part of a ship's bottom where it rises and narrows toward the stern.",
+          "definition_id": "m_en_gbus0888500.127",
+          "label_info": {
+            "subject": [
+              "Nautical"
+            ]
+          }
+        }
+      ],
+      "base_form": "run",
+      "pos_enum": 1
+    }
+  ],
+  "examples": {
+    "example": [
+      {
+        "text": "growing nervousness among investors led to a <b>run</b> on some banks",
+        "definition_id": "m_en_gbus0888500.103"
+      },
+      {
+        "text": "they <b>run</b> drugs for the cocaine cartels",
+        "definition_id": "m_en_gbus0888500.069"
+      },
+      {
+        "text": "a production <b>run</b> of only 150 cars",
+        "definition_id": "m_en_gbus0888500.097"
+      },
+      {
+        "text": "a chicken <b>run</b>",
+        "definition_id": "m_en_gbus0888500.111"
+      },
+      {
+        "text": "I'll <b>run</b> you home",
+        "definition_id": "m_en_gbus0888500.048"
+      },
+      {
+        "text": "buses <b>run</b> into town every half hour",
+        "definition_id": "m_en_gbus0888500.046"
+      },
+      {
+        "text": "the New York-Washington <b>run</b>",
+        "definition_id": "m_en_gbus0888500.086"
+      },
+      {
+        "text": "she stood out from the general <b>run</b> of varsity cheerleaders",
+        "definition_id": "m_en_gbus0888500.105"
+      },
+      {
+        "text": "there's been a big <b>run</b> on nostalgia toys this year",
+        "definition_id": "m_en_gbus0888500.102"
+      },
+      {
+        "text": "a number of peripherals can be <b>run</b> off one SCSI port",
+        "definition_id": "m_en_gbus0888500.056"
+      },
+      {
+        "text": "cobbled streets <b>run</b> down to a tiny harbor",
+        "definition_id": "m_en_gbus0888500.043"
+      },
+      {
+        "text": "he could no longer afford to <b>run</b> a car",
+        "definition_id": "m_en_gbus0888500.054"
+      },
+      {
+        "text": "the group is drawing up plans to <b>run</b> trains on key routes",
+        "definition_id": "m_en_gbus0888500.047"
+      },
+      {
+        "text": "Dave has <b>run</b> 42 marathons",
+        "definition_id": "m_en_gbus0888500.020"
+      },
+      {
+        "text": "their absence means the Russians will have a clear <b>run</b> at the title",
+        "definition_id": "m_en_gbus0888500.091"
+      },
+      {
+        "text": "the tape has <b>run</b> out",
+        "definition_id": "m_en_gbus0888500.057"
+      },
+      {
+        "text": "a shallow <b>run</b> at the edge of a low rock",
+        "definition_id": "m_en_gbus0888500.122"
+      },
+      {
+        "text": "her cats were given the <b>run</b> of the house",
+        "definition_id": "m_en_gbus0888500.114"
+      },
+      {
+        "text": "this particular debate will <b>run</b> on and on",
+        "definition_id": "m_en_gbus0888500.059"
+      },
+      {
+        "text": "a badger <b>run</b>",
+        "definition_id": "m_en_gbus0888500.109"
+      },
+      {
+        "text": "Bobby set off at a <b>run</b>",
+        "definition_id": "m_en_gbus0888500.082"
+      },
+      {
+        "text": "he's had a <b>run</b> of bad luck",
+        "definition_id": "m_en_gbus0888500.095"
+      },
+      {
+        "text": "his <b>run</b> for the Republican nomination",
+        "definition_id": "m_en_gbus0888500.093"
+      },
+      {
+        "text": "a cross-country <b>run</b>",
+        "definition_id": "m_en_gbus0888500.079"
+      },
+      {
+        "text": "we decided to <b>run</b> a series of seminars",
+        "definition_id": "m_en_gbus0888500.052"
+      },
+      {
+        "text": "I <b>run</b> every morning",
+        "definition_id": "m_en_gbus0888500.019"
+      },
+      {
+        "text": "we could take a <b>run</b> out to the country",
+        "definition_id": "m_en_gbus0888500.087"
+      },
+      {
+        "text": "the play had a long <b>run</b> on Broadway",
+        "definition_id": "m_en_gbus0888500.096"
+      },
+      {
+        "text": "I'll <b>run</b> you a nice hot bath",
+        "definition_id": "m_en_gbus0888500.036"
+      },
+      {
+        "text": "I usually go for a <b>run</b> in the morning",
+        "definition_id": "m_en_gbus0888500.079"
+      }
+    ]
+  }
+}

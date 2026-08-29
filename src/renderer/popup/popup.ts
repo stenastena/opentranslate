@@ -13,6 +13,8 @@ interface TabResult {
   backTranslatedText?: string;
   detectedLang?: string;
   error?: string;
+  dictionary?: GoogleDictionary;
+  genderArticle?: string;
 }
 
 interface State {
@@ -42,6 +44,9 @@ const sourceLangSelect = document.getElementById('source-lang') as HTMLSelectEle
 const targetLangSelect = document.getElementById('target-lang') as HTMLSelectElement;
 const swapButton = document.getElementById('swap-langs') as HTMLButtonElement;
 const translateButton = document.getElementById('translate-btn') as HTMLButtonElement;
+const dictionarySection = document.getElementById('dictionary-section') as HTMLDetailsElement;
+const dictionaryContentEl = document.getElementById('dictionary-content')!;
+const translationGenderEl = document.getElementById('translation-gender')!;
 
 function populateLanguageSelects(): void {
   for (const lang of LANGUAGES) {
@@ -88,18 +93,91 @@ function renderActiveResult(): void {
     translationTextEl.readOnly = true;
     translationTextEl.classList.add('loading');
     backTranslationTextEl.textContent = '';
+    renderDictionary(undefined);
+    renderGenderBadge(undefined);
   } else if (result.status === 'error') {
     translationTextEl.value = result.error ?? 'Translation failed.';
     translationTextEl.readOnly = true;
     translationTextEl.classList.add('error');
     backTranslationTextEl.textContent = '';
+    renderDictionary(undefined);
+    renderGenderBadge(undefined);
   } else {
     translationTextEl.readOnly = false;
     if (document.activeElement !== translationTextEl) {
       translationTextEl.value = result.translatedText ?? '';
     }
     backTranslationTextEl.textContent = result.backTranslatedText ?? '(back-translation unavailable)';
+    renderDictionary(result.dictionary);
+    renderGenderBadge(result.genderArticle);
   }
+}
+
+// Shows the definite article for the current translation right next to
+// the "Translation" heading — the Dictionary section's own entries can
+// list a different word/article than what the translator actually
+// produced (Google's sentence translator and its dictionary lookup are
+// separate subsystems that don't always agree on the top candidate), so
+// this is specifically the article for translatedText itself.
+function renderGenderBadge(genderArticle: string | undefined): void {
+  translationGenderEl.hidden = !genderArticle;
+  translationGenderEl.textContent = genderArticle ?? '';
+}
+
+// Only Google ever returns dictionary data (issue #76); every other
+// provider/tab simply has no dictionary field, and a translated phrase has
+// no part-of-speech entries even from Google — in both cases the section
+// stays hidden rather than showing an empty shell.
+function renderDictionary(dictionary: GoogleDictionary | undefined): void {
+  dictionaryContentEl.innerHTML = '';
+
+  const hasContent = Boolean(
+    dictionary && (dictionary.entries.length > 0 || dictionary.examples.length > 0 || dictionary.alternativeTranslations.length > 0),
+  );
+  dictionarySection.hidden = !hasContent;
+  if (!dictionary || !hasContent) return;
+
+  for (const entry of dictionary.entries) {
+    const entryEl = document.createElement('div');
+    entryEl.className = 'dict-entry';
+
+    const posEl = document.createElement('div');
+    posEl.className = 'dict-pos';
+    posEl.textContent = entry.partOfSpeech;
+    entryEl.appendChild(posEl);
+
+    if (entry.translations.length > 0) entryEl.appendChild(dictRow('Translations', entry.translations));
+    if (entry.synonyms.length > 0) entryEl.appendChild(dictRow('Synonyms', entry.synonyms));
+    if (entry.definitions.length > 0) entryEl.appendChild(dictRow('Definitions', entry.definitions));
+
+    dictionaryContentEl.appendChild(entryEl);
+  }
+
+  if (dictionary.alternativeTranslations.length > 0) {
+    dictionaryContentEl.appendChild(dictRow('Alternatives', dictionary.alternativeTranslations));
+  }
+
+  if (dictionary.examples.length > 0) {
+    const list = document.createElement('ul');
+    list.className = 'dict-examples';
+    for (const example of dictionary.examples) {
+      const item = document.createElement('li');
+      item.textContent = example;
+      list.appendChild(item);
+    }
+    dictionaryContentEl.appendChild(list);
+  }
+}
+
+function dictRow(label: string, values: string[]): HTMLParagraphElement {
+  const row = document.createElement('p');
+  row.className = 'dict-row';
+  const labelEl = document.createElement('span');
+  labelEl.className = 'dict-row-label';
+  labelEl.textContent = `${label}: `;
+  row.appendChild(labelEl);
+  row.appendChild(document.createTextNode(values.join(', ')));
+  return row;
 }
 
 async function ensureActiveResultLoaded(): Promise<void> {
@@ -134,6 +212,8 @@ async function ensureActiveResultLoaded(): Promise<void> {
       translatedText: translateResult.value.translatedText,
       backTranslatedText: backResult.ok ? backResult.value.translatedText : undefined,
       detectedLang: effectiveSourceLang,
+      dictionary: translateResult.value.dictionary,
+      genderArticle: translateResult.value.genderArticle,
     });
   } catch (error) {
     state.resultsByProvider.set(providerId, {
@@ -183,10 +263,21 @@ async function retranslateFromEditedTranslation(): Promise<void> {
 
   const effectiveSourceLang = result.detectedLang ?? (state.sourceLang !== 'auto' ? state.sourceLang : undefined);
 
-  state.resultsByProvider.set(providerId, { ...result, translatedText: editedTranslation, backTranslatedText: undefined });
+  // Dictionary/gender data describes the *original* translatedText — once
+  // the user has overwritten it, that data no longer applies to what's
+  // actually in the field, so drop it rather than show it as if it still did.
+  state.resultsByProvider.set(providerId, {
+    ...result,
+    translatedText: editedTranslation,
+    backTranslatedText: undefined,
+    dictionary: undefined,
+    genderArticle: undefined,
+  });
   if (providerId === state.activeProviderId) {
     backTranslationTextEl.textContent = 'Translating…';
     backTranslationTextEl.classList.add('loading');
+    renderDictionary(undefined);
+    renderGenderBadge(undefined);
   }
 
   if (!effectiveSourceLang) return;

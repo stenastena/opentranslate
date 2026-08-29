@@ -1,3 +1,4 @@
+import { HistoryStore, NewHistoryEntry } from '../history';
 import { ProviderRegistry } from '../providers';
 import { AppSettings, SettingsStore } from '../settings';
 import { CHANNELS } from './channels';
@@ -12,6 +13,7 @@ export function registerIpcHandlers(
   ipcMain: IpcMainLike,
   registry: ProviderRegistry,
   settingsStore: SettingsStore,
+  historyStore: HistoryStore,
   onSettingsUpdated?: (settings: AppSettings) => void,
 ): void {
   ipcMain.handle(CHANNELS.settingsGet, () => settingsStore.load());
@@ -31,4 +33,12 @@ export function registerIpcHandlers(
   ipcMain.handle(CHANNELS.providerLastSuccessAt, (_event, providerId) => registry.getLastSuccessAt(providerId));
 
   ipcMain.handle(CHANNELS.providerListIds, () => registry.listProviderIds());
+
+  ipcMain.handle(CHANNELS.historyList, () => historyStore.list());
+
+  ipcMain.handle(CHANNELS.historyAdd, (_event, entry: NewHistoryEntry) => historyStore.add(entry));
+
+  ipcMain.handle(CHANNELS.historyRemove, (_event, id: string) => historyStore.remove(id));
+
+  ipcMain.handle(CHANNELS.historyClear, () => historyStore.clear());
 }

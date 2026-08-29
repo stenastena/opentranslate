@@ -13,6 +13,10 @@ const CHANNELS = {
   providerLastSuccessAt: 'provider:last-success-at',
   providerListIds: 'provider:list-ids',
   popupCapturedText: 'popup:captured-text',
+  historyList: 'history:list',
+  historyAdd: 'history:add',
+  historyRemove: 'history:remove',
+  historyClear: 'history:clear',
 } as const;
 
 const electronAPI = {
@@ -31,6 +35,13 @@ const electronAPI = {
     onCapturedText: (callback: (text: string) => void) => {
       ipcRenderer.on(CHANNELS.popupCapturedText, (_event, text: string) => callback(text));
     },
+  },
+  history: {
+    list: () => ipcRenderer.invoke(CHANNELS.historyList),
+    add: (entry: { originalText: string; sourceLang: string; targetLang: string; providerId: string; translatedText: string }) =>
+      ipcRenderer.invoke(CHANNELS.historyAdd, entry),
+    remove: (id: string) => ipcRenderer.invoke(CHANNELS.historyRemove, id),
+    clear: () => ipcRenderer.invoke(CHANNELS.historyClear),
   },
 };
 

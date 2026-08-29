@@ -1,4 +1,5 @@
 import { app, clipboard, ipcMain } from 'electron';
+import { createHistoryStore } from './history';
 import { registerCaptureHotkey, unregisterAllHotkeys } from './hotkeys';
 import { registerIpcHandlers } from './ipc/handlers';
 import { nutJsKeyEmulator } from './keyEmulator';
@@ -18,6 +19,7 @@ app.on('will-quit', unregisterAllHotkeys);
 app.whenReady().then(() => {
   const registry = createDefaultRegistry();
   const settingsStore = createSettingsStore();
+  const historyStore = createHistoryStore();
 
   const onCapture = async () => {
     console.log('[hotkey] capture triggered');
@@ -39,7 +41,7 @@ app.whenReady().then(() => {
     }
   }
 
-  registerIpcHandlers(ipcMain, registry, settingsStore, (updated) => {
+  registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, (updated) => {
     applyHotkey(updated.hotkeys.captureAndTranslate);
   });
 

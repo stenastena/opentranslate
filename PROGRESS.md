@@ -19,16 +19,27 @@ environment-specific rather than code bugs:
   Confirmed via a bare `curl` also getting 429 — not a code issue. Should
   clear on its own; re-run `npm run check-providers` at the start of the
   next session to confirm before doing anything Google-related.
-- **`npm run package`'s NSIS step fails on this dev machine** downloading
-  `winCodeSign` ("Cannot create symbolic link: a required privilege is not
-  held by the client") — a well-known Windows electron-builder limitation
-  needing Developer Mode or admin rights, unrelated to this project's code.
-  The actual app + native deps (`koffi`) bundle correctly into
-  `release/win-unpacked`; only the installer-generation step is blocked.
-  Not fixed — enabling Developer Mode is a system-settings change outside
-  what Claude should do unilaterally. Project owner can enable it if a
-  local installer build is ever needed; otherwise this doesn't block
-  anything (CI doesn't package, only builds+tests).
+- **`npm run package`'s NSIS step previously failed on this dev machine**
+  downloading `winCodeSign` ("Cannot create symbolic link: a required
+  privilege is not held by the client") — extracting that archive tries to
+  recreate two macOS-only symlinked `.dylib` files
+  (`darwin/10.12/lib/lib{crypto,ssl}.dylib`), which needs a privilege this
+  machine's account doesn't have without Developer Mode. **Worked around
+  2026-08-29** without touching any system setting: those two files are
+  never used by a Windows-target build (only `windows-10/signtool.exe`,
+  `rcedit-*.exe` etc. from the same archive are), so the archive was
+  extracted manually with `7za.exe x -xr!darwin` (excluding the whole
+  `darwin` subtree, skipping the problem entirely) and the result placed
+  at `%LOCALAPPDATA%\electron-builder\Cache\winCodeSign\winCodeSign-2.6.0`
+  — electron-builder's own downloader (`getBin("winCodeSign")` in
+  `app-builder-lib`) finds this pre-populated cache entry and skips
+  downloading/extracting it itself. `npm run package` now produces
+  `release\OpenTranslate Setup 0.1.0.exe` successfully. This fix lives
+  only in the local build-tool cache (nothing in the repo changed) — a
+  fresh machine or a cleared electron-builder cache would need the same
+  workaround repeated once. Not something to automate into the repo
+  itself; CI doesn't package (only builds+tests), so this was purely for
+  producing a local release build on request.
 
 **v0.2 backlog progress**: translation history (#8, and its sub-issues
 #9/#10/#11) is fully shipped. Google rich dictionary output (#76) is done.

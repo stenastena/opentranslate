@@ -22,9 +22,19 @@ export interface TranslationResult {
  * their own public methods — the registry is what turns that failure into an
  * isolated per-provider result instead of an app-wide crash.
  */
+export interface TranslateOptions {
+  // Skips anything beyond the bare translation — for Google specifically,
+  // this means skipping the dictionary/synonyms/examples request fields
+  // and the gender-article pivot lookup (issue #76 follow-up). Set by
+  // callers that only need translatedText and would otherwise triple or
+  // more the request count for no UI benefit — e.g. the popup's
+  // back-translation call, which never displays dictionary/gender data.
+  lightweight?: boolean;
+}
+
 export interface TranslationProvider {
   readonly id: string; // 'deepl' | 'yandex' | 'google'
-  translate(text: string, sourceLang: string, targetLang: string): Promise<TranslationResult>;
+  translate(text: string, sourceLang: string, targetLang: string, options?: TranslateOptions): Promise<TranslationResult>;
   detectLanguage(text: string): Promise<string>;
   isHealthy(): Promise<boolean>;
 }

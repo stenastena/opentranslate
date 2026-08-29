@@ -22,8 +22,8 @@ export function registerIpcHandlers(
     return updated;
   });
 
-  ipcMain.handle(CHANNELS.providerTranslate, (_event, providerId, text, sourceLang, targetLang) =>
-    registry.translate(providerId, text, sourceLang, targetLang),
+  ipcMain.handle(CHANNELS.providerTranslate, (_event, providerId, text, sourceLang, targetLang, options) =>
+    registry.translate(providerId, text, sourceLang, targetLang, options),
   );
 
   ipcMain.handle(CHANNELS.providerDetectLanguage, (_event, providerId, text) => registry.detectLanguage(providerId, text));

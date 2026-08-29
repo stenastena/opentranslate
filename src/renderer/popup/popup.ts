@@ -205,7 +205,7 @@ async function ensureActiveResultLoaded(): Promise<void> {
     const translateResult = await window.electronAPI.providers.translate(providerId, state.originalText, effectiveSourceLang, effectiveTargetLang);
     if (!translateResult.ok) throw new Error(translateResult.error);
 
-    const backResult = await window.electronAPI.providers.translate(providerId, translateResult.value.translatedText, effectiveTargetLang, effectiveSourceLang);
+    const backResult = await window.electronAPI.providers.translate(providerId, translateResult.value.translatedText, effectiveTargetLang, effectiveSourceLang, { lightweight: true });
 
     state.resultsByProvider.set(providerId, {
       status: 'ok',
@@ -283,7 +283,7 @@ async function retranslateFromEditedTranslation(): Promise<void> {
   if (!effectiveSourceLang) return;
 
   try {
-    const backResult = await window.electronAPI.providers.translate(providerId, editedTranslation, state.targetLang, effectiveSourceLang);
+    const backResult = await window.electronAPI.providers.translate(providerId, editedTranslation, state.targetLang, effectiveSourceLang, { lightweight: true });
     const current = state.resultsByProvider.get(providerId);
     if (!current) return;
     state.resultsByProvider.set(providerId, {

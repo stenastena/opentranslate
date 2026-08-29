@@ -53,7 +53,7 @@ async function findTranslationGender(word: string, targetLang: string): Promise<
   return dictData ? findArticleForWord(dictData, word) : undefined;
 }
 
-async function callGoogle(text: string, sourceLang: string, targetLang: string, computeGender = true): Promise<TranslationResult> {
+async function callGoogle(text: string, sourceLang: string, targetLang: string, includeExtras = true): Promise<TranslationResult> {
   const params = new URLSearchParams({ client: 'gtx', sl: sourceLang, tl: targetLang, dj: '1' });
   // dt=t is the plain translation; the rest (issue #76) ask for the
   // dictionary breakdown Google's own clients show for single-word lookups
@@ -62,8 +62,13 @@ async function callGoogle(text: string, sourceLang: string, targetLang: string, 
   // ld/qca/rm are requested because DeepLX-style unofficial clients send
   // them alongside the others; harmless if unused. dj=1 switches the
   // response from the legacy nested-array shape to the object shape these
-  // extra sections are parsed from (see googleDictionary.ts).
-  for (const dt of ['t', 'bd', 'ex', 'ld', 'md', 'qca', 'rw', 'rm', 'ss', 'at']) {
+  // extra sections are parsed from (see googleDictionary.ts). Skipped
+  // entirely for lightweight calls (detectLanguage, isHealthy, and the
+  // popup's back-translation) — those only ever read translatedText, so
+  // the extra fields would just be wasted request weight against an
+  // endpoint that's already sensitive to request volume (see #70).
+  const dtValues = includeExtras ? ['t', 'bd', 'ex', 'ld', 'md', 'qca', 'rw', 'rm', 'ss', 'at'] : ['t'];
+  for (const dt of dtValues) {
     params.append('dt', dt);
   }
   params.append('q', text);
@@ -75,6 +80,7 @@ async function callGoogle(text: string, sourceLang: string, targetLang: string, 
   // provider sidesteps that fingerprint check.
   const response = await curlGet(`${ENDPOINT}?${params.toString()}`, { 'User-Agent': CHROME_USER_AGENT });
   if (response.status !== 200) {
+    console.error(`[provider:google] request failed with status ${response.status} for text ${JSON.stringify(text)} (${sourceLang}->${targetLang})`, response.body.slice(0, 500));
     throw new ProviderError('google', `Google Translate request failed with status ${response.status}`);
   }
 
@@ -94,7 +100,7 @@ async function callGoogle(text: string, sourceLang: string, targetLang: string, 
     throw new ProviderError('google', 'Unexpected Google Translate response shape', error);
   }
 
-  if (computeGender && ARTICLE_LANGUAGES.has(targetLang) && !result.translatedText.includes(' ')) {
+  if (includeExtras && ARTICLE_LANGUAGES.has(targetLang) && !result.translatedText.includes(' ')) {
     result.genderArticle = findArticleForWord(data, result.translatedText) ?? (await findTranslationGender(result.translatedText, targetLang));
   }
 
@@ -104,8 +110,8 @@ async function callGoogle(text: string, sourceLang: string, targetLang: string, 
 export const googleProvider: TranslationProvider = {
   id: 'google',
 
-  translate(text, sourceLang, targetLang) {
-    return callGoogle(text, sourceLang, targetLang);
+  translate(text, sourceLang, targetLang, options) {
+    return callGoogle(text, sourceLang, targetLang, !options?.lightweight);
   },
 
   async detectLanguage(text) {

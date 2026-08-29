@@ -141,4 +141,18 @@ describe('googleProvider', () => {
     await googleProvider.isHealthy();
     expect(curlGetMock).toHaveBeenCalledTimes(1);
   });
+
+  it('a lightweight call requests only dt=t and skips the gender lookup entirely', async () => {
+    mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'Geschäft' }], src: 'ru' }));
+
+    const result = await googleProvider.translate('Бизнес', 'ru', 'de', { lightweight: true });
+
+    expect(result.translatedText).toBe('Geschäft');
+    expect(result.dictionary).toBeUndefined();
+    expect(result.genderArticle).toBeUndefined();
+    expect(curlGetMock).toHaveBeenCalledTimes(1);
+    const [url] = curlGetMock.mock.calls[0];
+    expect(url).toContain('dt=t');
+    expect(url).not.toContain('dt=bd');
+  });
 });

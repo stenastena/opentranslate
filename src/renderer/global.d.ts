@@ -13,6 +13,18 @@ interface AppSettings {
 
 type ProviderCallResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
+interface HistoryEntry {
+  id: string;
+  timestamp: number;
+  originalText: string;
+  sourceLang: string;
+  targetLang: string;
+  providerId: string;
+  translatedText: string;
+}
+
+type NewHistoryEntry = Omit<HistoryEntry, 'id' | 'timestamp'>;
+
 interface TranslationResult {
   translatedText: string;
   detectedSourceLang?: string;

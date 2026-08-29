@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { HistoryStore } from '../history/store';
 import { ProviderRegistry } from '../providers/registry';
 import { TranslationProvider } from '../providers/types';
 import { SettingsStore } from '../settings/store';
@@ -34,16 +35,18 @@ class FakeIpcMain implements IpcMainLike {
 describe('registerIpcHandlers', () => {
   let dir: string;
   let settingsStore: SettingsStore;
+  let historyStore: HistoryStore;
   let registry: ProviderRegistry;
   let ipcMain: FakeIpcMain;
 
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'opentranslate-ipc-'));
     settingsStore = new SettingsStore(join(dir, 'settings.json'));
+    historyStore = new HistoryStore(join(dir, 'history.json'));
     registry = new ProviderRegistry();
     registry.register(fakeProvider('good'));
     ipcMain = new FakeIpcMain();
-    registerIpcHandlers(ipcMain, registry, settingsStore);
+    registerIpcHandlers(ipcMain, registry, settingsStore, historyStore);
   });
 
   afterEach(() => {
@@ -80,10 +83,53 @@ describe('registerIpcHandlers', () => {
     expect(await ipcMain.invoke(CHANNELS.providerLastSuccessAt, 'good')).not.toBeNull();
   });
 
+  it('history:add persists an entry and history:list returns it newest-first', async () => {
+    await ipcMain.invoke(CHANNELS.historyAdd, {
+      originalText: 'hello',
+      sourceLang: 'en',
+      targetLang: 'de',
+      providerId: 'good',
+      translatedText: 'Hallo',
+    });
+
+    const list = (await ipcMain.invoke(CHANNELS.historyList)) as Array<{ originalText: string }>;
+    expect(list).toHaveLength(1);
+    expect(list[0].originalText).toBe('hello');
+    expect(historyStore.list()).toHaveLength(1);
+  });
+
+  it('history:remove deletes a single entry by id', async () => {
+    const added = (await ipcMain.invoke(CHANNELS.historyAdd, {
+      originalText: 'hello',
+      sourceLang: 'en',
+      targetLang: 'de',
+      providerId: 'good',
+      translatedText: 'Hallo',
+    })) as { id: string };
+
+    await ipcMain.invoke(CHANNELS.historyRemove, added.id);
+
+    expect(await ipcMain.invoke(CHANNELS.historyList)).toEqual([]);
+  });
+
+  it('history:clear empties the history', async () => {
+    await ipcMain.invoke(CHANNELS.historyAdd, {
+      originalText: 'hello',
+      sourceLang: 'en',
+      targetLang: 'de',
+      providerId: 'good',
+      translatedText: 'Hallo',
+    });
+
+    await ipcMain.invoke(CHANNELS.historyClear);
+
+    expect(await ipcMain.invoke(CHANNELS.historyList)).toEqual([]);
+  });
+
   it('settings:update invokes the onSettingsUpdated callback with the merged settings', async () => {
     const onSettingsUpdated = vi.fn();
     const anotherIpcMain = new FakeIpcMain();
-    registerIpcHandlers(anotherIpcMain, registry, settingsStore, onSettingsUpdated);
+    registerIpcHandlers(anotherIpcMain, registry, settingsStore, historyStore, onSettingsUpdated);
 
     await anotherIpcMain.invoke(CHANNELS.settingsUpdate, { hotkeys: { captureAndTranslate: 'Alt+G' } });
 

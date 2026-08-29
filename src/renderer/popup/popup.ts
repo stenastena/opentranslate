@@ -205,6 +205,18 @@ async function ensureActiveResultLoaded(): Promise<void> {
     const translateResult = await window.electronAPI.providers.translate(providerId, state.originalText, effectiveSourceLang, effectiveTargetLang);
     if (!translateResult.ok) throw new Error(translateResult.error);
 
+    // Fire-and-forget: a history-write failure shouldn't block showing the
+    // translation that's already in hand.
+    void window.electronAPI.history
+      .add({
+        originalText: state.originalText,
+        sourceLang: effectiveSourceLang,
+        targetLang: effectiveTargetLang,
+        providerId,
+        translatedText: translateResult.value.translatedText,
+      })
+      .catch((error) => console.error('[popup] failed to record history entry', error));
+
     const backResult = await window.electronAPI.providers.translate(providerId, translateResult.value.translatedText, effectiveTargetLang, effectiveSourceLang, { lightweight: true });
 
     state.resultsByProvider.set(providerId, {

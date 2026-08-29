@@ -13,6 +13,18 @@ interface AppSettings {
 
 type ProviderCallResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
+interface HistoryEntry {
+  id: string;
+  timestamp: number;
+  originalText: string;
+  sourceLang: string;
+  targetLang: string;
+  providerId: string;
+  translatedText: string;
+}
+
+type NewHistoryEntry = Omit<HistoryEntry, 'id' | 'timestamp'>;
+
 interface TranslationResult {
   translatedText: string;
   detectedSourceLang?: string;
@@ -33,6 +45,12 @@ interface ElectronAPI {
   };
   popup: {
     onCapturedText(callback: (text: string) => void): void;
+  };
+  history: {
+    list(): Promise<HistoryEntry[]>;
+    add(entry: NewHistoryEntry): Promise<HistoryEntry>;
+    remove(id: string): Promise<void>;
+    clear(): Promise<void>;
   };
 }
 

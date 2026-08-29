@@ -17,6 +17,8 @@ const CHANNELS = {
   historyAdd: 'history:add',
   historyRemove: 'history:remove',
   historyClear: 'history:clear',
+  ttsSpeak: 'tts:speak',
+  ttsStop: 'tts:stop',
 } as const;
 
 const electronAPI = {
@@ -42,6 +44,10 @@ const electronAPI = {
       ipcRenderer.invoke(CHANNELS.historyAdd, entry),
     remove: (id: string) => ipcRenderer.invoke(CHANNELS.historyRemove, id),
     clear: () => ipcRenderer.invoke(CHANNELS.historyClear),
+  },
+  tts: {
+    speak: (text: string, lang?: string) => ipcRenderer.invoke(CHANNELS.ttsSpeak, text, lang),
+    stop: () => ipcRenderer.invoke(CHANNELS.ttsStop),
   },
 };
 

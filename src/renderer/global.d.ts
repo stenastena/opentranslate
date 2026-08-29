@@ -52,6 +52,10 @@ interface ElectronAPI {
     remove(id: string): Promise<void>;
     clear(): Promise<void>;
   };
+  tts: {
+    speak(text: string, lang?: string): Promise<void>;
+    stop(): Promise<void>;
+  };
 }
 
 declare global {

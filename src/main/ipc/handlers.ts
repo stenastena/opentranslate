@@ -1,6 +1,7 @@
 import { HistoryStore, NewHistoryEntry } from '../history';
 import { ProviderRegistry } from '../providers';
 import { AppSettings, SettingsStore } from '../settings';
+import { TTSProvider } from '../tts';
 import { CHANNELS } from './channels';
 
 // Matches the subset of Electron's IpcMain we actually use, so this module
@@ -14,6 +15,7 @@ export function registerIpcHandlers(
   registry: ProviderRegistry,
   settingsStore: SettingsStore,
   historyStore: HistoryStore,
+  ttsProvider: TTSProvider,
   onSettingsUpdated?: (settings: AppSettings) => void,
 ): void {
   ipcMain.handle(CHANNELS.settingsGet, () => settingsStore.load());
@@ -41,4 +43,8 @@ export function registerIpcHandlers(
   ipcMain.handle(CHANNELS.historyRemove, (_event, id: string) => historyStore.remove(id));
 
   ipcMain.handle(CHANNELS.historyClear, () => historyStore.clear());
+
+  ipcMain.handle(CHANNELS.ttsSpeak, (_event, text: string, lang?: string) => ttsProvider.speak(text, lang));
+
+  ipcMain.handle(CHANNELS.ttsStop, () => ttsProvider.stop());
 }

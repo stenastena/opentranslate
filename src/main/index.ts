@@ -7,6 +7,7 @@ import { installApplicationMenu } from './menu';
 import { createDefaultRegistry } from './providers';
 import { createSettingsStore } from './settings';
 import { captureSelectedText } from './textCapture';
+import { systemTtsProvider } from './tts';
 import { createTray } from './tray';
 import { showHistoryWindow } from './windows/historyWindow';
 import { showPopupWindow } from './windows/popupWindow';
@@ -43,7 +44,7 @@ app.whenReady().then(() => {
     }
   }
 
-  registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, (updated) => {
+  registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, systemTtsProvider, (updated) => {
     applyHotkey(updated.hotkeys.captureAndTranslate);
   });
 

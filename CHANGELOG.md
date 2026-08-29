@@ -39,6 +39,17 @@ root-cause writeups.
   as a badge on the primary translation (#76). DeepL/Yandex have no
   equivalent capability.
 
+### Performance
+- Cut Google request volume: the popup's back-translation call no longer
+  redundantly repeats the dictionary/gender-article lookup the forward
+  translation already did, which could add up to 6 requests per
+  single-word lookup for no UI benefit (#78).
+
+### Changed
+- License switched from MIT to Apache License 2.0, with a NOTICE file so
+  attribution is preserved in derivative works even from a plain-copy
+  fork (#79).
+
 See the [v0.2 milestone](../../milestone/2) for what's next (translation
 history, TTS).
 

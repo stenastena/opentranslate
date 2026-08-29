@@ -21,7 +21,14 @@ GitHub setup for the whole roadmap (labels, milestones v0.1–1.0, project
 board with Backlog/Todo/In Progress/In Review/Done columns, issue templates)
 is complete and not expected to need further changes. Backlog for v0.2–1.0
 is tracked as issues #8–#34 (untouched, not started) plus **#75** (new,
-split out from #70 — Yandex needs an official paid API key).
+split out from #70 — Yandex needs an official paid API key) and **#76**
+(new, high-priority feature request — Google dictionary output, now
+shipped, see below).
+
+**Issue #76 (Google rich dictionary output) is done, PR #77 merged.**
+Filed and implemented in the same session per the project owner's request
+(priority:high, milestone v0.2 — filed as v0.2 rather than v0.1 since it's
+net-new feature work, not a fix blocking v0.1's Definition of Done).
 
 ## What shipped in v0.1
 
@@ -93,6 +100,33 @@ split out from #70 — Yandex needs an official paid API key).
     Cloud Translate API key and an adapter rewrite, which is a
     product/cost decision, not a bug fix.
 
+- **Issue #76 (Google rich dictionary output, FIXED, PR #77)**: Google's
+  unofficial endpoint returns a much richer response when queried with
+  extra `dt=` values (bd/ss/md/ex/rw/at) plus `dj=1` — parts of speech,
+  synonyms, definitions, examples, alternative translations — this is
+  what QTranslate showed for single-word lookups. Only populated for
+  single-word source text (an API constraint, not a bug); phrases still
+  get alternative translations. Added `src/main/providers/googleDictionary.ts`
+  (reverse-engineered from real captured responses — fixtures in
+  `__fixtures__/google/`) and a collapsible Dictionary section in the
+  popup, shown only when there's real data. **Follow-up from real-machine
+  testing**: German/French noun translations now carry their definite
+  article (`der`/`die`/`das`, `le`/`la` — Google's data isn't
+  German-specific here) inline, and the *primary* translation gets its
+  own gender badge next to "Translation" (not just inside Dictionary),
+  since the sentence translator and the dictionary subsystem don't always
+  pick the same top word for a query (e.g. "Бизнес" → "Geschäft", but the
+  dictionary's own top candidate is "Business"). A pivot lookup (produced
+  word -> English -> back to target language) recovers the article in
+  that mismatch case when possible; it's best-effort and intentionally
+  shows nothing when Google's dictionary tool doesn't have the produced
+  word under any pivot (confirmed real gap: "environment" -> "Umfeld").
+  Checked DeepL for equivalent capability — it has none; its oneshot
+  endpoint returns only `{detected_source_language, text}` (confirmed via
+  a direct request), and its web client's per-word alternatives route
+  through the already-dead legacy jsonrpc endpoint (#70) and only return
+  whole-phrase alternatives, not part-of-speech/gender data.
+
 Two notes on the merged history (informational, no action needed):
 - PR #64 (popup window) left one harmless empty extra commit on `main`
   from a transient GitHub API error during the merge — identical file
@@ -115,8 +149,9 @@ gh issue list --milestone v0.1 --state open   # should be empty
    the real machine (capture → translate across all working providers →
    popup interactions → settings), now that #68/#69/#70 are all fixed,
    then close the v0.1 milestone for real.
-2. Then move to the v0.2 backlog (issues #8–#14: translation history,
-   TTS), same process as before: issue → branch → PR → CI → merge.
+2. Then move to the v0.2 backlog (issues #8–#14: translation history, TTS
+   — #76, Google dictionary output, is already done), same process as
+   before: issue → branch → PR → CI → merge.
 3. Issue #75 (Yandex official API key) is backlog, not blocking — pick it
    up whenever there's a product decision to spend on a paid Yandex key.
 

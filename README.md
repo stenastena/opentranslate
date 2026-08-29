@@ -69,6 +69,10 @@ Build a distributable Windows installer:
 npm run package
 ```
 
+## Author
+
+Created and maintained by [Sergey Osherov](https://github.com/stenastena).
+
 ## License
 
-MIT — see [LICENSE](LICENSE).
+Apache License 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).

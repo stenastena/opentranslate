@@ -16,42 +16,46 @@ describe('deeplProvider', () => {
     vi.unstubAllGlobals();
   });
 
-  it('translates text using the jsonrpc response shape', async () => {
-    mockFetchOnce(
-      JSON.stringify({ jsonrpc: '2.0', id: 1, result: { texts: [{ text: 'Hallo' }], lang: 'EN' } }),
-    );
+  it('translates text using the oneshot response shape', async () => {
+    mockFetchOnce(JSON.stringify({ translations: [{ text: 'Hallo', detected_source_language: 'EN' }] }));
 
     const result = await deeplProvider.translate('hello', 'en', 'de');
 
     expect(result).toEqual({ translatedText: 'Hallo', detectedSourceLang: 'en' });
   });
 
-  it('sends a POST request with a JSON body targeting LMT_handle_texts', async () => {
-    const fetchMock = mockFetchOnce(
-      JSON.stringify({ jsonrpc: '2.0', id: 1, result: { texts: [{ text: 'Hallo' }], lang: 'EN' } }),
-    );
+  it('sends a POST request to the oneshot endpoint with the expected body', async () => {
+    const fetchMock = mockFetchOnce(JSON.stringify({ translations: [{ text: 'Hallo' }] }));
 
     await deeplProvider.translate('hello', 'en', 'de');
 
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toContain('LMT_handle_texts');
+    expect(url).toContain('oneshot-free.www.deepl.com/v1/translate');
     expect(init.method).toBe('POST');
-    expect(init.body).toContain('LMT_handle_texts');
-    expect(init.body).toContain('"target_lang":"DE"');
+    expect(init.headers.Authorization).toBe('None');
+    const body = JSON.parse(init.body);
+    expect(body).toMatchObject({ text: ['hello'], target_lang: 'de', source_lang: 'en', usage_type: 'translate' });
   });
 
-  it('detects the source language', async () => {
-    mockFetchOnce(
-      JSON.stringify({ jsonrpc: '2.0', id: 1, result: { texts: [{ text: 'hello' }], lang: 'FR' } }),
-    );
+  it('normalizes bare "en"/"pt"/"zh" target codes to DeepL\'s regional/script variants', async () => {
+    const fetchMock = mockFetchOnce(JSON.stringify({ translations: [{ text: 'hi' }] }));
+
+    await deeplProvider.translate('hallo', 'de', 'en');
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.target_lang).toBe('en-US');
+  });
+
+  it('omits source_lang when auto-detecting', async () => {
+    mockFetchOnce(JSON.stringify({ translations: [{ text: 'hello', detected_source_language: 'FR' }] }));
 
     const lang = await deeplProvider.detectLanguage('bonjour');
 
     expect(lang).toBe('fr');
   });
 
-  it('throws with the service message when DeepL returns a jsonrpc error', async () => {
-    mockFetchOnce(JSON.stringify({ jsonrpc: '2.0', id: 1, error: { code: 1042911, message: 'Too many requests' } }));
+  it('throws with the service message when DeepL returns a non-ok response with a message', async () => {
+    mockFetchOnce(JSON.stringify({ message: 'Too many requests' }), false, 429);
 
     await expect(deeplProvider.translate('hello', 'en', 'de')).rejects.toThrow(/Too many requests/);
   });
@@ -62,16 +66,14 @@ describe('deeplProvider', () => {
     await expect(deeplProvider.translate('hello', 'en', 'de')).rejects.toThrow(/Failed to parse/);
   });
 
-  it('throws when the HTTP response is not ok', async () => {
+  it('throws with the status code when the HTTP response is not ok and has no message', async () => {
     mockFetchOnce('', false, 503);
 
     await expect(deeplProvider.translate('hello', 'en', 'de')).rejects.toThrow(/status 503/);
   });
 
   it('reports healthy when a translation comes back', async () => {
-    mockFetchOnce(
-      JSON.stringify({ jsonrpc: '2.0', id: 1, result: { texts: [{ text: 'Hallo' }], lang: 'EN' } }),
-    );
+    mockFetchOnce(JSON.stringify({ translations: [{ text: 'Hallo' }] }));
 
     await expect(deeplProvider.isHealthy()).resolves.toBe(true);
   });

@@ -19,6 +19,22 @@ describe('parseGoogleDictionary', () => {
     expect(parseGoogleDictionary({ sentences: [{ trans: 'hi' }], src: 'en' })).toBeUndefined();
   });
 
+  it('does not crash when an alternative_translations group has no "alternative" field', () => {
+    // Real crash observed translating a multi-sentence paragraph: the
+    // whitespace-only segment between two sentences ("\r\n\r\n") comes
+    // back with no "alternative" key at all, not an empty array.
+    const dictionary = parseGoogleDictionary({
+      sentences: [{ trans: 'hi' }],
+      src: 'en',
+      alternative_translations: [
+        { src_phrase: 'hello', alternative: [{ word_postproc: 'hi' }] },
+        { src_phrase: '\r\n\r\n' } as never,
+      ],
+    });
+
+    expect(dictionary!.alternativeTranslations).toEqual(['hi']);
+  });
+
   it('groups translations, synonyms, and definitions by part of speech for a single word', () => {
     const dictionary = parseGoogleDictionary(runEnDe);
 

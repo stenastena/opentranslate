@@ -44,7 +44,12 @@ export function showPopupWindow(capturedText: string): BrowserWindow {
     // focus must not close it (only Esc does). alwaysOnTop:true and a
     // close-on-blur handler both actively fought that; removed.
     alwaysOnTop: false,
-    skipTaskbar: true,
+    // skipTaskbar also removes the window from Alt+Tab on Windows (they
+    // share the same WS_EX_TOOLWINDOW/APPWINDOW style bit) — confirmed on
+    // the real machine that with it set, the popup could only be found by
+    // clicking it with the mouse, with no keyboard way back to it. A real
+    // window needs to be Alt+Tab-reachable.
+    skipTaskbar: false,
     show: false,
     webPreferences: {
       preload: join(__dirname, '..', '..', 'preload', 'index.js'),

@@ -25,7 +25,7 @@
       </section>
 
       <section class="section">
-        <h2>Translation</h2>
+        <h2>Translation<span id="translation-gender" class="gender-badge" hidden></span></h2>
         <textarea id="translation-text" class="text-block" spellcheck="false" readonly></textarea>
       </section>
 
@@ -33,6 +33,11 @@
         <h2>Back-translation</h2>
         <div id="back-translation-text" class="text-block"></div>
       </section>
+
+      <details id="dictionary-section" class="dictionary-section" hidden>
+        <summary>Dictionary</summary>
+        <div id="dictionary-content"></div>
+      </details>
     </div>
     <script type="module" src="popup.js"></script>
   </body>

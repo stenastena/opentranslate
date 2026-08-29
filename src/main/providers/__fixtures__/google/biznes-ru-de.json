@@ -1,0 +1,104 @@
+{
+  "sentences": [
+    {
+      "trans": "Geschäft",
+      "orig": "Бизнес",
+      "backend": 11
+    },
+    {
+      "src_translit": "Biznes"
+    }
+  ],
+  "dict": [
+    {
+      "pos": "noun",
+      "terms": [
+        "Business"
+      ],
+      "entry": [
+        {
+          "word": "Business",
+          "reverse_translation": [
+            "бизнес"
+          ],
+          "previous_word": "das"
+        }
+      ],
+      "base_form": "бизнес",
+      "pos_enum": 1
+    }
+  ],
+  "src": "ru",
+  "alternative_translations": [
+    {
+      "src_phrase": "Бизнес",
+      "alternative": [
+        {
+          "word_postproc": "Geschäft",
+          "has_preceding_space": true,
+          "attach_to_next_token": false,
+          "backends": [
+            11
+          ]
+        },
+        {
+          "word_postproc": "Beschäftigung",
+          "has_preceding_space": true,
+          "attach_to_next_token": false,
+          "backends": [
+            11
+          ]
+        },
+        {
+          "word_postproc": "Unternehmen",
+          "has_preceding_space": true,
+          "attach_to_next_token": false,
+          "backends": [
+            2
+          ]
+        }
+      ],
+      "srcunicodeoffsets": [
+        {
+          "begin": 0,
+          "end": 6
+        }
+      ],
+      "raw_src_segment": "Бизнес",
+      "start_pos": 0,
+      "end_pos": 0
+    }
+  ],
+  "confidence": 0.8038961,
+  "spell": {},
+  "ld_result": {
+    "srclangs": [
+      "ru"
+    ],
+    "srclangs_confidences": [
+      0.8038961
+    ],
+    "extended_srclangs": [
+      "ru"
+    ]
+  },
+  "definitions": [
+    {
+      "pos": "noun",
+      "entry": [
+        {
+          "gloss": "То, что является источником дохода; деловое предприятие.",
+          "definition_id": "11773255110487452192",
+          "example": "Мелкий бизнес"
+        },
+        {
+          "gloss": "Предпринимательская деятельность; занятие, приносящая доход, прибыль.",
+          "definition_id": "13088024285987633109",
+          "example": "Легальный бизнес"
+        }
+      ],
+      "base_form": "би́знес",
+      "pos_enum": 1
+    }
+  ]
+}

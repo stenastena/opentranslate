@@ -99,6 +99,18 @@ body {
   font-weight: 600;
 }
 
+.gender-badge {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #eaf1fb;
+  color: #2b6cb0;
+  font-size: 10px;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 600;
+}
+
 .text-block {
   min-height: 3em;
   height: 5em;
@@ -129,4 +141,52 @@ body {
 
 .text-block.error {
   color: #c0392b;
+}
+
+.dictionary-section {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 6px 8px;
+}
+
+.dictionary-section summary {
+  cursor: pointer;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #888;
+  font-weight: 600;
+}
+
+.dict-entry {
+  margin-top: 8px;
+}
+
+.dict-entry:first-of-type {
+  margin-top: 6px;
+}
+
+.dict-pos {
+  font-weight: 600;
+  font-style: italic;
+  color: #2b6cb0;
+  font-size: 12px;
+}
+
+.dict-row {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.dict-row-label {
+  color: #888;
+}
+
+.dict-examples {
+  margin: 8px 0 0;
+  padding-left: 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #444;
 }

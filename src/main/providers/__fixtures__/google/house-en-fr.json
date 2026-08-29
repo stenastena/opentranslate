@@ -1,0 +1,652 @@
+{
+  "sentences": [
+    {
+      "trans": "maison",
+      "orig": "house",
+      "backend": 10
+    }
+  ],
+  "dict": [
+    {
+      "pos": "noun",
+      "terms": [
+        "maison",
+        "chambre",
+        "famille",
+        "foyer",
+        "manoir",
+        "parlement",
+        "théâtre",
+        "parc",
+        "sénat",
+        "spectateurs",
+        "audience"
+      ],
+      "entry": [
+        {
+          "word": "maison",
+          "reverse_translation": [
+            "house",
+            "home",
+            "dwelling",
+            "place",
+            "domicile",
+            "tenement"
+          ],
+          "score": 0.45783335,
+          "previous_word": "la"
+        },
+        {
+          "word": "chambre",
+          "reverse_translation": [
+            "room",
+            "chamber",
+            "house",
+            "compartment",
+            "digs",
+            "hatch"
+          ],
+          "score": 0.017752126,
+          "previous_word": "la"
+        },
+        {
+          "word": "famille",
+          "reverse_translation": [
+            "family",
+            "relatives",
+            "house",
+            "household",
+            "group",
+            "people"
+          ],
+          "score": 0.004559123,
+          "previous_word": "la"
+        },
+        {
+          "word": "foyer",
+          "reverse_translation": [
+            "home",
+            "fireplace",
+            "focus",
+            "hearth",
+            "foyer",
+            "house"
+          ],
+          "score": 0.0012463948,
+          "previous_word": "le"
+        },
+        {
+          "word": "manoir",
+          "reverse_translation": [
+            "manor",
+            "house",
+            "hall",
+            "seat"
+          ],
+          "score": 0.00040464516,
+          "previous_word": "le"
+        },
+        {
+          "word": "parlement",
+          "reverse_translation": [
+            "parliament",
+            "house"
+          ],
+          "score": 0.000057390887,
+          "previous_word": "le"
+        },
+        {
+          "word": "théâtre",
+          "reverse_translation": [
+            "theater",
+            "stage",
+            "playhouse",
+            "house",
+            "theatre"
+          ],
+          "score": 0.000048327973,
+          "previous_word": "le"
+        },
+        {
+          "word": "parc",
+          "reverse_translation": [
+            "park",
+            "garden",
+            "yard",
+            "pen",
+            "house",
+            "enclosure"
+          ],
+          "score": 0.000048327973,
+          "previous_word": "le"
+        },
+        {
+          "word": "sénat",
+          "reverse_translation": [
+            "senate",
+            "house"
+          ],
+          "score": 0.000008530394,
+          "previous_word": "le"
+        },
+        {
+          "word": "spectateurs",
+          "reverse_translation": [
+            "spectators",
+            "audience",
+            "onlookers",
+            "crowd",
+            "house"
+          ],
+          "score": 3.2563133e-7,
+          "previous_word": "les"
+        },
+        {
+          "word": "audience",
+          "reverse_translation": [
+            "audience",
+            "house"
+          ],
+          "score": 1.6373771e-7,
+          "previous_word": "l'"
+        }
+      ],
+      "base_form": "house",
+      "pos_enum": 1
+    },
+    {
+      "pos": "verb",
+      "terms": [
+        "loger",
+        "abriter",
+        "recevoir",
+        "résider"
+      ],
+      "entry": [
+        {
+          "word": "loger",
+          "reverse_translation": [
+            "accommodate",
+            "house",
+            "lodge",
+            "room",
+            "put up",
+            "quarter"
+          ],
+          "score": 0.13323711
+        },
+        {
+          "word": "abriter",
+          "reverse_translation": [
+            "shelter",
+            "house",
+            "harbor",
+            "nestle",
+            "harbour"
+          ],
+          "score": 0.097478345
+        },
+        {
+          "word": "recevoir",
+          "reverse_translation": [
+            "receive",
+            "take",
+            "welcome",
+            "entertain",
+            "house",
+            "greet"
+          ],
+          "score": 0.00008481823
+        },
+        {
+          "word": "résider",
+          "reverse_translation": [
+            "reside",
+            "live",
+            "lie",
+            "dwell",
+            "home",
+            "house"
+          ],
+          "score": 0.0000040294726
+        }
+      ],
+      "base_form": "house",
+      "pos_enum": 2
+    }
+  ],
+  "src": "en",
+  "alternative_translations": [
+    {
+      "src_phrase": "house",
+      "alternative": [
+        {
+          "word_postproc": "maison",
+          "has_preceding_space": true,
+          "attach_to_next_token": false,
+          "backends": [
+            10
+          ]
+        },
+        {
+          "word_postproc": "loger",
+          "has_preceding_space": true,
+          "attach_to_next_token": false,
+          "backends": [
+            10
+          ]
+        },
+        {
+          "word_postproc": "abriter",
+          "has_preceding_space": true,
+          "attach_to_next_token": false,
+          "backends": [
+            2
+          ]
+        },
+        {
+          "word_postproc": "chambre",
+          "has_preceding_space": true,
+          "attach_to_next_token": false,
+          "backends": [
+            8
+          ]
+        }
+      ],
+      "srcunicodeoffsets": [
+        {
+          "begin": 0,
+          "end": 5
+        }
+      ],
+      "raw_src_segment": "house",
+      "start_pos": 0,
+      "end_pos": 0
+    }
+  ],
+  "confidence": 1,
+  "spell": {},
+  "ld_result": {
+    "srclangs": [
+      "en"
+    ],
+    "srclangs_confidences": [
+      1
+    ],
+    "extended_srclangs": [
+      "en"
+    ]
+  },
+  "synsets": [
+    {
+      "pos": "noun",
+      "entry": [
+        {
+          "synonym": [
+            "habitation",
+            "residence",
+            "dwelling",
+            "dwelling place",
+            "abode",
+            "domicile"
+          ],
+          "definition_id": "m_en_gbus0481790.010",
+          "label_info": {
+            "register": [
+              "formal"
+            ]
+          }
+        },
+        {
+          "synonym": [
+            "home",
+            "place of residence",
+            "homestead",
+            "lodging place",
+            "a roof over one's head"
+          ],
+          "definition_id": "m_en_gbus0481790.010"
+        },
+        {
+          "synonym": [
+            "brood"
+          ],
+          "definition_id": "m_en_gbus0481790.013",
+          "label_info": {
+            "register": [
+              "informal"
+            ]
+          }
+        },
+        {
+          "synonym": [
+            "household",
+            "family",
+            "family circle",
+            "ménage",
+            "clan",
+            "tribe"
+          ],
+          "definition_id": "m_en_gbus0481790.013"
+        },
+        {
+          "synonym": [
+            "clan",
+            "kindred",
+            "family",
+            "tribe",
+            "race",
+            "strain",
+            "dynasty",
+            "line",
+            "lineage",
+            "ancestry",
+            "ancestors",
+            "bloodline",
+            "descent",
+            "family tree"
+          ],
+          "definition_id": "m_en_gbus0481790.014"
+        },
+        {
+          "synonym": [
+            "outfit",
+            "setup"
+          ],
+          "definition_id": "m_en_gbus0481790.020",
+          "label_info": {
+            "register": [
+              "informal"
+            ]
+          }
+        },
+        {
+          "synonym": [
+            "firm",
+            "business",
+            "company",
+            "corporation",
+            "enterprise",
+            "establishment",
+            "institution",
+            "concern",
+            "organization",
+            "operation"
+          ],
+          "definition_id": "m_en_gbus0481790.020"
+        },
+        {
+          "synonym": [
+            "eatery",
+            "boozer"
+          ],
+          "definition_id": "m_en_gbus0481790.026",
+          "label_info": {
+            "register": [
+              "informal"
+            ]
+          }
+        },
+        {
+          "synonym": [
+            "inn",
+            "bar",
+            "tavern",
+            "hostelry",
+            "taproom",
+            "restaurant",
+            "hotel",
+            "eating house",
+            "pub",
+            "public house"
+          ],
+          "definition_id": "m_en_gbus0481790.026"
+        },
+        {
+          "synonym": [
+            "alehouse",
+            "taphouse",
+            "beerhouse",
+            "saloon"
+          ],
+          "definition_id": "m_en_gbus0481790.026",
+          "label_info": {
+            "register": [
+              "historical"
+            ]
+          }
+        },
+        {
+          "synonym": [
+            "punters"
+          ],
+          "definition_id": "m_en_gbus0481790.030",
+          "label_info": {
+            "register": [
+              "informal"
+            ]
+          }
+        },
+        {
+          "synonym": [
+            "audience",
+            "crowd",
+            "those present",
+            "listeners",
+            "spectators",
+            "viewers",
+            "gathering",
+            "assembly",
+            "assemblage",
+            "congregation",
+            "gallery",
+            "stalls"
+          ],
+          "definition_id": "m_en_gbus0481790.030"
+        },
+        {
+          "synonym": [
+            "legislative assembly",
+            "legislative body",
+            "chamber",
+            "council",
+            "parliament",
+            "diet",
+            "congress",
+            "senate"
+          ],
+          "definition_id": "m_en_gbus0481790.041"
+        }
+      ],
+      "base_form": "house",
+      "pos_enum": 1
+    },
+    {
+      "pos": "verb",
+      "entry": [
+        {
+          "synonym": [
+            "accommodate",
+            "provide accommodation for",
+            "provide with accommodation",
+            "give accommodation to",
+            "make space for",
+            "make room for",
+            "give someone a roof over their head",
+            "provide a roof over someone's head",
+            "provide with a place to work",
+            "harbor",
+            "lodge",
+            "quarter",
+            "board",
+            "billet",
+            "take in",
+            "provide shelter for",
+            "shelter",
+            "sleep",
+            "put up",
+            "give a bed to",
+            "provide with a place to sleep"
+          ],
+          "definition_id": "m_en_gbus0481790.074"
+        },
+        {
+          "synonym": [
+            "contain",
+            "hold",
+            "store",
+            "cover",
+            "protect",
+            "enclose",
+            "encase",
+            "sheathe",
+            "keep safe"
+          ],
+          "definition_id": "m_en_gbus0481790.081"
+        }
+      ],
+      "base_form": "house",
+      "pos_enum": 2
+    }
+  ],
+  "definitions": [
+    {
+      "pos": "noun",
+      "entry": [
+        {
+          "gloss": "a building for human habitation, especially one that is lived in by a family or small group of people.",
+          "definition_id": "m_en_gbus0481790.010",
+          "example": "my wife and I are moving to a new house"
+        },
+        {
+          "gloss": "a building in which people meet for a particular activity.",
+          "definition_id": "m_en_gbus0481790.019",
+          "example": "a house of prayer"
+        },
+        {
+          "gloss": "a religious community that occupies a particular building.",
+          "definition_id": "m_en_gbus0481790.033",
+          "example": "the Cistercian house at Clairvaux"
+        },
+        {
+          "gloss": "a legislative or deliberative assembly.",
+          "definition_id": "m_en_gbus0481790.041",
+          "example": "the sixty-member National Council, the country's upper house"
+        },
+        {
+          "gloss": "a style of popular dance music typically using synthesized drum and bass lines, sparse repetitive vocals, and a fast beat.",
+          "definition_id": "m_en_gbus0481790.046",
+          "example": "DJs specializing in techno, garage, and house"
+        },
+        {
+          "gloss": "any of the twelve divisions of the celestial sphere, based on the positions of the ascendant and midheaven at a given time and place, and determined by any of a number of methods.",
+          "definition_id": "m_en_gbus0481790.049",
+          "label_info": {
+            "subject": [
+              "Astrology"
+            ]
+          }
+        }
+      ],
+      "base_form": "house",
+      "pos_enum": 1
+    },
+    {
+      "pos": "adjective",
+      "entry": [
+        {
+          "gloss": "(of an animal or plant) kept in, frequenting, or infesting buildings.",
+          "definition_id": "m_en_gbus0481790.060"
+        },
+        {
+          "gloss": "relating to a business, institution, or society.",
+          "definition_id": "m_en_gbus0481790.063",
+          "example": "a house journal"
+        }
+      ],
+      "base_form": "house",
+      "pos_enum": 3
+    },
+    {
+      "pos": "verb",
+      "entry": [
+        {
+          "gloss": "provide (a person or animal) with shelter or living quarters.",
+          "definition_id": "m_en_gbus0481790.074",
+          "example": "we make exceptions to these rules if we need to house someone urgently"
+        },
+        {
+          "gloss": "provide space for; accommodate.",
+          "definition_id": "m_en_gbus0481790.081",
+          "example": "the museum houses a collection of Roman sculpture"
+        }
+      ],
+      "base_form": "house",
+      "pos_enum": 2
+    }
+  ],
+  "examples": {
+    "example": [
+      {
+        "text": "the <b>house</b> band",
+        "definition_id": "m_en_gbus0481790.064"
+      },
+      {
+        "text": "we make exceptions to these rules if we need to <b>house</b> someone urgently",
+        "definition_id": "m_en_gbus0481790.074"
+      },
+      {
+        "text": "a <b>house</b> journal",
+        "definition_id": "m_en_gbus0481790.063"
+      },
+      {
+        "text": "DJs specializing in techno, garage, and <b>house</b>",
+        "definition_id": "m_en_gbus0481790.046"
+      },
+      {
+        "text": "a reptile <b>house</b>",
+        "definition_id": "m_en_gbus0481790.017"
+      },
+      {
+        "text": "a <b>house</b> of prayer",
+        "definition_id": "m_en_gbus0481790.019"
+      },
+      {
+        "text": "a <b>house</b> of 45 boarders",
+        "definition_id": "m_en_gbus0481790.034"
+      },
+      {
+        "text": "I ordered a bottle of their <b>house</b> wine",
+        "definition_id": "m_en_gbus0481790.026"
+      },
+      {
+        "text": "the sixty-member National Council, the country's upper <b>house</b>",
+        "definition_id": "m_en_gbus0481790.041"
+      },
+      {
+        "text": "a hundred musicians performed in front of a full <b>house</b>",
+        "definition_id": "m_en_gbus0481790.030"
+      },
+      {
+        "text": "my wife and I are moving to a new <b>house</b>",
+        "definition_id": "m_en_gbus0481790.010"
+      },
+      {
+        "text": "the Cistercian <b>house</b> at Clairvaux",
+        "definition_id": "m_en_gbus0481790.033"
+      },
+      {
+        "text": "a publishing <b>house</b>",
+        "definition_id": "m_en_gbus0481790.020"
+      },
+      {
+        "text": "<b>house</b> prices",
+        "definition_id": "m_en_gbus0481790.010"
+      },
+      {
+        "text": "do you want the whole <b>house</b> woken up?",
+        "definition_id": "m_en_gbus0481790.013"
+      }
+    ]
+  }
+}

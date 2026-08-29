@@ -1,0 +1,71 @@
+{
+  "sentences": [
+    {
+      "trans": "Hallo Welt, wie geht es dir?",
+      "orig": "hello world, how are you",
+      "backend": 3,
+      "model_specification": [
+        {}
+      ],
+      "translation_engine_debug_info": [
+        {
+          "model_tracking": {
+            "checkpoint_md5": "84d48e73ebfa38d4d681515b81e0b72a",
+            "launch_doc": "en_de_2023q1.md"
+          }
+        }
+      ]
+    }
+  ],
+  "src": "en",
+  "alternative_translations": [
+    {
+      "src_phrase": "hello world, how are you",
+      "alternative": [
+        {
+          "word_postproc": "Hallo Welt, wie geht es dir?",
+          "has_preceding_space": true,
+          "attach_to_next_token": false,
+          "backends": [
+            3
+          ],
+          "backend_infos": [
+            {
+              "backend": 3
+            }
+          ]
+        },
+        {
+          "word_postproc": "Hallo Welt, wie geht es dir",
+          "has_preceding_space": true,
+          "attach_to_next_token": false,
+          "backends": [
+            8
+          ]
+        }
+      ],
+      "srcunicodeoffsets": [
+        {
+          "begin": 0,
+          "end": 24
+        }
+      ],
+      "raw_src_segment": "hello world, how are you",
+      "start_pos": 0,
+      "end_pos": 0
+    }
+  ],
+  "confidence": 0.980349,
+  "spell": {},
+  "ld_result": {
+    "srclangs": [
+      "en"
+    ],
+    "srclangs_confidences": [
+      0.980349
+    ],
+    "extended_srclangs": [
+      "en"
+    ]
+  }
+}

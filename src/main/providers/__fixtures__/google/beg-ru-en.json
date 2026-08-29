@@ -1,0 +1,140 @@
+{
+  "sentences": [
+    {
+      "trans": "running",
+      "orig": "бег",
+      "backend": 2
+    },
+    {
+      "src_translit": "beg"
+    }
+  ],
+  "dict": [
+    {
+      "pos": "noun",
+      "terms": [
+        "running",
+        "run",
+        "race"
+      ],
+      "entry": [
+        {
+          "word": "running",
+          "reverse_translation": [
+            "бег",
+            "ход",
+            "бега",
+            "работа",
+            "эксплуатация",
+            "беготня"
+          ],
+          "score": 0.329765
+        },
+        {
+          "word": "run",
+          "reverse_translation": [
+            "пробег",
+            "бег",
+            "прогон",
+            "ход",
+            "работа",
+            "трасса"
+          ],
+          "score": 0.17651048
+        },
+        {
+          "word": "race",
+          "reverse_translation": [
+            "раса",
+            "гонки",
+            "гонка",
+            "род",
+            "народ",
+            "бег"
+          ],
+          "score": 0.021413151
+        }
+      ],
+      "base_form": "бег",
+      "pos_enum": 1
+    }
+  ],
+  "src": "ru",
+  "alternative_translations": [
+    {
+      "src_phrase": "бег",
+      "alternative": [
+        {
+          "word_postproc": "running",
+          "has_preceding_space": true,
+          "attach_to_next_token": false,
+          "backends": [
+            2
+          ]
+        },
+        {
+          "word_postproc": "jogging",
+          "has_preceding_space": true,
+          "attach_to_next_token": false,
+          "backends": [
+            8
+          ]
+        }
+      ],
+      "srcunicodeoffsets": [
+        {
+          "begin": 0,
+          "end": 3
+        }
+      ],
+      "raw_src_segment": "бег",
+      "start_pos": 0,
+      "end_pos": 0
+    }
+  ],
+  "confidence": 0.7559367,
+  "spell": {},
+  "ld_result": {
+    "srclangs": [
+      "ru"
+    ],
+    "srclangs_confidences": [
+      0.7559367
+    ],
+    "extended_srclangs": [
+      "ru"
+    ]
+  },
+  "definitions": [
+    {
+      "pos": "noun",
+      "entry": [
+        {
+          "gloss": "Движение куда-н., передвижение, при к-ром быстро и резко отталкиваются ногами от земли.",
+          "definition_id": "15193494804871406042",
+          "example": "Устать от бега"
+        },
+        {
+          "gloss": "Вообще — быстрое движение, передвижение чего-н.",
+          "definition_id": "8261649970150230419",
+          "example": "Бег времени",
+          "label_info": {
+            "labels": [
+              "переносное значение"
+            ]
+          }
+        }
+      ],
+      "base_form": "бег",
+      "pos_enum": 1
+    }
+  ],
+  "examples": {
+    "example": [
+      {
+        "text": "Марафонский <b>бег</b> вид спортивного состязания",
+        "definition_id": "15193494804871406042"
+      }
+    ]
+  }
+}

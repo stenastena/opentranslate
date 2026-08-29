@@ -15,6 +15,25 @@ body {
   overflow-y: auto;
 }
 
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 8px 0;
+}
+
+#clear-all-button {
+  border: 1px solid #c9c9c9;
+  background: #f3f3f3;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+#clear-all-button:hover {
+  background: #e6e6e6;
+}
+
 .empty-state {
   padding: 24px;
   text-align: center;
@@ -39,7 +58,8 @@ body {
 
 .history-entry-meta {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
   font-size: 11px;
   color: #888;
   margin-bottom: 4px;
@@ -50,6 +70,24 @@ body {
   letter-spacing: 0.03em;
   font-weight: 600;
   color: #2b6cb0;
+}
+
+.history-entry-details {
+  flex: 1;
+}
+
+.history-entry-delete {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #aaa;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+
+.history-entry-delete:hover {
+  color: #c0392b;
 }
 
 .history-entry-original {

@@ -8,6 +8,7 @@ const PROVIDER_LABELS: Record<string, string> = {
 
 const listEl = document.getElementById('history-list')!;
 const emptyStateEl = document.getElementById('empty-state')!;
+const clearAllButton = document.getElementById('clear-all-button') as HTMLButtonElement;
 
 function formatTimestamp(timestamp: number): string {
   return new Date(timestamp).toLocaleString();
@@ -27,8 +28,17 @@ function renderEntry(entry: HistoryEntry): HTMLLIElement {
   meta.appendChild(provider);
 
   const details = document.createElement('span');
+  details.className = 'history-entry-details';
   details.textContent = `${languageLabel(entry.sourceLang)} → ${languageLabel(entry.targetLang)} · ${formatTimestamp(entry.timestamp)}`;
   meta.appendChild(details);
+
+  const deleteButton = document.createElement('button');
+  deleteButton.type = 'button';
+  deleteButton.className = 'history-entry-delete';
+  deleteButton.title = 'Delete this entry';
+  deleteButton.textContent = '✕';
+  deleteButton.addEventListener('click', () => void handleDelete(entry.id));
+  meta.appendChild(deleteButton);
 
   li.appendChild(meta);
 
@@ -55,10 +65,23 @@ async function loadHistory(): Promise<void> {
 
   listEl.innerHTML = '';
   emptyStateEl.hidden = entries.length > 0;
+  clearAllButton.hidden = entries.length === 0;
 
   for (const entry of entries) {
     listEl.appendChild(renderEntry(entry));
   }
 }
+
+async function handleDelete(id: string): Promise<void> {
+  await window.electronAPI.history.remove(id);
+  await loadHistory();
+}
+
+async function handleClearAll(): Promise<void> {
+  await window.electronAPI.history.clear();
+  await loadHistory();
+}
+
+clearAllButton.addEventListener('click', () => void handleClearAll());
 
 void loadHistory();

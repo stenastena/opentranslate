@@ -3,10 +3,12 @@ import { createHistoryStore } from './history';
 import { registerCaptureHotkey, unregisterAllHotkeys } from './hotkeys';
 import { registerIpcHandlers } from './ipc/handlers';
 import { nutJsKeyEmulator } from './keyEmulator';
+import { installApplicationMenu } from './menu';
 import { createDefaultRegistry } from './providers';
 import { createSettingsStore } from './settings';
 import { captureSelectedText } from './textCapture';
 import { createTray } from './tray';
+import { showHistoryWindow } from './windows/historyWindow';
 import { showPopupWindow } from './windows/popupWindow';
 import { showSettingsWindow } from './windows/settingsWindow';
 
@@ -48,5 +50,12 @@ app.whenReady().then(() => {
   const settings = settingsStore.load();
   applyHotkey(settings.hotkeys.captureAndTranslate);
 
-  createTray(() => showSettingsWindow());
+  createTray(
+    () => showSettingsWindow(),
+    () => showHistoryWindow(),
+  );
+  installApplicationMenu(
+    () => showSettingsWindow(),
+    () => showHistoryWindow(),
+  );
 });

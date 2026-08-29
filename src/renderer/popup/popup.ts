@@ -34,13 +34,14 @@ const state: State = {
   resultsByProvider: new Map(),
 };
 
-const originalTextEl = document.getElementById('original-text')!;
-const translationTextEl = document.getElementById('translation-text')!;
+const originalTextEl = document.getElementById('original-text') as HTMLTextAreaElement;
+const translationTextEl = document.getElementById('translation-text') as HTMLTextAreaElement;
 const backTranslationTextEl = document.getElementById('back-translation-text')!;
 const tabsEl = document.getElementById('provider-tabs')!;
 const sourceLangSelect = document.getElementById('source-lang') as HTMLSelectElement;
 const targetLangSelect = document.getElementById('target-lang') as HTMLSelectElement;
 const swapButton = document.getElementById('swap-langs') as HTMLButtonElement;
+const translateButton = document.getElementById('translate-btn') as HTMLButtonElement;
 
 function populateLanguageSelects(): void {
   for (const lang of LANGUAGES) {
@@ -70,7 +71,11 @@ function renderTabs(): void {
 }
 
 function renderActiveResult(): void {
-  originalTextEl.textContent = state.originalText;
+  // Don't clobber the field the user is actively typing in — a translation
+  // for another tab finishing in the background shouldn't yank their cursor.
+  if (document.activeElement !== originalTextEl) {
+    originalTextEl.value = state.originalText;
+  }
 
   const providerId = state.activeProviderId;
   const result = providerId ? state.resultsByProvider.get(providerId) : undefined;
@@ -79,19 +84,22 @@ function renderActiveResult(): void {
   backTranslationTextEl.classList.remove('loading', 'error');
 
   if (!result || result.status === 'idle' || result.status === 'loading') {
-    translationTextEl.textContent = 'Translating…';
+    translationTextEl.value = 'Translating…';
+    translationTextEl.readOnly = true;
     translationTextEl.classList.add('loading');
     backTranslationTextEl.textContent = '';
   } else if (result.status === 'error') {
-    translationTextEl.textContent = result.error ?? 'Translation failed.';
+    translationTextEl.value = result.error ?? 'Translation failed.';
+    translationTextEl.readOnly = true;
     translationTextEl.classList.add('error');
     backTranslationTextEl.textContent = '';
   } else {
-    translationTextEl.textContent = result.translatedText ?? '';
+    translationTextEl.readOnly = false;
+    if (document.activeElement !== translationTextEl) {
+      translationTextEl.value = result.translatedText ?? '';
+    }
     backTranslationTextEl.textContent = result.backTranslatedText ?? '(back-translation unavailable)';
   }
-
-  reportSizeToMain();
 }
 
 async function ensureActiveResultLoaded(): Promise<void> {
@@ -140,6 +148,62 @@ async function ensureActiveResultLoaded(): Promise<void> {
   }
 }
 
+// The first translation for a captured selection happens automatically;
+// after that, re-translating (following an edit to Original or Translation)
+// is explicit via the Translate button rather than firing on every blur —
+// auto-retriggering mid-edit was surprising in practice.
+async function handleTranslateClick(): Promise<void> {
+  if (originalTextEl.value !== state.originalText) {
+    await retranslateFromOriginal();
+    return;
+  }
+  await retranslateFromEditedTranslation();
+}
+
+async function retranslateFromOriginal(): Promise<void> {
+  state.originalText = originalTextEl.value;
+  invalidateAllResults();
+  renderTabs();
+  renderActiveResult();
+  await ensureActiveResultLoaded();
+}
+
+// Re-runs only the back-translation, using the user's edited translation —
+// this is exactly how translators sanity-check a manual correction ("does
+// my edit still round-trip to what I meant?").
+async function retranslateFromEditedTranslation(): Promise<void> {
+  const providerId = state.activeProviderId;
+  if (!providerId) return;
+
+  const result = state.resultsByProvider.get(providerId);
+  if (!result || result.status !== 'ok') return;
+
+  const editedTranslation = translationTextEl.value;
+  if (editedTranslation === result.translatedText) return;
+
+  const effectiveSourceLang = result.detectedLang ?? (state.sourceLang !== 'auto' ? state.sourceLang : undefined);
+
+  state.resultsByProvider.set(providerId, { ...result, translatedText: editedTranslation, backTranslatedText: undefined });
+  if (providerId === state.activeProviderId) {
+    backTranslationTextEl.textContent = 'Translating…';
+    backTranslationTextEl.classList.add('loading');
+  }
+
+  if (!effectiveSourceLang) return;
+
+  try {
+    const backResult = await window.electronAPI.providers.translate(providerId, editedTranslation, state.targetLang, effectiveSourceLang);
+    const current = state.resultsByProvider.get(providerId);
+    if (!current) return;
+    state.resultsByProvider.set(providerId, {
+      ...current,
+      backTranslatedText: backResult.ok ? backResult.value.translatedText : undefined,
+    });
+  } finally {
+    if (providerId === state.activeProviderId) renderActiveResult();
+  }
+}
+
 function invalidateAllResults(): void {
   for (const providerId of state.providerIds) {
     state.resultsByProvider.set(providerId, { status: 'idle' });
@@ -170,14 +234,6 @@ async function handleSwap(): Promise<void> {
   await handleLanguageChange();
 }
 
-function reportSizeToMain(): void {
-  requestAnimationFrame(() => {
-    const width = Math.max(document.body.scrollWidth, 360);
-    const height = document.body.scrollHeight;
-    window.electronAPI.popup.reportSize(width, height);
-  });
-}
-
 async function init(): Promise<void> {
   populateLanguageSelects();
 
@@ -193,6 +249,7 @@ async function init(): Promise<void> {
   sourceLangSelect.addEventListener('change', () => void handleLanguageChange());
   targetLangSelect.addEventListener('change', () => void handleLanguageChange());
   swapButton.addEventListener('click', () => void handleSwap());
+  translateButton.addEventListener('click', () => void handleTranslateClick());
 
   window.electronAPI.popup.onCapturedText((text) => {
     state.originalText = text;

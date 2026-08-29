@@ -31,7 +31,6 @@ interface ElectronAPI {
   };
   popup: {
     onCapturedText(callback: (text: string) => void): void;
-    reportSize(width: number, height: number): void;
   };
 }
 

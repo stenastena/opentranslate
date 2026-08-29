@@ -6,7 +6,7 @@ import { createDefaultRegistry } from './providers';
 import { createSettingsStore } from './settings';
 import { captureSelectedText } from './textCapture';
 import { createTray } from './tray';
-import { registerPopupIpc, showPopupWindow } from './windows/popupWindow';
+import { showPopupWindow } from './windows/popupWindow';
 import { showSettingsWindow } from './windows/settingsWindow';
 
 app.on('window-all-closed', () => {
@@ -42,7 +42,6 @@ app.whenReady().then(() => {
   registerIpcHandlers(ipcMain, registry, settingsStore, (updated) => {
     applyHotkey(updated.hotkeys.captureAndTranslate);
   });
-  registerPopupIpc(ipcMain);
 
   const settings = settingsStore.load();
   applyHotkey(settings.hotkeys.captureAndTranslate);

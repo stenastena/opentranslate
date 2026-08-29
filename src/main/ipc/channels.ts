@@ -8,5 +8,4 @@ export const CHANNELS = {
   providerLastSuccessAt: 'provider:last-success-at',
   providerListIds: 'provider:list-ids',
   popupCapturedText: 'popup:captured-text',
-  popupResize: 'popup:resize',
 } as const;

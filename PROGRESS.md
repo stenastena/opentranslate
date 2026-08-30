@@ -43,10 +43,14 @@ environment-specific rather than code bugs:
 
 **v0.2 backlog progress**: translation history (#8, and its sub-issues
 #9/#10/#11) is fully shipped. Google rich dictionary output (#76) is done.
-Text-to-speech (#12/#13/#14) is fully shipped — see below. Remaining v0.2
-backlog: Appearance settings (#15–20), Advanced settings (#25–29), Yandex
-(#75, needs a product decision), and #88 (higher-quality free TTS voices,
-non-blocking follow-up).
+Text-to-speech (#12/#13/#14) is fully shipped. Per-language voice selection
+settings (#89, stage 1 of the #88 voice-quality follow-up) is fully shipped
+— see below. **In progress: #90 (stage 2 — voice list refresh button +
+NaturalVoiceSAPIAdapter guidance + quality hints)**, requested by the
+project owner as a high-priority follow-up feature request, being worked
+autonomously per that request. Remaining v0.2 backlog after that: Appearance
+settings (#15–20), Advanced settings (#25–29), Yandex (#75, needs a product
+decision).
 
 The old "dictionary provider subsystem" issues (#21/#22/#23/#24) were closed
 this session as superseded: they asked for a generic multi-provider
@@ -177,8 +181,36 @@ three bugs, all now fixed:
     installed on this dev machine, so the language-matching in
     `systemProvider.ts` finds nothing and silently falls back to the
     default voice — working as designed, just a poor result). Filed as a
-    follow-up, **#88** (backlog, not blocking): explore a genuinely free,
-    higher-quality alternative voice engine.
+    follow-up, **#88**: explore a genuinely free, higher-quality
+    alternative voice engine. The project owner turned this into a
+    concrete two-stage feature request (split into #89/#90 below) rather
+    than leaving it as open-ended research.
+- **#89 — per-language voice selection settings**, fully shipped (PR #91,
+  stage 1 of #88's follow-up):
+  - `TTSProvider` gains `listVoices()` (re-queried fresh every call —
+    never cached at app startup, so a voice installed mid-session shows up
+    next time Settings is opened) and `speak()` gains an optional
+    `voiceName` override that takes priority over locale matching,
+    falling back to it when the given name isn't currently installed.
+  - A new Voice tab in Settings: one row per language in
+    `LANGUAGES` (all of them, not just the 2-language auto-detect pair —
+    Settings has no separate "used languages" concept, and every listed
+    language is already manually selectable in the popup), each with a
+    dropdown (locale-matching voices, then every installed voice for
+    manual override, defaulting to "Automatic" = today's behavior) and a
+    Test button that speaks a short fixed phrase with no translation call
+    needed. An explicit "No voice installed for this language" hint shows
+    rather than hiding a language with no locale match.
+  - `AppSettings.tts.voiceByLang` persists the choice; a language with no
+    entry is unaffected, so anyone who never opens Voice settings sees
+    exactly the same behavior as before this PR.
+  - **A real ordering bug was caught and fixed before merging**: loading
+    settings and loading the voice list happen concurrently, and whichever
+    finished second could silently wipe out the other's effect on a
+    `<select>`'s value depending on timing. Found via a stubbed-`electronAPI`
+    browser test of the real bundled `settings.js` (not just mocked unit
+    tests) — fixed by re-applying the saved selection once more after both
+    have settled, rather than relying on either one "winning" the race.
 
 Two notes on the merged history (informational, no action needed):
 - PR #64 (popup window) left one harmless empty extra commit on `main`

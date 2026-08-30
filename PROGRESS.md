@@ -13,12 +13,14 @@ are fixed and merged (#67/#68/#69/#70, plus #81/#84 found during this
 session's own DoD pass). The only two loose ends, both non-blocking and
 environment-specific rather than code bugs:
 
-- **Google was hit by a real, temporary IP-level rate limit** near the end
-  of this session, from this session's own heavy testing volume (curl
-  fixture-gathering, repeated `check-providers` runs, live app testing).
-  Confirmed via a bare `curl` also getting 429 — not a code issue. Should
-  clear on its own; re-run `npm run check-providers` at the start of the
-  next session to confirm before doing anything Google-related.
+- **Google is currently 429ing again** (confirmed live via `check-providers`
+  during the #94 investigation below) — this specific instance is, same as
+  before, a real upstream IP-level limit that needs to just clear with
+  time, not a code bug. What *is* now fixed in code (#94, this session):
+  the app's own request pattern was needlessly volume-hungry (see below),
+  which meant even light real usage burned through the limit faster than
+  it should have. Re-run `npm run check-providers` to check whether it's
+  cleared before relying on Google.
 - **`npm run package`'s NSIS step previously failed on this dev machine**
   downloading `winCodeSign` ("Cannot create symbolic link: a required
   privilege is not held by the client") — extracting that archive tries to
@@ -45,23 +47,16 @@ environment-specific rather than code bugs:
 #9/#10/#11) is fully shipped. Google rich dictionary output (#76) is done.
 Text-to-speech (#12/#13/#14) is fully shipped. The #88 voice-quality
 follow-up (requested by the project owner as a high-priority feature
-request after live-testing #14) is fully shipped in two stages — #89
-(per-language voice selection settings) and #90 (voice list refresh +
-NaturalVoiceSAPIAdapter guidance + quality hints) — see below. Remaining
-v0.2 backlog: Appearance settings (#15–20), Advanced settings (#25–29),
-Yandex (#75, needs a product decision).
-
-**Real-app hands-on check still worth doing when convenient** (not done by
-this session — everything below was verified via unit tests, a real-machine
-`systemTtsProvider` smoke test, and a stubbed-`electronAPI` browser preview
-of the real bundled Settings JS/CSS, but not by clicking through the actual
-tray → Settings → Voice tab in the running app, which needs a human at the
-keyboard the way #14's live test was): open Settings → Voice, pick a
-specific voice for a language, click Test and confirm it's actually audible
-in that voice, click the NaturalVoiceSAPIAdapter link and confirm it opens
-the real GitHub page in the default browser (not in-app), and — if
-NaturalVoiceSAPIAdapter actually gets installed at some point — confirm
-"Refresh voice list" picks up its voices without an app restart.
+request after live-testing #14) shipped in two stages — #89/#90 — and was
+then hands-on tested live by the project owner: it works, but voice quality
+is "a bit better, not dramatically better" even with the settings in place
+— tracked as a fresh follow-up, **#93** (backlog, not urgent — open
+questions about whether NaturalVoiceSAPIAdapter was actually installed yet,
+logged in the issue). **#94 — Google request-volume/reliability fix** (this
+session, at the project owner's request after hitting 429 under light real
+usage) is also fully shipped — see below. Remaining v0.2 backlog: Appearance
+settings (#15–20), Advanced settings (#25–29), Yandex (#75, needs a product
+decision), #93 (voice quality, backlog).
 
 The old "dictionary provider subsystem" issues (#21/#22/#23/#24) were closed
 this session as superseded: they asked for a generic multi-provider
@@ -243,6 +238,36 @@ three bugs, all now fixed:
     guessing.
   - **#88 closed** once both stages shipped — see its closing comment for
     the summary.
+  - **Live hands-on follow-up (2026-08-30)**: the project owner tried
+    Settings → Voice for real. It works, but "немного лучше, но не
+    кардинально лучше" (a bit better, not dramatically better) — tracked
+    as **#93** (backlog): open whether NaturalVoiceSAPIAdapter was actually
+    installed yet, and if it was, whether the ceiling is the adapter/voices
+    themselves or something in how `systemProvider.ts` calls into SAPI.
+- **#94 — Google request-volume/reliability fix**, fully shipped (PR #95),
+  same session, prompted by the project owner hitting a real 429 under
+  light usage:
+  - Root cause: a single-word lookup into an article-using target language
+    (de/fr/es/it/pt/nl) already cost up to 3 requests via the gender-pivot
+    fallback (#76's `findTranslationGender`) — common, not an edge case,
+    since the dictionary/gender feature is Google-exclusive and the
+    default second language is German. Zero caching meant re-viewing the
+    same word paid that cost again every time.
+  - `curlGet` (`curlFetch.ts`) now retries a 429/503 up to 2 extra times
+    with jittered exponential backoff — confirmed via external research
+    (googletrans/deep-translator-style unofficial clients) that this is
+    the standard mitigation for transient rate limiting.
+  - `google.ts`: every request (including the pivot's two) goes through a
+    shared in-memory cache keyed by the exact request URL — 5-minute TTL,
+    200-entry cap, only caches successful (200) responses.
+  - Trimmed 4 `dt=` params (`ld`/`qca`/`rw`/`rm`) sent on every full
+    request but never parsed anywhere.
+  - **Confirmed live that Google is genuinely 429ing right now** (a real,
+    sustained upstream block, not a transient one — our own retries during
+    this same investigation still got 429). This fix reduces how much
+    *future* light usage burns through the limit; it does not and cannot
+    clear an already-established block faster. Re-run
+    `npm run check-providers` to check current status.
 
 Two notes on the merged history (informational, no action needed):
 - PR #64 (popup window) left one harmless empty extra commit on `main`

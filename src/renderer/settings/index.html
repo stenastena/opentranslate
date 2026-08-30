@@ -12,6 +12,7 @@
         <button type="button" class="tab active" data-panel="hotkeys">Hotkeys</button>
         <button type="button" class="tab" data-panel="languages">Languages</button>
         <button type="button" class="tab" data-panel="services">Services</button>
+        <button type="button" class="tab" data-panel="voice">Voice</button>
       </div>
 
       <section id="panel-hotkeys" class="panel active">
@@ -32,6 +33,14 @@
         <label><input id="service-deepl" type="checkbox" /> DeepL</label>
         <label><input id="service-yandex" type="checkbox" /> Yandex Translate</label>
         <label><input id="service-google" type="checkbox" /> Google Translate</label>
+      </section>
+
+      <section id="panel-voice" class="panel voice-panel">
+        <p class="hint">
+          Pick a specific system voice per language for the popup's Speak buttons. Leave a language on "Automatic" to
+          keep matching a voice to it by locale, same as before.
+        </p>
+        <div id="voice-rows"></div>
       </section>
 
       <div class="actions">

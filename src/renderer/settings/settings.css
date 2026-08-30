@@ -45,6 +45,7 @@ body {
   gap: 6px;
   padding: 16px;
   flex: 1;
+  overflow-y: auto;
 }
 
 .panel.active {
@@ -106,4 +107,57 @@ body {
 
 #save-button:hover {
   background: #235a92;
+}
+
+.voice-panel {
+  gap: 0;
+}
+
+#voice-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.voice-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+  flex-wrap: wrap;
+}
+
+.voice-row label {
+  width: 90px;
+  flex-shrink: 0;
+  color: #1a1a1a;
+}
+
+.voice-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.test-voice-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  border: 1px solid #c9c9c9;
+  background: #f3f3f3;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.test-voice-btn:hover:not(:disabled) {
+  background: #e6e6e6;
+}
+
+.test-voice-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.voice-empty-hint {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: #c0392b;
 }

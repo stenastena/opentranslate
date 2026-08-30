@@ -8,7 +8,7 @@ vi.mock('node:child_process', () => ({
 
 const { systemTtsProvider } = await import('./systemProvider');
 
-type ExecFileCallback = (error: Error | null) => void;
+type ExecFileCallback = (error: Error | null, stdout?: string) => void;
 
 function fakeChild() {
   const child = new EventEmitter() as EventEmitter & { kill: () => void };
@@ -21,16 +21,17 @@ describe('systemTtsProvider', () => {
     execFileMock.mockReset();
   });
 
-  it('passes text and language through environment variables, never the script string', async () => {
+  it('passes text, language and voice name through environment variables, never the script string', async () => {
     const maliciousText = "hello'; Remove-Item C:\\ -Recurse -Force #";
     execFileMock.mockImplementation((_cmd: string, _args: string[], opts: { env: Record<string, string> }, cb: ExecFileCallback) => {
       expect(opts.env.OPENTRANSLATE_TTS_TEXT).toBe(maliciousText);
       expect(opts.env.OPENTRANSLATE_TTS_LANG).toBe('de');
+      expect(opts.env.OPENTRANSLATE_TTS_VOICE).toBe("Evil'; Remove-Item C:\\ #");
       cb(null);
       return fakeChild();
     });
 
-    await systemTtsProvider.speak(maliciousText, 'de');
+    await systemTtsProvider.speak(maliciousText, 'de', "Evil'; Remove-Item C:\\ #");
 
     expect(execFileMock).toHaveBeenCalledTimes(1);
     const [cmd, args] = execFileMock.mock.calls[0];
@@ -44,9 +45,10 @@ describe('systemTtsProvider', () => {
     expect(execFileMock).not.toHaveBeenCalled();
   });
 
-  it('omits the language filter when no lang is given', async () => {
+  it('omits the language filter and voice override when neither is given', async () => {
     execFileMock.mockImplementation((_cmd: string, _args: string[], opts: { env: Record<string, string> }, cb: ExecFileCallback) => {
       expect(opts.env.OPENTRANSLATE_TTS_LANG).toBe('');
+      expect(opts.env.OPENTRANSLATE_TTS_VOICE).toBe('');
       cb(null);
       return fakeChild();
     });
@@ -95,5 +97,40 @@ describe('systemTtsProvider', () => {
     });
 
     await expect(systemTtsProvider.isHealthy()).resolves.toBe(true);
+  });
+
+  it('listVoices parses a multi-voice JSON array and lowercases langCode', async () => {
+    const json = JSON.stringify([
+      { Name: 'Microsoft Hazel Desktop', Locale: 'en-GB', LangCode: 'en', Description: 'Hazel' },
+      { Name: 'Microsoft Hedda Desktop', Locale: 'de-DE', LangCode: 'DE', Description: 'Hedda' },
+    ]);
+    execFileMock.mockImplementation((_cmd: string, _args: string[], _opts: unknown, cb: ExecFileCallback) => {
+      cb(null, json);
+      return fakeChild();
+    });
+
+    await expect(systemTtsProvider.listVoices()).resolves.toEqual([
+      { name: 'Microsoft Hazel Desktop', locale: 'en-GB', langCode: 'en', description: 'Hazel' },
+      { name: 'Microsoft Hedda Desktop', locale: 'de-DE', langCode: 'de', description: 'Hedda' },
+    ]);
+  });
+
+  it('listVoices wraps a single-voice JSON object (Windows PowerShell ConvertTo-Json quirk) into an array', async () => {
+    const json = JSON.stringify({ Name: 'Microsoft David Desktop', Locale: 'en-US', LangCode: 'en', Description: 'David' });
+    execFileMock.mockImplementation((_cmd: string, _args: string[], _opts: unknown, cb: ExecFileCallback) => {
+      cb(null, json);
+      return fakeChild();
+    });
+
+    await expect(systemTtsProvider.listVoices()).resolves.toEqual([{ name: 'Microsoft David Desktop', locale: 'en-US', langCode: 'en', description: 'David' }]);
+  });
+
+  it('listVoices returns an empty array when there are no installed voices', async () => {
+    execFileMock.mockImplementation((_cmd: string, _args: string[], _opts: unknown, cb: ExecFileCallback) => {
+      cb(null, '');
+      return fakeChild();
+    });
+
+    await expect(systemTtsProvider.listVoices()).resolves.toEqual([]);
   });
 });

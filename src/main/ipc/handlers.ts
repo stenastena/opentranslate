@@ -44,7 +44,9 @@ export function registerIpcHandlers(
 
   ipcMain.handle(CHANNELS.historyClear, () => historyStore.clear());
 
-  ipcMain.handle(CHANNELS.ttsSpeak, (_event, text: string, lang?: string) => ttsProvider.speak(text, lang));
+  ipcMain.handle(CHANNELS.ttsSpeak, (_event, text: string, lang?: string, voiceName?: string) => ttsProvider.speak(text, lang, voiceName));
 
   ipcMain.handle(CHANNELS.ttsStop, () => ttsProvider.stop());
+
+  ipcMain.handle(CHANNELS.ttsListVoices, () => ttsProvider.listVoices());
 }

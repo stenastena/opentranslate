@@ -30,6 +30,10 @@ interface State {
   // en; source anything else (including a third language) -> target ru.
   autoDetectFirst: string;
   autoDetectSecond: string;
+  // Per-language SAPI voice override from Settings → Voice (issue #89).
+  // A language with no entry here falls back to systemTtsProvider's
+  // automatic locale matching — same as before this setting existed.
+  voiceByLang: Record<string, string>;
   providerIds: string[];
   activeProviderId: string | null;
   resultsByProvider: Map<string, TabResult>;
@@ -41,6 +45,7 @@ const state: State = {
   targetLang: 'auto',
   autoDetectFirst: 'en',
   autoDetectSecond: 'de',
+  voiceByLang: {},
   providerIds: [],
   activeProviderId: null,
   resultsByProvider: new Map(),
@@ -153,13 +158,18 @@ function renderGenderBadge(genderArticle: string | undefined): void {
 interface SpeakData {
   text: string;
   lang?: string;
+  voiceName?: string;
+}
+
+function voiceOverrideFor(lang: string | undefined): string | undefined {
+  return lang ? state.voiceByLang[lang] : undefined;
 }
 
 function getOriginalSpeakData(): SpeakData | null {
   const text = originalTextEl.value.trim();
   if (!text) return null;
   const lang = state.sourceLang !== 'auto' ? state.sourceLang : state.lastDetectedLang;
-  return { text, lang };
+  return { text, lang, voiceName: voiceOverrideFor(lang) };
 }
 
 function getTranslationSpeakData(): SpeakData | null {
@@ -169,7 +179,7 @@ function getTranslationSpeakData(): SpeakData | null {
   const text = translationTextEl.value.trim();
   if (!text) return null;
   const lang = result.targetLang ?? (state.targetLang !== 'auto' ? state.targetLang : state.lastResolvedTargetLang);
-  return { text, lang };
+  return { text, lang, voiceName: voiceOverrideFor(lang) };
 }
 
 function setSpeakButtonActive(button: HTMLButtonElement, active: boolean): void {
@@ -193,7 +203,7 @@ async function handleSpeakClick(button: HTMLButtonElement, getData: () => SpeakD
   activeSpeakButton = button;
   setSpeakButtonActive(button, true);
   try {
-    await window.electronAPI.tts.speak(data.text, data.lang);
+    await window.electronAPI.tts.speak(data.text, data.lang, data.voiceName);
   } catch (error) {
     console.error('[popup] failed to speak text', error);
   } finally {
@@ -429,6 +439,7 @@ async function init(): Promise<void> {
 
   state.autoDetectFirst = settings.languages.autoDetectFirst;
   state.autoDetectSecond = settings.languages.autoDetectSecond;
+  state.voiceByLang = settings.tts.voiceByLang;
 
   state.providerIds = PROVIDER_ORDER.filter((id) => providerIds.includes(id) && settings.services[id as keyof typeof settings.services]);
   state.activeProviderId = state.providerIds[0] ?? null;

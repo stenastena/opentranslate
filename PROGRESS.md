@@ -43,14 +43,25 @@ environment-specific rather than code bugs:
 
 **v0.2 backlog progress**: translation history (#8, and its sub-issues
 #9/#10/#11) is fully shipped. Google rich dictionary output (#76) is done.
-Text-to-speech (#12/#13/#14) is fully shipped. Per-language voice selection
-settings (#89, stage 1 of the #88 voice-quality follow-up) is fully shipped
-— see below. **In progress: #90 (stage 2 — voice list refresh button +
-NaturalVoiceSAPIAdapter guidance + quality hints)**, requested by the
-project owner as a high-priority follow-up feature request, being worked
-autonomously per that request. Remaining v0.2 backlog after that: Appearance
-settings (#15–20), Advanced settings (#25–29), Yandex (#75, needs a product
-decision).
+Text-to-speech (#12/#13/#14) is fully shipped. The #88 voice-quality
+follow-up (requested by the project owner as a high-priority feature
+request after live-testing #14) is fully shipped in two stages — #89
+(per-language voice selection settings) and #90 (voice list refresh +
+NaturalVoiceSAPIAdapter guidance + quality hints) — see below. Remaining
+v0.2 backlog: Appearance settings (#15–20), Advanced settings (#25–29),
+Yandex (#75, needs a product decision).
+
+**Real-app hands-on check still worth doing when convenient** (not done by
+this session — everything below was verified via unit tests, a real-machine
+`systemTtsProvider` smoke test, and a stubbed-`electronAPI` browser preview
+of the real bundled Settings JS/CSS, but not by clicking through the actual
+tray → Settings → Voice tab in the running app, which needs a human at the
+keyboard the way #14's live test was): open Settings → Voice, pick a
+specific voice for a language, click Test and confirm it's actually audible
+in that voice, click the NaturalVoiceSAPIAdapter link and confirm it opens
+the real GitHub page in the default browser (not in-app), and — if
+NaturalVoiceSAPIAdapter actually gets installed at some point — confirm
+"Refresh voice list" picks up its voices without an app restart.
 
 The old "dictionary provider subsystem" issues (#21/#22/#23/#24) were closed
 this session as superseded: they asked for a generic multi-provider
@@ -211,6 +222,27 @@ three bugs, all now fixed:
     browser test of the real bundled `settings.js` (not just mocked unit
     tests) — fixed by re-applying the saved selection once more after both
     have settled, rather than relying on either one "winning" the race.
+- **#90 — voice list refresh + NaturalVoiceSAPIAdapter guidance, quality
+  hints**, fully shipped (PR #92, stage 2 of #88's follow-up):
+  - A "Refresh voice list" button in the Voice section re-queries installed
+    voices immediately — no app restart or Settings reopen needed, which
+    matters right after installing something like NaturalVoiceSAPIAdapter.
+  - An info box explains [NaturalVoiceSAPIAdapter](https://github.com/gexgd0419/NaturalVoiceSAPIAdapter)
+    (free, open-source, exposes Microsoft Edge's neural "Read Aloud" voices
+    as ordinary SAPI voices) with a link opened externally via a new
+    `tts:open-natural-voice-adapter-page` IPC channel — deliberately a
+    fixed, hardcoded URL rather than accepting an arbitrary one from the
+    renderer, since this app must never install third-party software
+    itself, only point at it. If NaturalVoiceSAPIAdapter is actually
+    installed and its voices get picked up correctly, that validates #89's
+    `listVoices()` was built generally enough (full enumeration, no
+    per-vendor special-casing) — no code changes needed for it specifically.
+  - A best-effort "★ Natural" tag on a voice's dropdown label when its
+    name/description contains "Natural"/"Neural"/"Online" — a heuristic,
+    not a guarantee; non-matching voices are left unlabeled rather than
+    guessing.
+  - **#88 closed** once both stages shipped — see its closing comment for
+    the summary.
 
 Two notes on the merged history (informational, no action needed):
 - PR #64 (popup window) left one harmless empty extra commit on `main`

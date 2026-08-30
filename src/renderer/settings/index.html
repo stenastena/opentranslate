@@ -40,6 +40,17 @@
           Pick a specific system voice per language for the popup's Speak buttons. Leave a language on "Automatic" to
           keep matching a voice to it by locale, same as before.
         </p>
+
+        <div class="voice-info-box">
+          <p>
+            Windows' built-in voices are limited. For noticeably better quality, install the free, open-source
+            <button type="button" id="natural-voice-link" class="link-button">NaturalVoiceSAPIAdapter</button>
+            — it adds Microsoft Edge's neural "Read Aloud" voices as ordinary system voices. OpenTranslate does not
+            download or install anything itself; this only opens the project's page in your browser.
+          </p>
+          <button type="button" id="refresh-voices-button" class="secondary-button">Refresh voice list</button>
+        </div>
+
         <div id="voice-rows"></div>
       </section>
 

@@ -8,7 +8,7 @@ import { TranslationProvider } from '../providers/types';
 import { SettingsStore } from '../settings/store';
 import { TTSProvider } from '../tts';
 import { CHANNELS } from './channels';
-import { IpcMainLike, registerIpcHandlers } from './handlers';
+import { IpcMainLike, NATURAL_VOICE_ADAPTER_URL, ShellLike, registerIpcHandlers } from './handlers';
 
 function fakeProvider(id: string): TranslationProvider {
   return {
@@ -40,6 +40,7 @@ describe('registerIpcHandlers', () => {
   let registry: ProviderRegistry;
   let ipcMain: FakeIpcMain;
   let ttsProvider: TTSProvider;
+  let shell: ShellLike;
 
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'opentranslate-ipc-'));
@@ -54,8 +55,9 @@ describe('registerIpcHandlers', () => {
       isHealthy: vi.fn().mockResolvedValue(true),
       listVoices: vi.fn().mockResolvedValue([]),
     };
+    shell = { openExternal: vi.fn().mockResolvedValue(undefined) };
     ipcMain = new FakeIpcMain();
-    registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, ttsProvider);
+    registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, ttsProvider, shell);
   });
 
   afterEach(() => {
@@ -138,7 +140,7 @@ describe('registerIpcHandlers', () => {
   it('settings:update invokes the onSettingsUpdated callback with the merged settings', async () => {
     const onSettingsUpdated = vi.fn();
     const anotherIpcMain = new FakeIpcMain();
-    registerIpcHandlers(anotherIpcMain, registry, settingsStore, historyStore, ttsProvider, onSettingsUpdated);
+    registerIpcHandlers(anotherIpcMain, registry, settingsStore, historyStore, ttsProvider, shell, onSettingsUpdated);
 
     await anotherIpcMain.invoke(CHANNELS.settingsUpdate, { hotkeys: { captureAndTranslate: 'Alt+G' } });
 
@@ -161,5 +163,11 @@ describe('registerIpcHandlers', () => {
     const voices = await ipcMain.invoke(CHANNELS.ttsListVoices);
 
     expect(voices).toEqual([{ name: 'Microsoft Hazel Desktop', locale: 'en-GB', langCode: 'en', description: 'Hazel' }]);
+  });
+
+  it('tts:open-natural-voice-adapter-page opens the fixed adapter URL, not an arbitrary one', async () => {
+    await ipcMain.invoke(CHANNELS.ttsOpenNaturalVoiceAdapterPage, 'https://evil.example.com');
+    expect(shell.openExternal).toHaveBeenCalledWith(NATURAL_VOICE_ADAPTER_URL);
+    expect(shell.openExternal).not.toHaveBeenCalledWith('https://evil.example.com');
   });
 });

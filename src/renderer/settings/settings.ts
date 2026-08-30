@@ -32,6 +32,8 @@ const serviceCheckboxes = {
 const saveButton = document.getElementById('save-button') as HTMLButtonElement;
 const statusText = document.getElementById('status-text')!;
 const voiceRowsEl = document.getElementById('voice-rows')!;
+const naturalVoiceLink = document.getElementById('natural-voice-link') as HTMLButtonElement;
+const refreshVoicesButton = document.getElementById('refresh-voices-button') as HTMLButtonElement;
 
 interface VoiceRow {
   lang: string;
@@ -61,8 +63,21 @@ function setupTabs(): void {
   });
 }
 
+// Best-effort only: SAPI has no reliable "voice quality" field, so this is
+// just a substring match against markers vendors commonly put in a
+// higher-quality voice's own name/description (e.g. NaturalVoiceSAPIAdapter
+// voices are literally named "... (Natural) - ..."). A voice that doesn't
+// match isn't necessarily low quality — it's just not flagged either way,
+// which is the point: no guessing at a classification this can't verify.
+const QUALITY_HINT_PATTERN = /natural|neural|online/i;
+
+function isLikelyHighQualityVoice(voice: TTSVoice): boolean {
+  return QUALITY_HINT_PATTERN.test(voice.name) || QUALITY_HINT_PATTERN.test(voice.description);
+}
+
 function voiceOptionLabel(voice: TTSVoice): string {
-  return voice.locale ? `${voice.name} (${voice.locale})` : voice.name;
+  const base = voice.locale ? `${voice.name} (${voice.locale})` : voice.name;
+  return isLikelyHighQualityVoice(voice) ? `${base} ★ Natural` : base;
 }
 
 // Every row gets: "Automatic" (today's locale-matching fallback, the
@@ -141,6 +156,22 @@ async function loadVoices(): Promise<void> {
   populateVoiceOptions();
 }
 
+// Re-queries installed voices without needing to close/reopen Settings or
+// restart the app — the point being right after installing something like
+// NaturalVoiceSAPIAdapter, its new voices should show up immediately.
+// populateVoiceOptions() preserves whatever's currently selected in each
+// row across the rebuild, so this doesn't discard an unsaved choice.
+async function handleRefreshVoices(): Promise<void> {
+  refreshVoicesButton.disabled = true;
+  refreshVoicesButton.textContent = 'Refreshing…';
+  try {
+    await loadVoices();
+  } finally {
+    refreshVoicesButton.disabled = false;
+    refreshVoicesButton.textContent = 'Refresh voice list';
+  }
+}
+
 function applySavedVoiceSelections(voiceByLang: Record<string, string>): void {
   for (const row of voiceRows) {
     row.select.value = voiceByLang[row.lang] ?? '';
@@ -211,6 +242,10 @@ async function init(): Promise<void> {
   await Promise.all([loadSettings(), loadVoices()]);
   applySavedVoiceSelections(loadedVoiceByLang);
   saveButton.addEventListener('click', () => void handleSave());
+  refreshVoicesButton.addEventListener('click', () => void handleRefreshVoices());
+  naturalVoiceLink.addEventListener('click', () => {
+    window.electronAPI.tts.openNaturalVoiceAdapterPage().catch((error) => console.error('[settings] failed to open NaturalVoiceSAPIAdapter page', error));
+  });
 }
 
 void init();

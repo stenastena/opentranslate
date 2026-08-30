@@ -57,6 +57,7 @@ interface ElectronAPI {
     speak(text: string, lang?: string, voiceName?: string): Promise<void>;
     stop(): Promise<void>;
     listVoices(): Promise<TTSVoice[]>;
+    openNaturalVoiceAdapterPage(): Promise<void>;
   };
 }
 

@@ -1,4 +1,4 @@
-import { app, clipboard, ipcMain } from 'electron';
+import { app, clipboard, ipcMain, shell } from 'electron';
 import { createHistoryStore } from './history';
 import { registerCaptureHotkey, unregisterAllHotkeys } from './hotkeys';
 import { registerIpcHandlers } from './ipc/handlers';
@@ -44,7 +44,7 @@ app.whenReady().then(() => {
     }
   }
 
-  registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, systemTtsProvider, (updated) => {
+  registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, systemTtsProvider, shell, (updated) => {
     applyHotkey(updated.hotkeys.captureAndTranslate);
   });
 

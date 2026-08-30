@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const curlGetMock = vi.fn();
 vi.mock('./curlFetch', () => ({ curlGet: (...args: unknown[]) => curlGetMock(...args) }));
 
-const { googleProvider } = await import('./google');
+const { googleProvider, __clearGoogleRequestCacheForTests } = await import('./google');
 
 function mockCurlOnce(body: string, status = 200) {
   curlGetMock.mockResolvedValue({ status, body });
@@ -18,6 +18,10 @@ function loadFixture(name: string): string {
 describe('googleProvider', () => {
   afterEach(() => {
     curlGetMock.mockReset();
+    // Without this, a later test reusing the same text/langs (to exercise a
+    // different mocked response) would get back an earlier test's cached
+    // response instead of ever calling the freshly mocked curlGet.
+    __clearGoogleRequestCacheForTests();
   });
 
   it('translates text using the dj=1 object response shape', async () => {
@@ -43,8 +47,13 @@ describe('googleProvider', () => {
     await googleProvider.translate('hello', 'en', 'de');
 
     const [url] = curlGetMock.mock.calls[0];
-    for (const dt of ['t', 'bd', 'ex', 'ld', 'md', 'qca', 'rw', 'rm', 'ss', 'at']) {
+    for (const dt of ['t', 'bd', 'ex', 'md', 'ss', 'at']) {
       expect(url).toContain(`dt=${dt}`);
+    }
+    // ld/qca/rw/rm are never parsed anywhere (see googleDictionary.ts) —
+    // trimmed as dead request weight (#94).
+    for (const dt of ['ld', 'qca', 'rw', 'rm']) {
+      expect(url).not.toContain(`dt=${dt}`);
     }
     expect(url).toContain('dj=1');
   });
@@ -154,5 +163,54 @@ describe('googleProvider', () => {
     const [url] = curlGetMock.mock.calls[0];
     expect(url).toContain('dt=t');
     expect(url).not.toContain('dt=bd');
+  });
+
+  it('serves a repeated identical request from cache instead of hitting the network again (#94)', async () => {
+    // Target 'ru' deliberately, not an article language — this isolates
+    // the plain request-cache behavior from the separate pivot-lookup
+    // mechanism (also cached, see the next test) so this one has an
+    // unambiguous "exactly 1 network call total" expectation.
+    mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'привет' }], src: 'en' }));
+
+    const first = await googleProvider.translate('hello', 'en', 'ru');
+    const second = await googleProvider.translate('hello', 'en', 'ru');
+
+    expect(first).toEqual(second);
+    expect(curlGetMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('caches the gender-pivot fallback too, so re-translating the same word only pays its 3-request cost once (#94)', async () => {
+    curlGetMock
+      .mockResolvedValueOnce({ status: 200, body: loadFixture('biznes-ru-de.json') })
+      .mockResolvedValueOnce({ status: 200, body: loadFixture('geschaeft-gloss-de-en.json') })
+      .mockResolvedValueOnce({ status: 200, body: loadFixture('business-en-de.json') });
+
+    const first = await googleProvider.translate('Бизнес', 'ru', 'de');
+    expect(curlGetMock).toHaveBeenCalledTimes(3);
+
+    const second = await googleProvider.translate('Бизнес', 'ru', 'de');
+    expect(second).toEqual(first);
+    expect(curlGetMock).toHaveBeenCalledTimes(3); // no additional calls for the repeat
+  });
+
+  it('does not cache a non-200 response, so a repeat of the same request hits the network again (#94)', async () => {
+    mockCurlOnce('', 429);
+
+    await expect(googleProvider.translate('hello', 'en', 'de')).rejects.toThrow(/status 429/);
+    await expect(googleProvider.translate('hello', 'en', 'de')).rejects.toThrow(/status 429/);
+
+    expect(curlGetMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('caches a differently-parameterized request (different lightweight flag) separately from the full one (#94)', async () => {
+    mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'Hallo' }], src: 'en' }));
+    await googleProvider.translate('hello', 'en', 'de');
+
+    curlGetMock.mockReset();
+    mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'Hallo' }], src: 'en' }));
+    const lightweight = await googleProvider.translate('hello', 'en', 'de', { lightweight: true });
+
+    expect(lightweight.dictionary).toBeUndefined();
+    expect(curlGetMock).toHaveBeenCalledTimes(1);
   });
 });

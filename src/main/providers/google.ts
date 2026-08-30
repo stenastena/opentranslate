@@ -1,5 +1,5 @@
 import { CHROME_USER_AGENT } from './browserHeaders';
-import { curlGet } from './curlFetch';
+import { CurlResponse, curlGet } from './curlFetch';
 import { findArticleForWord, parseGoogleDictionary, RawGoogleFullResponse } from './googleDictionary';
 import { logProviderParseError } from './logger';
 import { ProviderError, TranslationProvider, TranslationResult } from './types';
@@ -15,6 +15,50 @@ const HEALTH_CHECK_TEXT = 'hello';
 // an article anyway (e.g. Russian, Chinese).
 const ARTICLE_LANGUAGES = new Set(['de', 'fr', 'es', 'it', 'pt', 'nl']);
 
+// Issue #94: this endpoint's rate limit is easy to hit even under light,
+// real-world use — a single article-language word lookup can already cost
+// up to 3 requests (the main call plus findTranslationGender's two-hop
+// pivot below), and re-viewing the same word (switching tabs back and
+// forth, re-selecting the same text) previously always re-hit the network
+// for an identical answer. Caching by the exact request URL (which already
+// fully encodes text/langs/dt-params) dedupes that for free. Only
+// successful (200) responses are cached — a 429/error must hit the network
+// again next time rather than get "stuck" as a cached failure.
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_MAX_ENTRIES = 200;
+const requestCache = new Map<string, CurlResponse>();
+const cacheExpiry = new Map<string, number>();
+
+async function fetchGoogle(url: string): Promise<CurlResponse> {
+  const expiresAt = cacheExpiry.get(url);
+  if (expiresAt !== undefined && expiresAt > Date.now()) {
+    return requestCache.get(url)!;
+  }
+
+  const response = await curlGet(url, { 'User-Agent': CHROME_USER_AGENT });
+  if (response.status === 200) {
+    if (requestCache.size >= CACHE_MAX_ENTRIES) {
+      const oldestKey = requestCache.keys().next().value;
+      if (oldestKey !== undefined) {
+        requestCache.delete(oldestKey);
+        cacheExpiry.delete(oldestKey);
+      }
+    }
+    requestCache.set(url, response);
+    cacheExpiry.set(url, Date.now() + CACHE_TTL_MS);
+  }
+  return response;
+}
+
+// Test-only escape hatch — without this, a test reusing the same
+// text/langs as an earlier test (to exercise a different mocked response
+// shape) would silently get back the earlier test's now-cached response
+// instead of the freshly mocked one.
+export function __clearGoogleRequestCacheForTests(): void {
+  requestCache.clear();
+  cacheExpiry.clear();
+}
+
 function buildResult(data: RawGoogleFullResponse): TranslationResult {
   const translatedText = (data.sentences ?? []).map((sentence) => sentence.trans ?? '').join('');
   if (!translatedText) throw new Error('empty translation');
@@ -22,7 +66,7 @@ function buildResult(data: RawGoogleFullResponse): TranslationResult {
 }
 
 async function requestGoogle(params: URLSearchParams): Promise<RawGoogleFullResponse | undefined> {
-  const response = await curlGet(`${ENDPOINT}?${params.toString()}`, { 'User-Agent': CHROME_USER_AGENT });
+  const response = await fetchGoogle(`${ENDPOINT}?${params.toString()}`);
   if (response.status !== 200) return undefined;
   try {
     return JSON.parse(response.body);
@@ -43,7 +87,10 @@ async function requestGoogle(params: URLSearchParams): Promise<RawGoogleFullResp
 // original word — as it did for "business" -> German, which surfaces
 // "das Geschäft". Not guaranteed to find a match (the pivot's own top
 // candidate might not be our word either); returns undefined rather than
-// guessing when it doesn't.
+// guessing when it doesn't. Costs up to 2 extra requests against an
+// endpoint that's already sensitive to volume (see #94) — both go through
+// fetchGoogle's cache like everything else here, so repeating the same
+// lookup doesn't repeat the cost.
 async function findTranslationGender(word: string, targetLang: string): Promise<string | undefined> {
   const glossData = await requestGoogle(new URLSearchParams({ client: 'gtx', sl: targetLang, tl: 'en', dt: 't', dj: '1', q: word }));
   const gloss = (glossData?.sentences ?? []).map((s) => s.trans ?? '').join('').trim();
@@ -58,16 +105,14 @@ async function callGoogle(text: string, sourceLang: string, targetLang: string, 
   // dt=t is the plain translation; the rest (issue #76) ask for the
   // dictionary breakdown Google's own clients show for single-word lookups
   // — bd (translations by part of speech), ss (synonyms), md (definitions),
-  // ex (usage examples), rw ("see also"), at (alternative translations).
-  // ld/qca/rm are requested because DeepLX-style unofficial clients send
-  // them alongside the others; harmless if unused. dj=1 switches the
+  // ex (usage examples), at (alternative translations). dj=1 switches the
   // response from the legacy nested-array shape to the object shape these
   // extra sections are parsed from (see googleDictionary.ts). Skipped
   // entirely for lightweight calls (detectLanguage, isHealthy, and the
   // popup's back-translation) — those only ever read translatedText, so
   // the extra fields would just be wasted request weight against an
-  // endpoint that's already sensitive to request volume (see #70).
-  const dtValues = includeExtras ? ['t', 'bd', 'ex', 'ld', 'md', 'qca', 'rw', 'rm', 'ss', 'at'] : ['t'];
+  // endpoint that's already sensitive to request volume (see #70, #94).
+  const dtValues = includeExtras ? ['t', 'bd', 'ex', 'md', 'ss', 'at'] : ['t'];
   for (const dt of dtValues) {
     params.append('dt', dt);
   }
@@ -78,7 +123,7 @@ async function callGoogle(text: string, sourceLang: string, targetLang: string, 
   // confirmed side by side with curl, which passes with the exact same
   // headers (see curlFetch.ts). Shelling out to curl for just this
   // provider sidesteps that fingerprint check.
-  const response = await curlGet(`${ENDPOINT}?${params.toString()}`, { 'User-Agent': CHROME_USER_AGENT });
+  const response = await fetchGoogle(`${ENDPOINT}?${params.toString()}`);
   if (response.status !== 200) {
     console.error(`[provider:google] request failed with status ${response.status} for text ${JSON.stringify(text)} (${sourceLang}->${targetLang})`, response.body.slice(0, 500));
     throw new ProviderError('google', `Google Translate request failed with status ${response.status}`);

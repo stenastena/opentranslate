@@ -20,6 +20,7 @@ const CHANNELS = {
   ttsSpeak: 'tts:speak',
   ttsStop: 'tts:stop',
   ttsListVoices: 'tts:list-voices',
+  ttsOpenNaturalVoiceAdapterPage: 'tts:open-natural-voice-adapter-page',
 } as const;
 
 const electronAPI = {
@@ -50,6 +51,7 @@ const electronAPI = {
     speak: (text: string, lang?: string, voiceName?: string) => ipcRenderer.invoke(CHANNELS.ttsSpeak, text, lang, voiceName),
     stop: () => ipcRenderer.invoke(CHANNELS.ttsStop),
     listVoices: () => ipcRenderer.invoke(CHANNELS.ttsListVoices),
+    openNaturalVoiceAdapterPage: () => ipcRenderer.invoke(CHANNELS.ttsOpenNaturalVoiceAdapterPage),
   },
 };
 

@@ -9,6 +9,7 @@ interface AppSettings {
   hotkeys: { captureAndTranslate: string };
   languages: { autoDetectFirst: string; autoDetectSecond: string };
   services: { deepl: boolean; yandex: boolean; google: boolean };
+  tts: { voiceByLang: Record<string, string> };
 }
 
 type ProviderCallResult<T> = { ok: true; value: T } | { ok: false; error: string };
@@ -53,8 +54,9 @@ interface ElectronAPI {
     clear(): Promise<void>;
   };
   tts: {
-    speak(text: string, lang?: string): Promise<void>;
+    speak(text: string, lang?: string, voiceName?: string): Promise<void>;
     stop(): Promise<void>;
+    listVoices(): Promise<TTSVoice[]>;
   };
 }
 
@@ -87,4 +89,11 @@ declare global {
   }
 
   type NewHistoryEntry = Omit<HistoryEntry, 'id' | 'timestamp'>;
+
+  interface TTSVoice {
+    name: string;
+    locale: string;
+    langCode: string;
+    description: string;
+  }
 }

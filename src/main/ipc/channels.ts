@@ -14,4 +14,5 @@ export const CHANNELS = {
   historyClear: 'history:clear',
   ttsSpeak: 'tts:speak',
   ttsStop: 'tts:stop',
+  ttsListVoices: 'tts:list-voices',
 } as const;

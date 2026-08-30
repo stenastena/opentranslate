@@ -47,7 +47,13 @@ describe('registerIpcHandlers', () => {
     historyStore = new HistoryStore(join(dir, 'history.json'));
     registry = new ProviderRegistry();
     registry.register(fakeProvider('good'));
-    ttsProvider = { id: 'fake', speak: vi.fn().mockResolvedValue(undefined), stop: vi.fn().mockResolvedValue(undefined), isHealthy: vi.fn().mockResolvedValue(true) };
+    ttsProvider = {
+      id: 'fake',
+      speak: vi.fn().mockResolvedValue(undefined),
+      stop: vi.fn().mockResolvedValue(undefined),
+      isHealthy: vi.fn().mockResolvedValue(true),
+      listVoices: vi.fn().mockResolvedValue([]),
+    };
     ipcMain = new FakeIpcMain();
     registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, ttsProvider);
   });
@@ -140,12 +146,20 @@ describe('registerIpcHandlers', () => {
   });
 
   it('tts:speak delegates to the TTS provider', async () => {
-    await ipcMain.invoke(CHANNELS.ttsSpeak, 'hello', 'en');
-    expect(ttsProvider.speak).toHaveBeenCalledWith('hello', 'en');
+    await ipcMain.invoke(CHANNELS.ttsSpeak, 'hello', 'en', 'Microsoft Hazel Desktop');
+    expect(ttsProvider.speak).toHaveBeenCalledWith('hello', 'en', 'Microsoft Hazel Desktop');
   });
 
   it('tts:stop delegates to the TTS provider', async () => {
     await ipcMain.invoke(CHANNELS.ttsStop);
     expect(ttsProvider.stop).toHaveBeenCalled();
+  });
+
+  it('tts:list-voices delegates to the TTS provider', async () => {
+    (ttsProvider.listVoices as ReturnType<typeof vi.fn>).mockResolvedValue([{ name: 'Microsoft Hazel Desktop', locale: 'en-GB', langCode: 'en', description: 'Hazel' }]);
+
+    const voices = await ipcMain.invoke(CHANNELS.ttsListVoices);
+
+    expect(voices).toEqual([{ name: 'Microsoft Hazel Desktop', locale: 'en-GB', langCode: 'en', description: 'Hazel' }]);
   });
 });

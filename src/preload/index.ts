@@ -19,6 +19,7 @@ const CHANNELS = {
   historyClear: 'history:clear',
   ttsSpeak: 'tts:speak',
   ttsStop: 'tts:stop',
+  ttsListVoices: 'tts:list-voices',
 } as const;
 
 const electronAPI = {
@@ -46,8 +47,9 @@ const electronAPI = {
     clear: () => ipcRenderer.invoke(CHANNELS.historyClear),
   },
   tts: {
-    speak: (text: string, lang?: string) => ipcRenderer.invoke(CHANNELS.ttsSpeak, text, lang),
+    speak: (text: string, lang?: string, voiceName?: string) => ipcRenderer.invoke(CHANNELS.ttsSpeak, text, lang, voiceName),
     stop: () => ipcRenderer.invoke(CHANNELS.ttsStop),
+    listVoices: () => ipcRenderer.invoke(CHANNELS.ttsListVoices),
   },
 };
 

@@ -89,6 +89,9 @@ root-cause writeups.
   Original/Translation/Back-translation text specifically, with a live
   preview — the surrounding UI chrome (tabs, buttons, labels) keeps its
   own fixed sizes regardless (#116).
+- Settings → Appearance: a popup window opacity slider (30-100%), a real
+  window-transparency effect applied via Electron's native `opacity`
+  option (#17).
 
 ### Fixed
 - Capture reliability: the first several hotkey presses after launch
@@ -128,6 +131,11 @@ root-cause writeups.
   for German→English) and just make the button vanish with no
   explanation — now shows "No dictionary data available for this word or
   language pair." instead (#119 follow-up, found via live testing).
+- A fresh popup opened near a screen edge got clamped in place, sliding
+  it back so its edge touched the screen edge — covering the very
+  selection/cursor it was opened from. Now flips to the opposite side of
+  the cursor first, only clamping if even the flipped position doesn't
+  fit (#18).
 
 ### Changed
 - Popup window: closes only on Esc instead of on losing focus, is a real

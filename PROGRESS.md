@@ -99,14 +99,20 @@ items, none started yet:
   blocker entirely — could ship as its own simpler adapter without
   waiting on any Azure decision.
 
-**#116 — font size and font family selection is now shipped too** (see
-below). Remaining backlog: the rest of Appearance settings (#17–20,
-theme/opacity/auto-position/border, all backlog),
-Advanced settings (#25–29), Yandex (#75, needs a product decision, or try
-the free Mozhi-fallback route first), **#109** (resilience patterns —
-rate-limiting, dual-endpoint fallback, official-key-first, backlog), and
-**#108 — Reverso**, explicitly deprioritized by the project owner
-(2026-09-01: "выносим из текущего 0.2 milestone... Переносим куда-то
+**#116 — font size/family, #17 — popup opacity, and #18 — cursor-flip
+positioning are now shipped too** (see below). **#19 and #20 are flagged,
+not implemented** — both conflict with #69's deliberate native-frame/
+no-auto-hide redesign (QTranslate's own versions only make sense against
+its undecorated, auto-fading popups), and #20 specifically overlaps with
+already-shipped `lastBounds` behavior; full analysis posted as a comment
+on each issue, left open pending the project owner's call. Remaining
+backlog: theme selection (#16, the one still-untouched Appearance
+sub-issue), Advanced settings (#25–29), Yandex (#75, needs a product
+decision, or try the free Mozhi-fallback route first), **#109**
+(resilience patterns — rate-limiting, dual-endpoint fallback,
+official-key-first, backlog), and **#108 — Reverso**, explicitly
+deprioritized by the project owner (2026-09-01: "выносим из текущего
+0.2 milestone... Переносим куда-то
 позже") and moved from the v0.2 to the **v0.4** milestone.
 
 The old "dictionary provider subsystem" issues (#21/#22/#23/#24) were closed
@@ -603,6 +609,45 @@ three bugs, all now fixed:
     a non-default setting (18px Georgia) end to end, not just that a
     CSS variable got set. Still flagged as not hands-on-tested in the
     real Electron app.
+- **#17 — popup window opacity**, fully shipped (PR #122) — a slider
+  (30-100%) applied via Electron's native `BrowserWindow` `opacity`
+  option at popup creation (real window transparency, not a CSS
+  effect), read fresh from a second `SettingsStore` instance each time
+  a new popup is created (same apply-on-next-open pattern as #116).
+  `clampOpacity` (0.3-1.0, 5 new tests) guards against a hand-edited
+  settings.json making the popup invisible. No live preview in Settings
+  itself — opacity applies to a *different* window than the one showing
+  the slider, so the panel says so explicitly rather than faking one.
+- **#18 — cursor-flip auto-positioning**, fully shipped (PR #123) — a
+  fresh popup near a screen edge previously got clamped in place,
+  sliding it back so its edge touched the screen edge and covered the
+  selection/cursor it opened from. Ported from ahatem/QTranslate's
+  `FloatingPopupBehavior.positionNearMouse`, whose own comment names
+  this exact tradeoff: now flips to the opposite side of the cursor
+  first, falling back to clamping only if even the flipped position
+  doesn't fit. Scoped to fresh popups only — a remembered `lastBounds`
+  position is still just re-clamped in place, since there's no cursor
+  context to flip around and re-anchoring would fight the user's own
+  placement. `clampToWorkArea`/`resolveCursorAnchor` were made pure
+  (work area passed in, not fetched via Electron's `screen` internally)
+  specifically so this could get 10 real unit tests without mocking
+  Electron. **Scope note**: #18's title also mentions "auto-size" — no
+  concrete refinement was found to port (QTranslate resizes the same
+  way this app already does, via user drag), so left untouched rather
+  than inventing an unfounded change.
+- **#19 (border thickness/color) and #20 (pin window when dragged) —
+  researched via QTranslate comparison, not implemented, flagged on
+  each issue.** Both of QTranslate's actual analogs only make sense
+  against its *undecorated, auto-fading* popup windows — which #69
+  deliberately moved this app away from (real native frame, no
+  auto-hide-on-idle at all). Implementing either literally would mean
+  quietly reopening #69's decision, which isn't a call to make without
+  the project owner. #20 specifically is also likely already covered:
+  its title's actual behavior ("stop auto-repositioning once dragged")
+  matches what `lastBounds` (#18 above) already does, always-on, no
+  toggle. Full writeups are in each issue's own comments — left open
+  pending the project owner's read, moved on to other backlog items in
+  the meantime rather than blocking on them.
 
 Two notes on the merged history (informational, no action needed):
 - PR #64 (popup window) left one harmless empty extra commit on `main`
@@ -632,8 +677,11 @@ Paste this (or just "continue OpenTranslate") to pick the session back up:
 > data (Google #76 + source-side #117, Bing #119), text-to-speech —
 > offline SAPI *and* cloud-neural (#12–#14, #89/#90/#93/#103/#107),
 > five translation providers (DeepL/Yandex/Google/Bing #97/MyMemory #96),
-> per-tab native cloud voice (#112), font size/family (#116), and the
-> request-volume/reliability fixes (#94) are all done and merged.
+> per-tab native cloud voice (#112), font size/family (#116), popup
+> opacity (#17), cursor-flip positioning (#18), and the request-volume/
+> reliability fixes (#94) are all done and merged. #19/#20 were
+> researched and flagged (not implemented — see the comments on each
+> issue) rather than guessed past; see "Current state" above for why.
 >
 > **2026-09-01: the project owner stepped away for an unknown period and
 > explicitly asked for autonomous work to continue in their absence**
@@ -656,8 +704,10 @@ Paste this (or just "continue OpenTranslate") to pick the session back up:
 > **Immediate next step:** work through the rest of the backlog
 > autonomously, in this rough order:
 >
-> 1. **Rest of Appearance (#17–20)** — window opacity, auto-position/
->    auto-size refinement, border thickness/color, pin-when-dragged.
+> 1. **#16 (theme selection)** — the one remaining untouched Appearance
+>    sub-issue; #19/#20 are intentionally skipped (flagged, not started —
+>    see their issue comments and "Current state" above before picking
+>    either up).
 > 2. **Advanced settings (#25–29)** — mouse interaction modes, OCR API
 >    key, configurable copy action, default browser.
 > 3. **#109 (resilience patterns)** — proactive rate-limiting,

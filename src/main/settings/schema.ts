@@ -11,6 +11,9 @@ export interface ServiceSettings {
   deepl: boolean;
   yandex: boolean;
   google: boolean;
+  // Issue #97: Microsoft Translator via the unofficial bing.com/translator
+  // endpoint — see providers/bingTranslate.ts.
+  bing: boolean;
 }
 
 // Issue #107: which TTS backend actually produces the audio. 'system' is
@@ -40,7 +43,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   hotkeys: { captureAndTranslate: "Control+`" },
   languages: { autoDetectFirst: 'en', autoDetectSecond: 'de' },
-  services: { deepl: true, yandex: true, google: true },
+  services: { deepl: true, yandex: true, google: true, bing: true },
   // 'bing-cloud' by default: real Azure neural voices, the actual fix for
   // the recurring voice-quality complaint (#93) this issue exists to
   // address — 'google-cloud' and 'system' remain one Settings dropdown

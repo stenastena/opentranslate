@@ -7,7 +7,8 @@ vi.mock('../providers/curlFetch', () => ({
   curlPostFormBytes: (...args: unknown[]) => curlPostFormBytesMock(...args),
 }));
 
-const { __resetBingAuthCacheForTests, bingCloudTtsProvider } = await import('./bingCloudProvider');
+const { __resetBingAuthCacheForTests } = await import('../providers/bingAuth');
+const { bingCloudTtsProvider } = await import('./bingCloudProvider');
 
 // A trimmed-down stand-in for www.bing.com/translator's real markup —
 // just the four fragments fetchAuth's regexes actually extract, in the

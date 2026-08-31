@@ -4,8 +4,9 @@ const PROVIDER_LABELS: Record<string, string> = {
   deepl: 'DeepL',
   yandex: 'Yandex',
   google: 'Google',
+  bing: 'Bing',
 };
-const PROVIDER_ORDER = ['deepl', 'yandex', 'google'];
+const PROVIDER_ORDER = ['deepl', 'yandex', 'google', 'bing'];
 
 interface TabResult {
   status: 'idle' | 'loading' | 'ok' | 'error';

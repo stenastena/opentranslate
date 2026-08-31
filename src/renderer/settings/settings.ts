@@ -198,6 +198,20 @@ async function handleTestVoice(row: VoiceRow, button: HTMLButtonElement): Promis
   }
 }
 
+// A populated result means the selected provider only fetched audio bytes
+// (issue #107's cloud providers) rather than playing them itself — this
+// window has no persistent <audio> element or stop button like the popup's
+// (see popup.ts's playAudioAndWait), just a one-shot "play it and wait".
+function playAudioAndWait(base64: string, mimeType: string): Promise<void> {
+  return new Promise((resolve) => {
+    const audio = new Audio(`data:${mimeType};base64,${base64}`);
+    const finish = () => resolve();
+    audio.addEventListener('ended', finish);
+    audio.addEventListener('error', finish);
+    audio.play().catch(finish);
+  });
+}
+
 // Unlike the per-language rows' Test button, this exercises whatever's
 // currently selected in the dropdown — including a choice not yet saved —
 // via providerOverride, so trying a source doesn't require Save first.
@@ -205,7 +219,10 @@ async function handleTestTtsProvider(): Promise<void> {
   ttsProviderTestButton.disabled = true;
   ttsProviderTestButton.textContent = 'Testing…';
   try {
-    await window.electronAPI.tts.speak(TEST_PHRASES.en, 'en', undefined, ttsProviderSelect.value as TTSProviderId);
+    const result = await window.electronAPI.tts.speak(TEST_PHRASES.en, 'en', undefined, ttsProviderSelect.value as TTSProviderId);
+    if (result) {
+      await playAudioAndWait(result.audioBase64, result.mimeType);
+    }
   } catch (error) {
     console.error('[settings] failed to test TTS provider', error);
   } finally {

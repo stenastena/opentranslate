@@ -1,5 +1,6 @@
 import { FONT_FAMILIES, fontStackFor } from '../shared/fonts.js';
 import { LANGUAGES } from '../shared/languages.js';
+import { applyTheme } from '../shared/theme.js';
 
 // Short, fixed phrases so "Test" never needs a real translation call —
 // just something to actually exercise the selected voice with.
@@ -45,6 +46,14 @@ const fontFamilySelect = document.getElementById('font-family-select') as HTMLSe
 const fontPreview = document.getElementById('font-preview')!;
 const opacityRange = document.getElementById('opacity-range') as HTMLInputElement;
 const opacityValue = document.getElementById('opacity-value')!;
+const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
+const customColorsRow = document.getElementById('custom-colors-row') as HTMLElement;
+const customColorInputs = {
+  background: document.getElementById('custom-color-background') as HTMLInputElement,
+  text: document.getElementById('custom-color-text') as HTMLInputElement,
+  accent: document.getElementById('custom-color-accent') as HTMLInputElement,
+};
+const themePreview = document.getElementById('theme-preview') as HTMLElement;
 
 interface VoiceRow {
   lang: string;
@@ -85,6 +94,19 @@ function updateFontPreview(): void {
 // nothing in this document to visibly apply it to.
 function updateOpacityValue(): void {
   opacityValue.textContent = `${opacityRange.value}%`;
+}
+
+function currentCustomColors(): CustomThemeColors {
+  return { background: customColorInputs.background.value, text: customColorInputs.text.value, accent: customColorInputs.accent.value };
+}
+
+// Live-updates the mockup preview as the theme/colors change, and shows
+// the three color pickers only in Custom mode — a Light/Dark pick has no
+// per-color controls to show.
+function updateThemePreview(): void {
+  const theme = themeSelect.value as ThemeMode;
+  customColorsRow.hidden = theme !== 'custom';
+  applyTheme(themePreview, theme, currentCustomColors());
 }
 
 function setupTabs(): void {
@@ -282,6 +304,11 @@ async function loadSettings(): Promise<void> {
   updateFontPreview();
   opacityRange.value = String(Math.round(settings.appearance.opacity * 100));
   updateOpacityValue();
+  themeSelect.value = settings.appearance.theme;
+  customColorInputs.background.value = settings.appearance.customColors.background;
+  customColorInputs.text.value = settings.appearance.customColors.text;
+  customColorInputs.accent.value = settings.appearance.customColors.accent;
+  updateThemePreview();
 }
 
 async function handleSave(): Promise<void> {
@@ -306,6 +333,8 @@ async function handleSave(): Promise<void> {
         fontSize: Number(fontSizeRange.value),
         fontFamily: fontFamilySelect.value,
         opacity: Number(opacityRange.value) / 100,
+        theme: themeSelect.value as ThemeMode,
+        customColors: currentCustomColors(),
       },
     });
     statusText.textContent = 'Saved.';
@@ -335,6 +364,10 @@ async function init(): Promise<void> {
   fontSizeRange.addEventListener('input', updateFontPreview);
   fontFamilySelect.addEventListener('change', updateFontPreview);
   opacityRange.addEventListener('input', updateOpacityValue);
+  themeSelect.addEventListener('change', updateThemePreview);
+  customColorInputs.background.addEventListener('input', updateThemePreview);
+  customColorInputs.text.addEventListener('input', updateThemePreview);
+  customColorInputs.accent.addEventListener('input', updateThemePreview);
   naturalVoiceLink.addEventListener('click', () => {
     window.electronAPI.tts.openNaturalVoiceAdapterPage().catch((error) => console.error('[settings] failed to open NaturalVoiceSAPIAdapter page', error));
   });

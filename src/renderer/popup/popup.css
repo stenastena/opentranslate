@@ -10,6 +10,48 @@
 :root {
   --content-font-size: 13px;
   --content-font-family: 'Segoe UI', system-ui, sans-serif;
+
+  /* Issue #16: the color palette. Light (this block) is the pre-#16
+     hardcoded palette exactly, so anyone who never opens Appearance
+     settings sees the popup completely unchanged — same principle as
+     --content-font-*. [data-theme="dark"] below overrides all of these
+     with a hand-tuned dark set; 'custom' (popup.ts's applyAppearance)
+     overrides just --om-bg/--om-text/--om-accent inline and leaves the
+     rest as color-mix() expressions derived from those three, so a
+     three-color custom pick still produces a coherent full palette
+     without needing a picker for every single token. */
+  --om-bg: #ffffff;
+  --om-bg-alt: #f7f7f7;
+  --om-bg-control: #f3f3f3;
+  --om-bg-control-hover: #e6e6e6;
+  --om-border: #e0e0e0;
+  --om-text: #1a1a1a;
+  --om-text-secondary: #555555;
+  --om-text-muted: #888888;
+  --om-accent: #2b6cb0;
+  --om-accent-bg: #eaf1fb;
+  --om-accent-hover: #235a94;
+  --om-error: #c0392b;
+}
+
+/* Hand-tuned, not derived — light gets the same treatment (fixed values
+   above) for the same reason: a derived dark palette from a single "flip
+   light to dark" formula tends to produce muddy, low-contrast results
+   that a few real design decisions (what should get *brighter* vs
+   *darker* against a dark backdrop, e.g. --om-accent-hover) fix outright. */
+:root[data-theme='dark'] {
+  --om-bg: #1e1f22;
+  --om-bg-alt: #26282c;
+  --om-bg-control: #2a2c30;
+  --om-bg-control-hover: #35373c;
+  --om-border: #3a3d42;
+  --om-text: #e8e8ea;
+  --om-text-secondary: #b4b6ba;
+  --om-text-muted: #8b8d92;
+  --om-accent: #5b9bd5;
+  --om-accent-bg: #1f3550;
+  --om-accent-hover: #7bb0e0;
+  --om-error: #e57373;
 }
 
 html,
@@ -21,8 +63,8 @@ body {
   margin: 0;
   font-family: 'Segoe UI', system-ui, sans-serif;
   font-size: 13px;
-  color: #1a1a1a;
-  background: #ffffff;
+  color: var(--om-text);
+  background: var(--om-bg);
   overflow: auto;
 }
 
@@ -47,8 +89,9 @@ body {
 }
 
 #swap-langs {
-  border: 1px solid #c9c9c9;
-  background: #f3f3f3;
+  border: 1px solid var(--om-border);
+  background: var(--om-bg-control);
+  color: var(--om-text);
   border-radius: 4px;
   cursor: pointer;
   padding: 2px 8px;
@@ -57,12 +100,12 @@ body {
 }
 
 #swap-langs:hover {
-  background: #e6e6e6;
+  background: var(--om-bg-control-hover);
 }
 
 #translate-btn {
-  border: 1px solid #2b6cb0;
-  background: #2b6cb0;
+  border: 1px solid var(--om-accent);
+  background: var(--om-accent);
   color: #ffffff;
   border-radius: 4px;
   cursor: pointer;
@@ -71,13 +114,13 @@ body {
 }
 
 #translate-btn:hover {
-  background: #235a94;
+  background: var(--om-accent-hover);
 }
 
 .tabs {
   display: flex;
   gap: 4px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--om-border);
 }
 
 .tab {
@@ -87,17 +130,17 @@ body {
   font-size: 12px;
   cursor: pointer;
   border-bottom: 2px solid transparent;
-  color: #555;
+  color: var(--om-text-secondary);
 }
 
 .tab.active {
-  color: #1a1a1a;
-  border-bottom-color: #2b6cb0;
+  color: var(--om-text);
+  border-bottom-color: var(--om-accent);
   font-weight: 600;
 }
 
 .tab.error {
-  color: #c0392b;
+  color: var(--om-error);
 }
 
 .section h2 {
@@ -105,7 +148,7 @@ body {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: #888;
+  color: var(--om-text-muted);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -125,15 +168,15 @@ body {
    for that section and lets it be corrected, so they're deliberately
    identical rather than each having its own visual treatment. */
 .section-lang-select {
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--om-border);
   border-radius: 3px;
   padding: 1px 4px;
   font-size: 11px;
-  color: #555;
+  color: var(--om-text-secondary);
   text-transform: none;
   letter-spacing: normal;
   font-weight: normal;
-  background: #ffffff;
+  background: var(--om-bg);
   max-width: 120px;
 }
 
@@ -144,11 +187,11 @@ body {
   padding: 1px 4px;
   font-size: 12px;
   border-radius: 3px;
-  color: #555;
+  color: var(--om-text-secondary);
 }
 
 .speak-btn:hover:not(:disabled) {
-  background: #f0f0f0;
+  background: var(--om-bg-control-hover);
 }
 
 .speak-btn:disabled {
@@ -157,15 +200,15 @@ body {
 }
 
 .speak-btn.speaking {
-  color: #2b6cb0;
+  color: var(--om-accent);
 }
 
 .gender-badge {
   margin-left: 6px;
   padding: 1px 6px;
   border-radius: 3px;
-  background: #eaf1fb;
-  color: #2b6cb0;
+  background: var(--om-accent-bg);
+  color: var(--om-accent);
   font-size: 10px;
   text-transform: none;
   letter-spacing: normal;
@@ -181,43 +224,43 @@ body {
   line-height: 1.4;
   overflow: auto;
   resize: vertical;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--om-border);
   border-radius: 4px;
   padding: 4px 6px;
   width: 100%;
   font-size: var(--content-font-size);
   font-family: var(--content-font-family);
   color: inherit;
-  background: #ffffff;
+  background: var(--om-bg);
 }
 
 .text-block[readonly] {
-  background: #f7f7f7;
-  color: #555;
+  background: var(--om-bg-alt);
+  color: var(--om-text-secondary);
 }
 
 .text-block.loading {
-  color: #888;
+  color: var(--om-text-muted);
   font-style: italic;
 }
 
 .text-block.error {
-  color: #c0392b;
+  color: var(--om-error);
 }
 
 .load-dictionary-btn {
   align-self: flex-start;
-  border: 1px solid #c9c9c9;
-  background: #f3f3f3;
+  border: 1px solid var(--om-border);
+  background: var(--om-bg-control);
   border-radius: 4px;
   cursor: pointer;
   padding: 4px 10px;
   font-size: 12px;
-  color: #1a1a1a;
+  color: var(--om-text);
 }
 
 .load-dictionary-btn:hover:not(:disabled) {
-  background: #e6e6e6;
+  background: var(--om-bg-control-hover);
 }
 
 .load-dictionary-btn:disabled {
@@ -226,7 +269,7 @@ body {
 }
 
 .dictionary-section {
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--om-border);
   border-radius: 4px;
   padding: 6px 8px;
 }
@@ -236,7 +279,7 @@ body {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: #888;
+  color: var(--om-text-muted);
   font-weight: 600;
 }
 
@@ -251,7 +294,7 @@ body {
 .dict-pos {
   font-weight: 600;
   font-style: italic;
-  color: #2b6cb0;
+  color: var(--om-accent);
   font-size: 12px;
 }
 
@@ -262,13 +305,13 @@ body {
 }
 
 .dict-row-label {
-  color: #888;
+  color: var(--om-text-muted);
 }
 
 .dict-empty {
   margin: 4px 0 0;
   font-size: 12px;
-  color: #888;
+  color: var(--om-text-muted);
   font-style: italic;
 }
 
@@ -277,5 +320,5 @@ body {
   padding-left: 16px;
   font-size: 12px;
   line-height: 1.5;
-  color: #444;
+  color: var(--om-text-secondary);
 }

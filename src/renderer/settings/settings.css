@@ -259,3 +259,109 @@ body {
   background: #f7f7f7;
   color: #1a1a1a;
 }
+
+.custom-colors-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin: 6px 0 0;
+}
+
+.custom-colors-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #555;
+}
+
+.custom-colors-row input[type='color'] {
+  width: 28px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #c9c9c9;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* Issue #16: mirrors popup.css's own :root / [data-theme="dark"] token
+   values exactly (duplicated rather than shared — settings.css and
+   popup.css are separate stylesheets for separate windows) so this
+   preview actually shows what the popup will look like, not an
+   approximation. applyTheme() (renderer/shared/theme.ts) sets the same
+   data-theme attribute / inline custom-color overrides on this element
+   that it sets on the popup's <html>. */
+.theme-preview {
+  --om-bg: #ffffff;
+  --om-bg-alt: #f7f7f7;
+  --om-border: #e0e0e0;
+  --om-text: #1a1a1a;
+  --om-text-secondary: #555555;
+  --om-text-muted: #888888;
+  --om-accent: #2b6cb0;
+  --om-accent-bg: #eaf1fb;
+
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--om-border);
+  border-radius: 4px;
+  background: var(--om-bg);
+  color: var(--om-text);
+}
+
+.theme-preview[data-theme='dark'] {
+  --om-bg: #1e1f22;
+  --om-bg-alt: #26282c;
+  --om-border: #3a3d42;
+  --om-text: #e8e8ea;
+  --om-text-secondary: #b4b6ba;
+  --om-text-muted: #8b8d92;
+  --om-accent: #5b9bd5;
+  --om-accent-bg: #1f3550;
+}
+
+.theme-preview-tabs {
+  display: flex;
+  gap: 12px;
+  border-bottom: 1px solid var(--om-border);
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+}
+
+.theme-preview-tab {
+  font-size: 11px;
+  color: var(--om-text-secondary);
+}
+
+.theme-preview-tab.active {
+  color: var(--om-accent);
+  font-weight: 600;
+}
+
+.theme-preview-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--om-text-muted);
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+.theme-preview-block {
+  margin-top: 2px;
+  padding: 4px 6px;
+  border: 1px solid var(--om-border);
+  border-radius: 4px;
+  background: var(--om-bg);
+  font-size: 12px;
+}
+
+.gender-badge-preview {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--om-accent-bg);
+  color: var(--om-accent);
+  font-size: 10px;
+  font-weight: 600;
+}

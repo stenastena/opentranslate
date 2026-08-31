@@ -57,6 +57,23 @@ export interface AppearanceSettings {
   // otherwise make the popup invisible/unusable with no obvious way back
   // in from the UI alone.
   opacity: number;
+  // Issue #16: 'light'/'dark' pick one of popup.css's two hand-tuned
+  // palettes ([data-theme="..."] blocks); 'custom' has popup.ts set
+  // customColors' three values directly as CSS variables, with every
+  // other token in the palette derived from just those three via
+  // color-mix() (see popup.css's top-of-file comment) — so a 3-color
+  // pick still produces a coherent full palette without a picker for
+  // every individual token.
+  theme: ThemeMode;
+  customColors: CustomThemeColors;
+}
+
+export type ThemeMode = 'light' | 'dark' | 'custom';
+
+export interface CustomThemeColors {
+  background: string; // any valid CSS color, but the picker only ever writes #rrggbb
+  text: string;
+  accent: string;
 }
 
 export interface AppSettings {
@@ -83,7 +100,16 @@ export const DEFAULT_SETTINGS: AppSettings = {
   // never opens Appearance settings sees the popup completely unchanged.
   // opacity: 1 (fully opaque) is today's implicit behavior — Electron's
   // own default when no `opacity` constructor option is given at all.
-  appearance: { fontSize: 13, fontFamily: 'default', opacity: 1 },
+  // theme: 'light' + customColors matching popup.css's :root (light)
+  // block exactly, so switching to 'custom' without touching the
+  // pickers starts from today's actual colors, not arbitrary ones.
+  appearance: {
+    fontSize: 13,
+    fontFamily: 'default',
+    opacity: 1,
+    theme: 'light',
+    customColors: { background: '#ffffff', text: '#1a1a1a', accent: '#2b6cb0' },
+  },
 };
 
 export const MIN_OPACITY = 0.3;

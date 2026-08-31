@@ -134,6 +134,40 @@ describe('googleProvider', () => {
     expect(curlGetMock).toHaveBeenCalledTimes(3);
   });
 
+  it("computes the source word's own gender article via the same pivot, independent of the target language", async () => {
+    // German source, Russian target — Russian has no articles of its own
+    // (genderArticle stays undefined), but the source word "Einschränkung"
+    // is still German, so sourceGenderArticle should be found via the same
+    // word->English-gloss->dict-lookup-back pivot findTranslationGender
+    // already uses for the target-word case.
+    curlGetMock
+      .mockResolvedValueOnce({ status: 200, body: JSON.stringify({ sentences: [{ trans: 'ограничение' }], src: 'de' }) })
+      .mockResolvedValueOnce({ status: 200, body: JSON.stringify({ sentences: [{ trans: 'restriction' }] }) })
+      .mockResolvedValueOnce({ status: 200, body: JSON.stringify({ dict: [{ pos: 'noun', entry: [{ word: 'Einschränkung', previous_word: 'die' }] }] }) });
+
+    const result = await googleProvider.translate('Einschränkung', 'de', 'ru');
+
+    expect(result.translatedText).toBe('ограничение');
+    expect(result.genderArticle).toBeUndefined();
+    expect(result.sourceGenderArticle).toBe('die');
+    expect(curlGetMock).toHaveBeenCalledTimes(3);
+    const glossUrl = curlGetMock.mock.calls[1][0];
+    expect(glossUrl).toContain('sl=de');
+    expect(glossUrl).toContain('tl=en');
+    const dictUrl = curlGetMock.mock.calls[2][0];
+    expect(dictUrl).toContain('sl=en');
+    expect(dictUrl).toContain('tl=de');
+  });
+
+  it('does not compute a source gender article when the source language has no articles', async () => {
+    mockCurlOnce(loadFixture('house-en-fr.json'));
+
+    const result = await googleProvider.translate('house', 'en', 'fr');
+
+    expect(result.sourceGenderArticle).toBeUndefined();
+    expect(curlGetMock).toHaveBeenCalledTimes(1);
+  });
+
   it('does not attempt a gender lookup for non-article target languages or multi-word translations', async () => {
     mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'привет' }], src: 'en' }));
     await googleProvider.translate('hello', 'en', 'ru');
@@ -159,6 +193,7 @@ describe('googleProvider', () => {
     expect(result.translatedText).toBe('Geschäft');
     expect(result.dictionary).toBeUndefined();
     expect(result.genderArticle).toBeUndefined();
+    expect(result.sourceGenderArticle).toBeUndefined();
     expect(curlGetMock).toHaveBeenCalledTimes(1);
     const [url] = curlGetMock.mock.calls[0];
     expect(url).toContain('dt=t');

@@ -13,6 +13,13 @@ export interface TranslationResult {
   // has no articles, translatedText isn't a single word, or no article
   // could be found for that exact word.
   genderArticle?: string;
+  // Same idea as genderArticle, but for the *source* word instead of the
+  // translated one — e.g. translating German "Einschränkung" to Russian
+  // (which has no articles of its own, so genderArticle above is never
+  // set) still surfaces "die" here, since German is the source language.
+  // Independent of genderArticle: either, both, or neither can be set
+  // depending on which of source/target actually use articles.
+  sourceGenderArticle?: string;
 }
 
 /**

@@ -41,6 +41,7 @@ interface TranslationResult {
   detectedSourceLang?: string;
   dictionary?: GoogleDictionary;
   genderArticle?: string;
+  sourceGenderArticle?: string;
 }
 
 interface ElectronAPI {

@@ -13,6 +13,7 @@
         <button type="button" class="tab" data-panel="languages">Languages</button>
         <button type="button" class="tab" data-panel="services">Services</button>
         <button type="button" class="tab" data-panel="voice">Voice</button>
+        <button type="button" class="tab" data-panel="appearance">Appearance</button>
       </div>
 
       <section id="panel-hotkeys" class="panel active">
@@ -72,6 +73,24 @@
         </div>
 
         <div id="voice-rows"></div>
+      </section>
+
+      <section id="panel-appearance" class="panel">
+        <p class="hint">
+          Applies to the popup's Original, Translation, and Back-translation text — not the surrounding buttons,
+          tabs, or labels.
+        </p>
+
+        <label for="font-size-range">Font size</label>
+        <div class="font-size-row">
+          <input id="font-size-range" type="range" min="10" max="24" step="1" />
+          <span id="font-size-value" class="font-size-value"></span>
+        </div>
+
+        <label for="font-family-select">Font family</label>
+        <select id="font-family-select"></select>
+
+        <p id="font-preview" class="font-preview">The quick brown fox jumps over the lazy dog.</p>
       </section>
 
       <div class="actions">

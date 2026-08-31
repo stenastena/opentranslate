@@ -40,11 +40,24 @@ export interface TTSSettings {
   voiceByLang: Record<string, string>;
 }
 
+// Issue #116: font size/family for the popup's Original/Translation/
+// Back-translation text specifically — not the surrounding UI chrome
+// (tabs, buttons, labels), which stays at its own fixed sizes regardless.
+// fontFamily is a loose string here (not a union) the same way
+// voiceByLang's values are — it's an opaque id the renderer's own
+// FONT_FAMILIES table (src/renderer/shared/fonts.ts) resolves to an actual
+// CSS font stack; the main process persists it without validating it.
+export interface AppearanceSettings {
+  fontSize: number; // px
+  fontFamily: string;
+}
+
 export interface AppSettings {
   hotkeys: HotkeySettings;
   languages: LanguageSettings;
   services: ServiceSettings;
   tts: TTSSettings;
+  appearance: AppearanceSettings;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -59,4 +72,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   // someone stuck with total TTS silence just because a network call
   // failed.
   tts: { provider: 'bing-cloud', voiceByLang: {} },
+  // Matches popup.css's pre-#116 hardcoded values exactly, so anyone who
+  // never opens Appearance settings sees the popup completely unchanged.
+  appearance: { fontSize: 13, fontFamily: 'default' },
 };

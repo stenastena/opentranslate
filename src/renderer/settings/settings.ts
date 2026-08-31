@@ -1,3 +1,4 @@
+import { FONT_FAMILIES, fontStackFor } from '../shared/fonts.js';
 import { LANGUAGES } from '../shared/languages.js';
 
 // Short, fixed phrases so "Test" never needs a real translation call —
@@ -38,6 +39,10 @@ const naturalVoiceLink = document.getElementById('natural-voice-link') as HTMLBu
 const refreshVoicesButton = document.getElementById('refresh-voices-button') as HTMLButtonElement;
 const ttsProviderSelect = document.getElementById('tts-provider-select') as HTMLSelectElement;
 const ttsProviderTestButton = document.getElementById('tts-provider-test-button') as HTMLButtonElement;
+const fontSizeRange = document.getElementById('font-size-range') as HTMLInputElement;
+const fontSizeValue = document.getElementById('font-size-value')!;
+const fontFamilySelect = document.getElementById('font-family-select') as HTMLSelectElement;
+const fontPreview = document.getElementById('font-preview')!;
 
 interface VoiceRow {
   lang: string;
@@ -54,6 +59,23 @@ function populateLanguageSelects(): void {
     langFirstSelect.appendChild(new Option(lang.label, lang.code));
     langSecondSelect.appendChild(new Option(lang.label, lang.code));
   }
+}
+
+function populateFontFamilySelect(): void {
+  for (const font of FONT_FAMILIES) {
+    fontFamilySelect.appendChild(new Option(font.label, font.id));
+  }
+}
+
+// Live-updates as the user drags the slider / changes the dropdown —
+// before Save, so a choice can be judged without leaving Settings (there's
+// no separate Test button here the way Voice has, since there's nothing
+// to actually fetch/play; this is instant).
+function updateFontPreview(): void {
+  const size = Number(fontSizeRange.value);
+  fontSizeValue.textContent = `${size}px`;
+  fontPreview.style.fontSize = `${size}px`;
+  fontPreview.style.fontFamily = fontStackFor(fontFamilySelect.value);
 }
 
 function setupTabs(): void {
@@ -246,6 +268,9 @@ async function loadSettings(): Promise<void> {
   ttsProviderSelect.value = settings.tts.provider;
   loadedVoiceByLang = settings.tts.voiceByLang;
   applySavedVoiceSelections(loadedVoiceByLang);
+  fontSizeRange.value = String(settings.appearance.fontSize);
+  fontFamilySelect.value = settings.appearance.fontFamily;
+  updateFontPreview();
 }
 
 async function handleSave(): Promise<void> {
@@ -266,6 +291,7 @@ async function handleSave(): Promise<void> {
         mymemory: serviceCheckboxes.mymemory.checked,
       },
       tts: { provider: ttsProviderSelect.value as TTSProviderId, voiceByLang },
+      appearance: { fontSize: Number(fontSizeRange.value), fontFamily: fontFamilySelect.value },
     });
     statusText.textContent = 'Saved.';
   } catch (error) {
@@ -275,6 +301,7 @@ async function handleSave(): Promise<void> {
 
 async function init(): Promise<void> {
   populateLanguageSelects();
+  populateFontFamilySelect();
   buildVoiceRows();
   setupTabs();
   // Voices are re-read every time Settings opens (this module's whole
@@ -290,6 +317,8 @@ async function init(): Promise<void> {
   saveButton.addEventListener('click', () => void handleSave());
   refreshVoicesButton.addEventListener('click', () => void handleRefreshVoices());
   ttsProviderTestButton.addEventListener('click', () => void handleTestTtsProvider());
+  fontSizeRange.addEventListener('input', updateFontPreview);
+  fontFamilySelect.addEventListener('change', updateFontPreview);
   naturalVoiceLink.addEventListener('click', () => {
     window.electronAPI.tts.openNaturalVoiceAdapterPage().catch((error) => console.error('[settings] failed to open NaturalVoiceSAPIAdapter page', error));
   });

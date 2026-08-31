@@ -333,11 +333,22 @@ interface SpeakData {
   text: string;
   lang?: string;
   voiceName?: string;
+  providerOverride?: TTSProviderId;
 }
 
 function voiceOverrideFor(lang: string | undefined): string | undefined {
   return lang ? state.voiceByLang[lang] : undefined;
 }
+
+// Issue #112: Google and Bing translations are spoken with that same
+// provider's own cloud TTS voice, regardless of what's picked in Settings
+// — DeepL/Yandex have no TTS of their own, so those (and Original, which
+// isn't tied to any translation provider at all) keep using the
+// Settings-selected provider, same as before this issue.
+const NATIVE_TTS_PROVIDER_BY_TRANSLATION_PROVIDER: Partial<Record<string, TTSProviderId>> = {
+  google: 'google-cloud',
+  bing: 'bing-cloud',
+};
 
 function getOriginalSpeakData(): SpeakData | null {
   const text = originalTextEl.value.trim();
@@ -353,7 +364,8 @@ function getTranslationSpeakData(): SpeakData | null {
   const text = translationTextEl.value.trim();
   if (!text) return null;
   const lang = result.targetLang ?? (state.targetLang !== 'auto' ? state.targetLang : state.lastResolvedTargetLang);
-  return { text, lang, voiceName: voiceOverrideFor(lang) };
+  const providerOverride = providerId ? NATIVE_TTS_PROVIDER_BY_TRANSLATION_PROVIDER[providerId] : undefined;
+  return { text, lang, voiceName: voiceOverrideFor(lang), providerOverride };
 }
 
 function setSpeakButtonActive(button: HTMLButtonElement, active: boolean): void {
@@ -386,7 +398,7 @@ async function handleSpeakClick(button: HTMLButtonElement, getData: () => SpeakD
     // bytes (issue #107's cloud providers) rather than playing them
     // itself — null means the provider already produced sound server-side
     // (systemProvider.ts via PowerShell), same as before this issue.
-    const result = await window.electronAPI.tts.speak(data.text, data.lang, data.voiceName);
+    const result = await window.electronAPI.tts.speak(data.text, data.lang, data.voiceName, data.providerOverride);
     if (result) {
       await playAudioAndWait(result.audioBase64, result.mimeType);
     }

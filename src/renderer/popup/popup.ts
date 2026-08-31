@@ -174,9 +174,15 @@ function renderActiveResult(): void {
   backTranslationTextEl.classList.remove('loading', 'error');
 
   if (!result || result.status === 'idle' || result.status === 'loading') {
-    translationTextEl.value = 'Translating…';
+    // Idle with no text means nothing will ever load (ensureActiveResultLoaded
+    // bails out early on empty originalText) — e.g. the main window opened via
+    // the tray or a hotkey press with nothing selected. "Translating…" would
+    // be actively misleading there, so only show it once a load is genuinely
+    // in flight.
+    const isLoading = result?.status === 'loading';
+    translationTextEl.value = isLoading ? 'Translating…' : '';
     translationTextEl.readOnly = true;
-    translationTextEl.classList.add('loading');
+    translationTextEl.classList.toggle('loading', isLoading);
     backTranslationTextEl.textContent = '';
     renderDictionaryArea(undefined);
     renderDetectedLangSelect(undefined);

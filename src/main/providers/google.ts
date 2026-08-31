@@ -29,10 +29,12 @@ const CACHE_MAX_ENTRIES = 200;
 const requestCache = new Map<string, CurlResponse>();
 const cacheExpiry = new Map<string, number>();
 
-async function fetchGoogle(url: string): Promise<CurlResponse> {
-  const expiresAt = cacheExpiry.get(url);
-  if (expiresAt !== undefined && expiresAt > Date.now()) {
-    return requestCache.get(url)!;
+async function fetchGoogle(url: string, skipCache = false): Promise<CurlResponse> {
+  if (!skipCache) {
+    const expiresAt = cacheExpiry.get(url);
+    if (expiresAt !== undefined && expiresAt > Date.now()) {
+      return requestCache.get(url)!;
+    }
   }
 
   const response = await curlGet(url, { 'User-Agent': CHROME_USER_AGENT });
@@ -65,8 +67,8 @@ function buildResult(data: RawGoogleFullResponse): TranslationResult {
   return { translatedText, detectedSourceLang: data.src, dictionary: parseGoogleDictionary(data) };
 }
 
-async function requestGoogle(params: URLSearchParams): Promise<RawGoogleFullResponse | undefined> {
-  const response = await fetchGoogle(`${ENDPOINT}?${params.toString()}`);
+async function requestGoogle(params: URLSearchParams, skipCache = false): Promise<RawGoogleFullResponse | undefined> {
+  const response = await fetchGoogle(`${ENDPOINT}?${params.toString()}`, skipCache);
   if (response.status !== 200) return undefined;
   try {
     return JSON.parse(response.body);
@@ -91,16 +93,16 @@ async function requestGoogle(params: URLSearchParams): Promise<RawGoogleFullResp
 // endpoint that's already sensitive to volume (see #94) — both go through
 // fetchGoogle's cache like everything else here, so repeating the same
 // lookup doesn't repeat the cost.
-async function findTranslationGender(word: string, targetLang: string): Promise<string | undefined> {
-  const glossData = await requestGoogle(new URLSearchParams({ client: 'gtx', sl: targetLang, tl: 'en', dt: 't', dj: '1', q: word }));
+async function findTranslationGender(word: string, targetLang: string, skipCache: boolean): Promise<string | undefined> {
+  const glossData = await requestGoogle(new URLSearchParams({ client: 'gtx', sl: targetLang, tl: 'en', dt: 't', dj: '1', q: word }), skipCache);
   const gloss = (glossData?.sentences ?? []).map((s) => s.trans ?? '').join('').trim();
   if (!gloss) return undefined;
 
-  const dictData = await requestGoogle(new URLSearchParams({ client: 'gtx', sl: 'en', tl: targetLang, dt: 'bd', dj: '1', q: gloss }));
+  const dictData = await requestGoogle(new URLSearchParams({ client: 'gtx', sl: 'en', tl: targetLang, dt: 'bd', dj: '1', q: gloss }), skipCache);
   return dictData ? findArticleForWord(dictData, word) : undefined;
 }
 
-async function callGoogle(text: string, sourceLang: string, targetLang: string, includeExtras = true): Promise<TranslationResult> {
+async function callGoogle(text: string, sourceLang: string, targetLang: string, includeExtras = true, skipCache = false): Promise<TranslationResult> {
   const params = new URLSearchParams({ client: 'gtx', sl: sourceLang, tl: targetLang, dj: '1' });
   // dt=t is the plain translation; the rest (issue #76) ask for the
   // dictionary breakdown Google's own clients show for single-word lookups
@@ -123,7 +125,7 @@ async function callGoogle(text: string, sourceLang: string, targetLang: string, 
   // confirmed side by side with curl, which passes with the exact same
   // headers (see curlFetch.ts). Shelling out to curl for just this
   // provider sidesteps that fingerprint check.
-  const response = await fetchGoogle(`${ENDPOINT}?${params.toString()}`);
+  const response = await fetchGoogle(`${ENDPOINT}?${params.toString()}`, skipCache);
   if (response.status !== 200) {
     console.error(`[provider:google] request failed with status ${response.status} for text ${JSON.stringify(text)} (${sourceLang}->${targetLang})`, response.body.slice(0, 500));
     throw new ProviderError('google', `Google Translate request failed with status ${response.status}`);
@@ -146,7 +148,7 @@ async function callGoogle(text: string, sourceLang: string, targetLang: string, 
   }
 
   if (includeExtras && ARTICLE_LANGUAGES.has(targetLang) && !result.translatedText.includes(' ')) {
-    result.genderArticle = findArticleForWord(data, result.translatedText) ?? (await findTranslationGender(result.translatedText, targetLang));
+    result.genderArticle = findArticleForWord(data, result.translatedText) ?? (await findTranslationGender(result.translatedText, targetLang, skipCache));
   }
 
   return result;
@@ -156,7 +158,7 @@ export const googleProvider: TranslationProvider = {
   id: 'google',
 
   translate(text, sourceLang, targetLang, options) {
-    return callGoogle(text, sourceLang, targetLang, !options?.lightweight);
+    return callGoogle(text, sourceLang, targetLang, !options?.lightweight, options?.skipCache);
   },
 
   async detectLanguage(text) {

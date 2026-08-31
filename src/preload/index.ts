@@ -29,7 +29,7 @@ const electronAPI = {
     update: (partial: unknown) => ipcRenderer.invoke(CHANNELS.settingsUpdate, partial),
   },
   providers: {
-    translate: (providerId: string, text: string, sourceLang: string, targetLang: string, options?: { lightweight?: boolean }) =>
+    translate: (providerId: string, text: string, sourceLang: string, targetLang: string, options?: { lightweight?: boolean; skipCache?: boolean }) =>
       ipcRenderer.invoke(CHANNELS.providerTranslate, providerId, text, sourceLang, targetLang, options),
     detectLanguage: (providerId: string, text: string) => ipcRenderer.invoke(CHANNELS.providerDetectLanguage, providerId, text),
     getLastSuccessAt: (providerId: string) => ipcRenderer.invoke(CHANNELS.providerLastSuccessAt, providerId),

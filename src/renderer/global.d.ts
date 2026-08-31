@@ -39,7 +39,7 @@ interface ElectronAPI {
     update(partial: Partial<AppSettings>): Promise<AppSettings>;
   };
   providers: {
-    translate(providerId: string, text: string, sourceLang: string, targetLang: string, options?: { lightweight?: boolean }): Promise<ProviderCallResult<TranslationResult>>;
+    translate(providerId: string, text: string, sourceLang: string, targetLang: string, options?: { lightweight?: boolean; skipCache?: boolean }): Promise<ProviderCallResult<TranslationResult>>;
     detectLanguage(providerId: string, text: string): Promise<ProviderCallResult<string>>;
     getLastSuccessAt(providerId: string): Promise<number | null>;
     listIds(): Promise<string[]>;

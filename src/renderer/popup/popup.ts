@@ -1,3 +1,4 @@
+import { fontStackFor } from '../shared/fonts.js';
 import { LANGUAGES, languageLabel } from '../shared/languages.js';
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -788,6 +789,15 @@ async function handleSwap(): Promise<void> {
   await handleLanguageChange();
 }
 
+// Issue #116: applied once at popup init, not live-pushed to an
+// already-open popup if Settings changes elsewhere — matches how every
+// other setting here already behaves (e.g. voiceByLang), and the popup is
+// normally closed/reopened per capture anyway.
+function applyAppearance(appearance: { fontSize: number; fontFamily: string }): void {
+  document.documentElement.style.setProperty('--content-font-size', `${appearance.fontSize}px`);
+  document.documentElement.style.setProperty('--content-font-family', fontStackFor(appearance.fontFamily));
+}
+
 async function init(): Promise<void> {
   populateLanguageSelects();
 
@@ -796,6 +806,7 @@ async function init(): Promise<void> {
   state.autoDetectFirst = settings.languages.autoDetectFirst;
   state.autoDetectSecond = settings.languages.autoDetectSecond;
   state.voiceByLang = settings.tts.voiceByLang;
+  applyAppearance(settings.appearance);
 
   state.providerIds = PROVIDER_ORDER.filter((id) => providerIds.includes(id) && settings.services[id as keyof typeof settings.services]);
   state.activeProviderId = state.providerIds[0] ?? null;

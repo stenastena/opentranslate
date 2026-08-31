@@ -2,6 +2,16 @@
   box-sizing: border-box;
 }
 
+/* Issue #116: the popup's Original/Translation/Back-translation content
+   specifically, not the surrounding UI chrome (tabs, buttons, labels),
+   which keeps its own fixed sizes regardless. Set from popup.ts at init,
+   from Settings' Appearance tab — the values below are the pre-#116
+   defaults, kept as a fallback in case popup.ts's JS hasn't run yet. */
+:root {
+  --content-font-size: 13px;
+  --content-font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
 html,
 body {
   height: 100%;
@@ -175,7 +185,8 @@ body {
   border-radius: 4px;
   padding: 4px 6px;
   width: 100%;
-  font: inherit;
+  font-size: var(--content-font-size);
+  font-family: var(--content-font-family);
   color: inherit;
   background: #ffffff;
 }

@@ -5,11 +5,21 @@
 // commonjs output a second time as ES modules into the same dist path.
 export {};
 
+type TTSProviderId = 'system' | 'google-cloud' | 'bing-cloud';
+
 interface AppSettings {
   hotkeys: { captureAndTranslate: string };
   languages: { autoDetectFirst: string; autoDetectSecond: string };
   services: { deepl: boolean; yandex: boolean; google: boolean };
-  tts: { voiceByLang: Record<string, string> };
+  tts: { provider: TTSProviderId; voiceByLang: Record<string, string> };
+}
+
+// null means the selected provider already played the audio itself
+// (systemProvider.ts) — a populated object means the caller must play
+// these bytes itself (the cloud providers; see popup.ts's <audio> use).
+interface TTSSpeakResponse {
+  audioBase64: string;
+  mimeType: string;
 }
 
 type ProviderCallResult<T> = { ok: true; value: T } | { ok: false; error: string };
@@ -54,7 +64,11 @@ interface ElectronAPI {
     clear(): Promise<void>;
   };
   tts: {
-    speak(text: string, lang?: string, voiceName?: string): Promise<void>;
+    // providerOverride pins a specific provider for this call, bypassing
+    // the saved settings.tts.provider — used by Settings' per-language
+    // system-voice "Test" button (always 'system') and its provider-
+    // selector "Test" button (an in-progress, not-yet-saved choice).
+    speak(text: string, lang?: string, voiceName?: string, providerOverride?: TTSProviderId): Promise<TTSSpeakResponse | null>;
     stop(): Promise<void>;
     listVoices(): Promise<TTSVoice[]>;
     openNaturalVoiceAdapterPage(): Promise<void>;
@@ -96,5 +110,12 @@ declare global {
     locale: string;
     langCode: string;
     description: string;
+  }
+
+  type TTSProviderId = 'system' | 'google-cloud' | 'bing-cloud';
+
+  interface TTSSpeakResponse {
+    audioBase64: string;
+    mimeType: string;
   }
 }

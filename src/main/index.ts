@@ -7,7 +7,7 @@ import { installApplicationMenu } from './menu';
 import { createDefaultRegistry } from './providers';
 import { createSettingsStore } from './settings';
 import { captureSelectedText } from './textCapture';
-import { systemTtsProvider } from './tts';
+import { bingCloudTtsProvider, googleCloudTtsProvider, systemTtsProvider } from './tts';
 import { createTray } from './tray';
 import { showHistoryWindow } from './windows/historyWindow';
 import { showPopupWindow } from './windows/popupWindow';
@@ -55,7 +55,13 @@ app.whenReady().then(() => {
     }
   }
 
-  registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, systemTtsProvider, shell, (updated) => {
+  const ttsProviders = {
+    system: systemTtsProvider,
+    'google-cloud': googleCloudTtsProvider,
+    'bing-cloud': bingCloudTtsProvider,
+  };
+
+  registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, ttsProviders, shell, (updated) => {
     applyHotkey(updated.hotkeys.captureAndTranslate);
   });
 

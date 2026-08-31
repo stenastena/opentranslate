@@ -1,8 +1,19 @@
 import { HistoryStore, NewHistoryEntry } from '../history';
 import { ProviderRegistry } from '../providers';
-import { AppSettings, SettingsStore } from '../settings';
+import { AppSettings, SettingsStore, TTSProviderId } from '../settings';
 import { TTSProvider } from '../tts';
 import { CHANNELS } from './channels';
+
+// What the ttsSpeak handler hands back to the renderer over IPC — see
+// TTSSpeakResult in tts/types.ts for the main-process-side shape this is
+// derived from. null means the selected provider already produced sound
+// itself (systemProvider.ts, via PowerShell/SAPI) and there's nothing left
+// for the renderer to do; a populated object means the renderer must play
+// these bytes itself (the cloud providers — see popup.ts).
+export interface TTSSpeakResponse {
+  audioBase64: string;
+  mimeType: string;
+}
 
 // Matches the subset of Electron's IpcMain we actually use, so this module
 // (and its handlers) can be unit-tested without the Electron runtime.
@@ -28,7 +39,7 @@ export function registerIpcHandlers(
   registry: ProviderRegistry,
   settingsStore: SettingsStore,
   historyStore: HistoryStore,
-  ttsProvider: TTSProvider,
+  ttsProviders: Record<TTSProviderId, TTSProvider>,
   shell: ShellLike,
   onSettingsUpdated?: (settings: AppSettings) => void,
 ): void {
@@ -58,11 +69,32 @@ export function registerIpcHandlers(
 
   ipcMain.handle(CHANNELS.historyClear, () => historyStore.clear());
 
-  ipcMain.handle(CHANNELS.ttsSpeak, (_event, text: string, lang?: string, voiceName?: string) => ttsProvider.speak(text, lang, voiceName));
+  ipcMain.handle(CHANNELS.ttsSpeak, async (_event, text: string, lang?: string, voiceName?: string, providerOverride?: TTSProviderId): Promise<TTSSpeakResponse | null> => {
+    // providerOverride lets a caller pin a specific provider regardless of
+    // the saved setting — Settings' per-language SAPI "Test" button uses
+    // this to force 'system' (it's testing one specific installed voice,
+    // which only systemProvider.ts even understands), and its own
+    // provider-selector "Test" button uses it to try an in-progress,
+    // not-yet-saved choice. Ordinary popup speak clicks pass none, so they
+    // always follow whatever's actually saved.
+    const providerId = providerOverride ?? settingsStore.load().tts.provider;
+    const provider = ttsProviders[providerId] ?? ttsProviders.system;
 
-  ipcMain.handle(CHANNELS.ttsStop, () => ttsProvider.stop());
+    const toResponse = (result: Awaited<ReturnType<TTSProvider['speak']>>): TTSSpeakResponse | null =>
+      result.kind === 'audio' ? { audioBase64: result.data.toString('base64'), mimeType: result.mimeType } : null;
 
-  ipcMain.handle(CHANNELS.ttsListVoices, () => ttsProvider.listVoices());
+    try {
+      return toResponse(await provider.speak(text, lang, voiceName));
+    } catch (error) {
+      if (provider === ttsProviders.system) throw error; // no further fallback available
+      console.error(`[tts] ${providerId} failed, falling back to system voice`, error);
+      return toResponse(await ttsProviders.system.speak(text, lang, voiceName));
+    }
+  });
+
+  ipcMain.handle(CHANNELS.ttsStop, () => ttsProviders.system.stop());
+
+  ipcMain.handle(CHANNELS.ttsListVoices, () => ttsProviders.system.listVoices());
 
   ipcMain.handle(CHANNELS.ttsOpenNaturalVoiceAdapterPage, () => shell.openExternal(NATURAL_VOICE_ADAPTER_URL));
 }

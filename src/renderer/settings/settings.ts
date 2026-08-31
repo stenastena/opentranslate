@@ -34,6 +34,8 @@ const statusText = document.getElementById('status-text')!;
 const voiceRowsEl = document.getElementById('voice-rows')!;
 const naturalVoiceLink = document.getElementById('natural-voice-link') as HTMLButtonElement;
 const refreshVoicesButton = document.getElementById('refresh-voices-button') as HTMLButtonElement;
+const ttsProviderSelect = document.getElementById('tts-provider-select') as HTMLSelectElement;
+const ttsProviderTestButton = document.getElementById('tts-provider-test-button') as HTMLButtonElement;
 
 interface VoiceRow {
   lang: string;
@@ -183,12 +185,32 @@ async function handleTestVoice(row: VoiceRow, button: HTMLButtonElement): Promis
   button.disabled = true;
   button.textContent = 'Testing…';
   try {
-    await window.electronAPI.tts.speak(phrase, row.lang, row.select.value || undefined);
+    // Forced to 'system' regardless of the Voice source setting above:
+    // this button is testing one specific installed SAPI voice, which only
+    // systemProvider.ts understands — a cloud provider would just ignore
+    // voiceName and speak with its own fixed per-language voice instead.
+    await window.electronAPI.tts.speak(phrase, row.lang, row.select.value || undefined, 'system');
   } catch (error) {
     console.error(`[settings] failed to test voice for ${row.lang}`, error);
   } finally {
     button.disabled = false;
     button.textContent = 'Test';
+  }
+}
+
+// Unlike the per-language rows' Test button, this exercises whatever's
+// currently selected in the dropdown — including a choice not yet saved —
+// via providerOverride, so trying a source doesn't require Save first.
+async function handleTestTtsProvider(): Promise<void> {
+  ttsProviderTestButton.disabled = true;
+  ttsProviderTestButton.textContent = 'Testing…';
+  try {
+    await window.electronAPI.tts.speak(TEST_PHRASES.en, 'en', undefined, ttsProviderSelect.value as TTSProviderId);
+  } catch (error) {
+    console.error('[settings] failed to test TTS provider', error);
+  } finally {
+    ttsProviderTestButton.disabled = false;
+    ttsProviderTestButton.textContent = 'Test';
   }
 }
 
@@ -200,6 +222,7 @@ async function loadSettings(): Promise<void> {
   serviceCheckboxes.deepl.checked = settings.services.deepl;
   serviceCheckboxes.yandex.checked = settings.services.yandex;
   serviceCheckboxes.google.checked = settings.services.google;
+  ttsProviderSelect.value = settings.tts.provider;
   loadedVoiceByLang = settings.tts.voiceByLang;
   applySavedVoiceSelections(loadedVoiceByLang);
 }
@@ -219,7 +242,7 @@ async function handleSave(): Promise<void> {
         yandex: serviceCheckboxes.yandex.checked,
         google: serviceCheckboxes.google.checked,
       },
-      tts: { voiceByLang },
+      tts: { provider: ttsProviderSelect.value as TTSProviderId, voiceByLang },
     });
     statusText.textContent = 'Saved.';
   } catch (error) {
@@ -243,6 +266,7 @@ async function init(): Promise<void> {
   applySavedVoiceSelections(loadedVoiceByLang);
   saveButton.addEventListener('click', () => void handleSave());
   refreshVoicesButton.addEventListener('click', () => void handleRefreshVoices());
+  ttsProviderTestButton.addEventListener('click', () => void handleTestTtsProvider());
   naturalVoiceLink.addEventListener('click', () => {
     window.electronAPI.tts.openNaturalVoiceAdapterPage().catch((error) => console.error('[settings] failed to open NaturalVoiceSAPIAdapter page', error));
   });

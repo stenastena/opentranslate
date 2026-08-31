@@ -6,7 +6,8 @@ import { HistoryStore } from '../history/store';
 import { ProviderRegistry } from '../providers/registry';
 import { TranslationProvider } from '../providers/types';
 import { SettingsStore } from '../settings/store';
-import { TTSProvider } from '../tts';
+import { TTSProviderId } from '../settings/schema';
+import { TTSProvider, TTSSpeakResult } from '../tts';
 import { CHANNELS } from './channels';
 import { IpcMainLike, NATURAL_VOICE_ADAPTER_URL, ShellLike, registerIpcHandlers } from './handlers';
 
@@ -16,6 +17,16 @@ function fakeProvider(id: string): TranslationProvider {
     translate: async (text) => ({ translatedText: `${id}:${text}` }),
     detectLanguage: async () => 'en',
     isHealthy: async () => true,
+  };
+}
+
+function fakeTtsProvider(id: string, result: TTSSpeakResult): TTSProvider {
+  return {
+    id,
+    speak: vi.fn().mockResolvedValue(result),
+    stop: vi.fn().mockResolvedValue(undefined),
+    isHealthy: vi.fn().mockResolvedValue(true),
+    listVoices: vi.fn().mockResolvedValue([]),
   };
 }
 
@@ -39,7 +50,7 @@ describe('registerIpcHandlers', () => {
   let historyStore: HistoryStore;
   let registry: ProviderRegistry;
   let ipcMain: FakeIpcMain;
-  let ttsProvider: TTSProvider;
+  let ttsProviders: Record<TTSProviderId, TTSProvider>;
   let shell: ShellLike;
 
   beforeEach(() => {
@@ -48,16 +59,17 @@ describe('registerIpcHandlers', () => {
     historyStore = new HistoryStore(join(dir, 'history.json'));
     registry = new ProviderRegistry();
     registry.register(fakeProvider('good'));
-    ttsProvider = {
-      id: 'fake',
-      speak: vi.fn().mockResolvedValue(undefined),
-      stop: vi.fn().mockResolvedValue(undefined),
-      isHealthy: vi.fn().mockResolvedValue(true),
-      listVoices: vi.fn().mockResolvedValue([]),
+    // DEFAULT_SETTINGS.tts.provider is 'bing-cloud' (issue #107) — matches
+    // that here so "no explicit providerOverride" tests exercise the real
+    // default instead of an arbitrary fake id.
+    ttsProviders = {
+      system: fakeTtsProvider('system', { kind: 'played' }),
+      'google-cloud': fakeTtsProvider('google-cloud', { kind: 'audio', data: Buffer.from('google-audio'), mimeType: 'audio/mpeg' }),
+      'bing-cloud': fakeTtsProvider('bing-cloud', { kind: 'audio', data: Buffer.from('bing-audio'), mimeType: 'audio/mpeg' }),
     };
     shell = { openExternal: vi.fn().mockResolvedValue(undefined) };
     ipcMain = new FakeIpcMain();
-    registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, ttsProvider, shell);
+    registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, ttsProviders, shell);
   });
 
   afterEach(() => {
@@ -140,25 +152,56 @@ describe('registerIpcHandlers', () => {
   it('settings:update invokes the onSettingsUpdated callback with the merged settings', async () => {
     const onSettingsUpdated = vi.fn();
     const anotherIpcMain = new FakeIpcMain();
-    registerIpcHandlers(anotherIpcMain, registry, settingsStore, historyStore, ttsProvider, shell, onSettingsUpdated);
+    registerIpcHandlers(anotherIpcMain, registry, settingsStore, historyStore, ttsProviders, shell, onSettingsUpdated);
 
     await anotherIpcMain.invoke(CHANNELS.settingsUpdate, { hotkeys: { captureAndTranslate: 'Alt+G' } });
 
     expect(onSettingsUpdated).toHaveBeenCalledWith(expect.objectContaining({ hotkeys: { captureAndTranslate: 'Alt+G' } }));
   });
 
-  it('tts:speak delegates to the TTS provider', async () => {
-    await ipcMain.invoke(CHANNELS.ttsSpeak, 'hello', 'en', 'Microsoft Hazel Desktop');
-    expect(ttsProvider.speak).toHaveBeenCalledWith('hello', 'en', 'Microsoft Hazel Desktop');
+  it('tts:speak uses the saved provider setting by default and returns audio bytes as base64', async () => {
+    const response = await ipcMain.invoke(CHANNELS.ttsSpeak, 'hello', 'en', undefined);
+
+    expect(ttsProviders['bing-cloud'].speak).toHaveBeenCalledWith('hello', 'en', undefined);
+    expect(response).toEqual({ audioBase64: Buffer.from('bing-audio').toString('base64'), mimeType: 'audio/mpeg' });
   });
 
-  it('tts:stop delegates to the TTS provider', async () => {
+  it('tts:speak returns null when the provider plays audio itself (system)', async () => {
+    const response = await ipcMain.invoke(CHANNELS.ttsSpeak, 'hello', 'en', 'Microsoft Hazel Desktop', 'system');
+
+    expect(ttsProviders.system.speak).toHaveBeenCalledWith('hello', 'en', 'Microsoft Hazel Desktop');
+    expect(response).toBeNull();
+  });
+
+  it('tts:speak lets an explicit providerOverride win over the saved setting', async () => {
+    await ipcMain.invoke(CHANNELS.ttsSpeak, 'hello', 'en', undefined, 'google-cloud');
+
+    expect(ttsProviders['google-cloud'].speak).toHaveBeenCalled();
+    expect(ttsProviders['bing-cloud'].speak).not.toHaveBeenCalled();
+  });
+
+  it('tts:speak falls back to the system provider when the selected cloud provider throws', async () => {
+    (ttsProviders['bing-cloud'].speak as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('endpoint unreachable'));
+
+    const response = await ipcMain.invoke(CHANNELS.ttsSpeak, 'hello', 'en', undefined);
+
+    expect(ttsProviders.system.speak).toHaveBeenCalledWith('hello', 'en', undefined);
+    expect(response).toBeNull();
+  });
+
+  it('tts:speak re-throws when the system provider itself fails (no further fallback)', async () => {
+    (ttsProviders.system.speak as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('powershell not found'));
+
+    await expect(ipcMain.invoke(CHANNELS.ttsSpeak, 'hello', 'en', undefined, 'system')).rejects.toThrow('powershell not found');
+  });
+
+  it('tts:stop always delegates to the system provider, regardless of the selected speak provider', async () => {
     await ipcMain.invoke(CHANNELS.ttsStop);
-    expect(ttsProvider.stop).toHaveBeenCalled();
+    expect(ttsProviders.system.stop).toHaveBeenCalled();
   });
 
-  it('tts:list-voices delegates to the TTS provider', async () => {
-    (ttsProvider.listVoices as ReturnType<typeof vi.fn>).mockResolvedValue([{ name: 'Microsoft Hazel Desktop', locale: 'en-GB', langCode: 'en', description: 'Hazel' }]);
+  it('tts:list-voices always delegates to the system provider', async () => {
+    (ttsProviders.system.listVoices as ReturnType<typeof vi.fn>).mockResolvedValue([{ name: 'Microsoft Hazel Desktop', locale: 'en-GB', langCode: 'en', description: 'Hazel' }]);
 
     const voices = await ipcMain.invoke(CHANNELS.ttsListVoices);
 

@@ -51,6 +51,11 @@ interface State {
   // on a new capture or an explicit manual language-selector change, so
   // Auto-Detect still detects fresh next time rather than getting "stuck".
   sourceLangOverride?: string;
+  // Same idea as sourceLangOverride, for the *target* language — only
+  // meaningful when the top Target dropdown is on "Auto" (a manually
+  // picked target isn't "resolved", so there's nothing to correct). Also
+  // cleared on a new capture or a manual language-selector change.
+  targetLangOverride?: string;
   // Per-provider override of which language back-translation targets,
   // independent of the source language — a user may want to sanity-check
   // the translation in a language other than the detected/chosen source.
@@ -84,6 +89,7 @@ const tabsEl = document.getElementById('provider-tabs')!;
 const sourceLangSelect = document.getElementById('source-lang') as HTMLSelectElement;
 const targetLangSelect = document.getElementById('target-lang') as HTMLSelectElement;
 const detectedLangSelect = document.getElementById('detected-lang-select') as HTMLSelectElement;
+const targetLangOverrideSelect = document.getElementById('target-lang-select') as HTMLSelectElement;
 const backLangSelect = document.getElementById('back-lang-select') as HTMLSelectElement;
 const swapButton = document.getElementById('swap-langs') as HTMLButtonElement;
 const translateButton = document.getElementById('translate-btn') as HTMLButtonElement;
@@ -108,6 +114,7 @@ function populateLanguageSelects(): void {
     sourceLangSelect.appendChild(new Option(lang.label, lang.code));
     targetLangSelect.appendChild(new Option(lang.label, lang.code));
     detectedLangSelect.appendChild(new Option(lang.label, lang.code));
+    targetLangOverrideSelect.appendChild(new Option(lang.label, lang.code));
     backLangSelect.appendChild(new Option(lang.label, lang.code));
   }
   sourceLangSelect.value = state.sourceLang;
@@ -139,6 +146,7 @@ function syncSelectWithFallback(select: HTMLSelectElement, code: string, previou
 }
 
 let detectedSelectExtra: string | undefined;
+let targetSelectExtra: string | undefined;
 let backSelectExtra: string | undefined;
 
 function renderTabs(): void {
@@ -186,6 +194,7 @@ function renderActiveResult(): void {
     backTranslationTextEl.textContent = '';
     renderDictionaryArea(undefined);
     renderDetectedLangSelect(undefined);
+    renderTargetLangSelect(undefined);
     renderBackLangSelect(undefined);
   } else if (result.status === 'error') {
     translationTextEl.value = result.error ?? 'Translation failed.';
@@ -194,6 +203,7 @@ function renderActiveResult(): void {
     backTranslationTextEl.textContent = '';
     renderDictionaryArea(undefined);
     renderDetectedLangSelect(undefined);
+    renderTargetLangSelect(undefined);
     renderBackLangSelect(undefined);
   } else {
     translationTextEl.readOnly = false;
@@ -203,6 +213,7 @@ function renderActiveResult(): void {
     backTranslationTextEl.textContent = result.backTranslatedText ?? '(back-translation unavailable)';
     renderDictionaryArea(result);
     renderDetectedLangSelect(result.detectedLang);
+    renderTargetLangSelect(result.targetLang);
     renderBackLangSelect(result.backLang);
   }
 
@@ -259,6 +270,18 @@ function renderDetectedLangSelect(detectedLang: string | undefined): void {
   detectedLangSelect.hidden = !show;
   if (show && detectedLang) {
     detectedSelectExtra = syncSelectWithFallback(detectedLangSelect, detectedLang, detectedSelectExtra);
+  }
+}
+
+// Same idea for the *resolved* target language (see resolveAutoTargetLang)
+// — only shown when the top Target dropdown is on "Auto", for the same
+// reason: a manually-picked target isn't "resolved", so there's nothing to
+// offer correcting. Editable via handleTargetOverrideChange.
+function renderTargetLangSelect(targetLang: string | undefined): void {
+  const show = state.targetLang === 'auto' && Boolean(targetLang);
+  targetLangOverrideSelect.hidden = !show;
+  if (show && targetLang) {
+    targetSelectExtra = syncSelectWithFallback(targetLangOverrideSelect, targetLang, targetSelectExtra);
   }
 }
 
@@ -423,7 +446,10 @@ async function ensureActiveResultLoaded(forceFresh = false): Promise<void> {
     }
 
     if (effectiveTargetLang === 'auto') {
-      effectiveTargetLang = resolveAutoTargetLang(effectiveSourceLang);
+      // A manual correction of a previous target-resolution result for
+      // this same captured text (see handleTargetOverrideChange) takes
+      // priority over recomputing it from the Languages-settings pair.
+      effectiveTargetLang = state.targetLangOverride ?? resolveAutoTargetLang(effectiveSourceLang);
       state.lastResolvedTargetLang = effectiveTargetLang;
     }
 
@@ -609,7 +635,23 @@ async function retranslateBackWithLang(providerId: string, newBackLang: string):
 // the correction.
 async function handleSourceOverrideChange(newLang: string): Promise<void> {
   state.sourceLangOverride = newLang;
+  // A corrected source likely resolves to a different target too (in Auto
+  // target mode) — starting the target override fresh avoids carrying
+  // forward a choice made for the old (wrong) source.
+  state.targetLangOverride = undefined;
   state.backLangOverrideByProvider.clear();
+  invalidateAllResults();
+  renderTabs();
+  renderActiveResult();
+  await ensureActiveResultLoaded(true);
+}
+
+// Issue #102: corrects the resolved target language for the current
+// captured text without leaving Auto target mode — parallel to
+// handleSourceOverrideChange. Doesn't touch sourceLangOverride or the
+// back-translation override, since those are independent axes.
+async function handleTargetOverrideChange(newLang: string): Promise<void> {
+  state.targetLangOverride = newLang;
   invalidateAllResults();
   renderTabs();
   renderActiveResult();
@@ -637,6 +679,7 @@ async function handleLanguageChange(): Promise<void> {
   // would otherwise resurface unexpectedly if the user later switches back
   // to Auto-Detect.
   state.sourceLangOverride = undefined;
+  state.targetLangOverride = undefined;
   state.backLangOverrideByProvider.clear();
   invalidateAllResults();
   renderTabs();
@@ -676,6 +719,7 @@ async function init(): Promise<void> {
   sourceLangSelect.addEventListener('change', () => void handleLanguageChange());
   targetLangSelect.addEventListener('change', () => void handleLanguageChange());
   detectedLangSelect.addEventListener('change', () => void handleSourceOverrideChange(detectedLangSelect.value));
+  targetLangOverrideSelect.addEventListener('change', () => void handleTargetOverrideChange(targetLangOverrideSelect.value));
   backLangSelect.addEventListener('change', () => void handleBackLangOverrideChange(backLangSelect.value));
   swapButton.addEventListener('click', () => void handleSwap());
   translateButton.addEventListener('click', () => void handleTranslateClick());
@@ -692,6 +736,7 @@ async function init(): Promise<void> {
     // A fresh capture starts clean — any per-capture correction from the
     // previous text no longer applies.
     state.sourceLangOverride = undefined;
+    state.targetLangOverride = undefined;
     state.backLangOverrideByProvider.clear();
     invalidateAllResults();
     renderTabs();

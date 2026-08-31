@@ -36,31 +36,6 @@ body {
   font-size: 12px;
 }
 
-.detected-lang-select {
-  flex: 0 0 auto;
-  width: auto;
-  max-width: 120px;
-  padding: 2px 4px;
-  border-radius: 3px;
-  border: 1px solid #b9d3f0;
-  background: #eaf1fb;
-  color: #2b6cb0;
-  font-size: 11px;
-}
-
-.back-lang-select {
-  margin-left: auto;
-  border: 1px solid #e0e0e0;
-  border-radius: 3px;
-  padding: 1px 4px;
-  font-size: 11px;
-  color: #555;
-  text-transform: none;
-  letter-spacing: normal;
-  font-weight: normal;
-  background: #ffffff;
-}
-
 #swap-langs {
   border: 1px solid #c9c9c9;
   background: #f3f3f3;
@@ -124,10 +99,35 @@ body {
   font-weight: 600;
   display: flex;
   align-items: center;
+  gap: 4px;
+}
+
+/* Grows to fill the heading, pushing whatever follows (the language
+   select, the speak button) flush to the right as a group — works
+   whether or not the select happens to be hidden, unlike relying on
+   margin-left:auto on individual trailing siblings. */
+.h2-title {
+  flex: 1;
+}
+
+/* One shared look for the per-section language control on Original,
+   Translation, and Back-translation — each shows the effective language
+   for that section and lets it be corrected, so they're deliberately
+   identical rather than each having its own visual treatment. */
+.section-lang-select {
+  border: 1px solid #e0e0e0;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 11px;
+  color: #555;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: normal;
+  background: #ffffff;
+  max-width: 120px;
 }
 
 .speak-btn {
-  margin-left: auto;
   border: none;
   background: transparent;
   cursor: pointer;

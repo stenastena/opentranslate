@@ -50,26 +50,27 @@ follow-up (requested by the project owner as a high-priority feature
 request after live-testing #14) shipped in two stages — #89/#90 — and was
 then hands-on tested live by the project owner: it works, but voice quality
 is "a bit better, not dramatically better" even with the settings in place
-— tracked as a fresh follow-up, **#93** (backlog, not urgent — open
-questions about whether NaturalVoiceSAPIAdapter was actually installed yet,
-logged in the issue). **#94 — Google request-volume/reliability fix** (this
-session, at the project owner's request after hitting 429 under light real
-usage) is fully shipped. **#98/#99 — editable detected/back-translation
-language + on-demand dictionary** (this session, from live back-translation
-testing that turned out not to be a bug — see below) are also fully
-shipped, and so are three more same-session fixes from further live
-feedback: **#101** (tray simplified to just opening the main window;
-hotkey opens it even with nothing selected), **#102** (all three per-
-section language selects — Original/Translation/Back-translation — now
-share identical styling, and Translation got its own resolved-target
+— tracked as a fresh follow-up, **#93**, since resolved (see #107 below).
+**#94 — Google request-volume/reliability fix** is fully shipped.
+**#98/#99 — editable detected/back-translation language + on-demand
+dictionary** are also fully shipped, and so are three more fixes from
+further live feedback: **#101** (tray simplified to just opening the main
+window; hotkey opens it even with nothing selected), **#102** (all three
+per-section language selects — Original/Translation/Back-translation —
+now share identical styling, and Translation got its own resolved-target
 override), and **#103** (the real root cause of "new voices don't show
 up": `systemProvider.ts` was always shelling out to Windows PowerShell
 5.1, which can't see modern "OneCore"-registered voices at all — fixed by
-preferring `pwsh.exe` when installed). **#97 — Microsoft Translator
-(Azure)** is filed but explicitly *not started*: needs a project-owner
-decision on whether the onboarding friction (a real Azure account,
-confirmed to need a non-prepaid card) is worth it before any adapter code
-gets written.
+preferring `pwsh.exe` when installed).
+
+**#107 — cloud-based neural TTS, #97 — Microsoft Translator (Bing),
+#112 — native cloud voice per translation tab, #96 — MyMemory, #117 —
+source-word gender article, and #119 — Bing dictionary breakdown** are
+all now shipped too (a later session — see the dedicated writeups below).
+**#93 is closed**: #107's Bing-neural default is the actual fix, not
+another SAPI-quality workaround. **#97's Azure-account blocker is moot**:
+the unofficial Bing web endpoint QTranslate itself uses sidesteps it
+entirely, no Azure account or decision needed.
 
 **Comparison against ahatem/QTranslate** (an actively-maintained modern
 Kotlin rewrite, not the original abandoned Questsoft app) was requested by
@@ -98,13 +99,16 @@ items, none started yet:
   blocker entirely — could ship as its own simpler adapter without
   waiting on any Azure decision.
 
-Remaining v0.2 backlog: Appearance settings (#15–20), Advanced settings
-(#25–29), Yandex (#75, needs a product decision, or try the free Mozhi-
-fallback route first), #93 (voice quality — re-verify against #103's fix
-before assuming it's still unresolved; #107 is the stronger fix if #103
-alone isn't enough), #96 (MyMemory, backlog), #97 (Microsoft Translator —
-the unofficial-Bing route doesn't need a decision the way official Azure
-does), #107/#108/#109 (all backlog, not started).
+Remaining backlog: **#116 — font size and font family selection**
+(Appearance, sub-issue of #15; the project owner's explicit next priority,
+ahead of the rest of Appearance — not started), the rest of Appearance
+settings (#17–20, theme/opacity/auto-position/border, all backlog),
+Advanced settings (#25–29), Yandex (#75, needs a product decision, or try
+the free Mozhi-fallback route first), **#109** (resilience patterns —
+rate-limiting, dual-endpoint fallback, official-key-first, backlog), and
+**#108 — Reverso**, explicitly deprioritized by the project owner
+(2026-09-01: "выносим из текущего 0.2 milestone... Переносим куда-то
+позже") and moved from the v0.2 to the **v0.4** milestone.
 
 The old "dictionary provider subsystem" issues (#21/#22/#23/#24) were closed
 this session as superseded: they asked for a generic multi-provider
@@ -449,6 +453,136 @@ three bugs, all now fixed:
     reproduce and fix the general gap) — re-verify with the project owner
     actually installing it, now that the underlying enumeration bug is
     fixed, to close the loop on #93 too.
+- **#107 — cloud-based neural TTS**, fully shipped (PR #110), the priority
+  follow-up to #93 explicitly requested by the project owner ("голос как у
+  них надо точно включить в наши задачи").
+  - `googleCloudTtsProvider` (`translate_tts`, gtx primary / tw-ob
+    fallback, 200-char chunking) and `bingCloudTtsProvider` (`tfettts`,
+    real Azure neural voices like "de-DE-KatjaNeural", auth scraped from
+    bing.com/translator) — both ported from ahatem/QTranslate's
+    `GoogleTTSService.kt`/`BingTTSService.kt`+`BingAuthManager.kt`, and
+    **every request shape verified live via curl** (including Bing's full
+    auth-token-scrape → SSML POST round trip) before writing any
+    TypeScript, not just inferred from the Kotlin source.
+  - `TTSProvider.speak()` now returns a `TTSSpeakResult`
+    (`{kind:'played'}` for `systemProvider.ts`, unchanged; `{kind:'audio',
+    data, mimeType}` for the two cloud providers, which can only fetch
+    bytes — nothing in the main process can play them). The popup plays
+    those via an `<audio>` element and awaits playback finishing, the same
+    way it already awaited PowerShell's blocking `Speak()` call for the
+    stop-button/icon logic.
+  - Settings gained a Voice-source dropdown (System / Google Cloud / Bing
+    Neural — **defaults to Bing Neural**, the actual fix for #93's
+    complaint) with its own Test button. Any cloud request that throws
+    falls back to the system voice for that one call
+    (`ipc/handlers.ts`), so a network hiccup never leaves Speak silent.
+  - **Live-tested bug found and fixed same session**: the per-language
+    SAPI Test button and the new Voice-source Test button both called
+    `tts.speak()` and discarded the response — fine for 'system' (already
+    played server-side) but silent for cloud (bytes returned, never
+    played). Fixed by giving Settings its own `playAudioAndWait` (no stop
+    button needed there, unlike the popup's).
+  - **#93 closed**: this is the real fix, not another SAPI workaround.
+- **#97 — Microsoft Translator, via the unofficial Bing web endpoint**,
+  fully shipped (PR #111) — the blocker on the *official* Azure route
+  (non-prepaid card required) turned out to be moot: QTranslate's own
+  `BingTranslatorService.kt` reaches Bing's engine through
+  `www.bing.com/ttranslatev3`, the same unofficial-endpoint pattern
+  already trusted elsewhere in this app, needing no Azure account at all.
+  - `providers/bingAuth.ts`: a shared IG/IID/key/token/MUID auth set
+    scraped from `bing.com/translator`'s HTML, cached ~55 minutes, reused
+    by translation *and* TTS (#107) — one page load, many API calls,
+    matching how a real browser session works. One forced-refresh retry
+    on any failure.
+  - Bing's own language codes match this app's bare codes directly except
+    Chinese (`zh` vs Bing's `zh-Hans`/`zh-Hant`) — confirmed live (bare
+    `zh` returns an in-body `{"statusCode":400}` error, not an HTTP
+    failure, so response-body inspection was needed, not just status
+    codes).
+- **#112 — Google/Bing translations speak with their own native cloud
+  voice**, fully shipped in two stages (PRs #113/#114), requested live
+  after #107 landed: "надо для Google и Bing озвучку делать родными cloud
+  сервисами. Остальные провайдеры пусть озвучиваются выбранным сервисом в
+  настройках."
+  - The popup now resolves which `providerOverride` to pass `tts.speak()`
+    based on the *active translation-provider tab* — Google tab → always
+    `google-cloud`, Bing tab → always `bing-cloud`, every other tab (DeepL/
+    Yandex/MyMemory) → whatever's chosen in Settings. Confirmed live: "Ok.
+    Хорошо" + follow-up confirmation that both Original and Translation
+    (stage 2, PR #114 — stage 1 only covered Translation) now behave this
+    way correctly.
+- **#96 — MyMemory Translation**, fully shipped (PR #115), a 5th provider
+  and the simplest integration yet: `api.mymemory.translated.net` is a
+  real, documented public API (not reverse-engineered) — plain `fetch`,
+  no curl/TLS workaround needed, no signup.
+  - Every language code this app uses (including `zh`, unlike Bing)
+    matches MyMemory's own directly. `auto` maps to MyMemory's
+    `autodetect` sentinel. The free tier's 500-char limit is checked
+    client-side (confirmed live: MyMemory returns a clean error message
+    for an over-limit request, not silent truncation). Error responses
+    are HTTP 200 with the failure embedded in the body, and
+    `responseStatus` is a *string* on error but a *number* on success —
+    confirmed live, handled explicitly.
+  - **Ships off by default**: its translation-memory-based answers are
+    "generally strong for common EU pairs, more inconsistent for others"
+    per the issue — and this session's own `check-providers` run
+    demonstrated that caveat directly and unprompted: the top match for
+    "Hello, world!" → German was the English text itself. Confirmed
+    working live by the project owner, with the expected limitations
+    noted and accepted ("Есть ограничения на автоматическое использование
+    языков. В целом устраивает").
+- **#117 — source-word gender article**, fully shipped (PR #118), reported
+  live via screenshot: German "Einschränkungen" → Russian showed no
+  gender/article at all. Not a regression — #76's `genderArticle` only
+  ever computed an article for the *translated* word, gated on the target
+  using articles (de/fr/es/it/pt/nl); Russian isn't one, so nothing fired,
+  but the *source* word being German (regardless of target) was never
+  accounted for.
+  - `google.ts` now also computes `sourceGenderArticle`, reusing
+    `findTranslationGender(word, lang, skipCache)` unchanged — that
+    function only ever cared about a (word, lang) pair, not which "side"
+    it came from. Verified live end-to-end with the exact reported word
+    (`Einschränkung` → gloss "Limitation" → dict entry `previous_word:
+    "die"`) before writing any test fixtures.
+  - New badge next to "Original", mirroring the existing one next to
+    "Translation" (`renderGenderBadge` now takes the target element as a
+    parameter). Confirmed working live by the project owner ("Отлично").
+- **#119 — Bing dictionary breakdown**, fully shipped (PR #120), requested
+  live: "надо проверить возможность создания dictionary через Bing. Если
+  это возможно, тогда надо завести задачу и итоже начать исполнение."
+  - No prior art to port — unlike Google/Reverso/AI/CSV, ahatem/QTranslate
+    has no `BingDictionaryService.kt`. Found instead by opening
+    bing.com/translator in a real browser and watching its own network
+    traffic while looking up a single word: it fires `tlookupv3` (the
+    dictionary panel) alongside `ttranslatev3`, on the same shared auth.
+  - `providers/bingDictionary.ts` parses `tlookupv3`'s response
+    (POS-tagged, confidence-ranked candidates with back-translations) into
+    the existing `GoogleDictionary` shape, so the popup's rendering code
+    needed zero changes. `bingTranslate.ts` fetches it best-effort after a
+    successful single-word, non-lightweight translate — a lookup failure
+    never fails the translation itself.
+  - **One confirmed real gap**: `prefixWord` (Bing's equivalent of
+    Google's `previous_word`, the field #76/#117's gender display is
+    built on) came back empty for every word tested live (house,
+    restriction, bridge, run) — Bing's dictionary API just doesn't appear
+    to carry grammatical gender. Read defensively in case it's ever
+    populated, but the Bing tab isn't expected to show a gender badge.
+  - **Live-tested bug found and fixed same session**: German → Russian's
+    "Show Dictionary" made the button silently vanish with nothing shown
+    (confirmed live via curl: Bing's `tlookupv3` genuinely has no data
+    for that pair — `{"statusCode":400}` — a real Bing limitation, not a
+    parsing bug). The UI bug was separate: `dictionaryStatus` went
+    straight to 'loaded' regardless of whether anything came back.
+    `renderDictionary()` now takes an `attempted` flag and shows "No
+    dictionary data available for this word or language pair." instead of
+    silently hiding. Confirmed fixed live by the project owner.
+- **#108 — Reverso deprioritized**, at the project owner's explicit
+  request (2026-09-01) — moved from the v0.2 to the **v0.4** milestone,
+  no code changes. **#116 — font size and font family selection** filed
+  as a new sub-issue of #15 (Appearance) and marked the project owner's
+  priority for the *next* piece of work, ahead of the rest of Appearance
+  — not started yet ("Род - важнее UI" paused it once already this
+  session in favor of #117; pick it back up next).
 
 Two notes on the merged history (informational, no action needed):
 - PR #64 (popup window) left one harmless empty extra commit on `main`
@@ -474,39 +608,48 @@ Paste this (or just "continue OpenTranslate") to pick the session back up:
 > npm run check-providers
 > ```
 >
-> v0.1 is fully shipped. v0.2's translation history, Google dictionary
-> output, text-to-speech (#8–#11, #76, #12–#14, #89/#90/#98/#99/#101/#102/
-> #103), and the Google request-volume fix (#94) are all done and merged.
+> v0.1 is fully shipped. v0.2's translation history, dictionary/gender
+> data (Google #76 + source-side #117, Bing #119), text-to-speech —
+> offline SAPI *and* cloud-neural (#12–#14, #89/#90/#93/#103/#107),
+> five translation providers (DeepL/Yandex/Google/Bing #97/MyMemory #96),
+> per-tab native cloud voice (#112), and the request-volume/reliability
+> fixes (#94) are all done and merged.
 >
-> **Immediate next step, already explicitly requested but not yet started:**
-> **#107 — cloud-based neural TTS**, via the same unofficial-endpoint
-> pattern already trusted for translation (Google's `translate_tts`,
-> Bing's `tfettts` with real Azure neural voices — see the issue body,
-> written after reading ahatem/QTranslate's actual plugin source for both).
-> This is the priority follow-up to #93 (SAPI voice quality still "a bit
-> better, not dramatically better" even after #103's enumeration fix) —
-> the project owner asked to start on this specifically ("голос как у них
-> надо точно включить в наши задачи" / "приступай к задачам связанным с
-> голосом как в QTranslate") and it hasn't been picked up yet this session.
-> Start here before anything else in the list below.
+> **2026-09-01: the project owner stepped away for an unknown period and
+> explicitly asked for autonomous work to continue in their absence**
+> ("Я сейчас уйду на какое-то время. Интерактива не будет. Работай
+> автономно над всеми задачами... Обновляй документацию по мере
+> выполнения каждой задачи."). This session's own mandatory
+> interactive-verification workflow (see the Notes below) **cannot run
+> hands-on checks during this stretch** — there's no one to click Test or
+> confirm audio output. Substitute: build + typecheck + unit tests +
+> (for renderer-only changes) a stubbed-`electronAPI` browser preview,
+> merge once CI is green per the usual autonomous PR workflow, and note
+> plainly in both the PR and here whenever something genuinely needs a
+> real hands-on check (audio, hotkey capture, OS-level focus/input) that
+> hasn't happened yet — don't claim it's confirmed when it isn't.
 >
-> Everything else here is backlog, not blocking anything — pick whichever
-> makes sense next, autonomously, once #107 is underway or done:
+> **Immediate next step, the project owner's explicit priority:**
+> **#116 — font size and font family selection** (sub-issue of #15,
+> Appearance). Requested directly ahead of the rest of Appearance
+> ("Меня больше интересует настройка размеров шрифтов и возможно выбор
+> шрифтов") — start here.
 >
-> 1. **#108 (Reverso)** — niche 4th provider, 6 languages, no Auto-Detect
->    support (confirmed from their source) — a genuine but narrow addition.
-> 2. **#96 (MyMemory)** — simplest free 4th provider, no API key.
-> 3. **#97 (Microsoft Translator)** — the *official* Azure route is stuck
->    on a real blocker (card required, no way around it); the *unofficial
->    Bing* route (per the newest comment on the issue) sidesteps that
->    entirely and could ship independently, as its own simpler adapter.
-> 4. **#109 (resilience patterns)** — proactive rate-limiting, dual-endpoint
->    fallback per provider, official-key-first-with-free-fallback on the
->    same provider (not a separate one) — hardening, not urgent.
-> 5. **#75 (Yandex)** — try the free Mozhi-fallback route (see the issue's
->    newest comment) before defaulting to "needs a paid API key".
-> 6. **Appearance settings (#15–20)** and **Advanced settings (#25–29)** —
->    next in backlog order after the above.
+> Everything else is backlog, not blocking anything — work through it
+> autonomously, in this rough order:
+>
+> 1. **Rest of Appearance (#17–20)** — window opacity, auto-position/
+>    auto-size refinement, border thickness/color, pin-when-dragged.
+> 2. **Advanced settings (#25–29)** — mouse interaction modes, OCR API
+>    key, configurable copy action, default browser.
+> 3. **#109 (resilience patterns)** — proactive rate-limiting,
+>    dual-endpoint fallback, official-key-first-with-free-fallback —
+>    hardening, not urgent, no current complaint driving it.
+> 4. **#75 (Yandex)** — try the free Mozhi-fallback route (see the
+>    issue's newest comment) before defaulting to "needs a paid API key".
+> 5. **#108 (Reverso)** — explicitly deprioritized by the project owner
+>    this session and moved to the **v0.4** milestone; leave it there
+>    unless re-prioritized.
 >
 > Same process as every prior session: issue already exists (or file one) →
 > branch → PR → CI → merge, one sub-issue at a time. Handle the routine
@@ -514,21 +657,25 @@ Paste this (or just "continue OpenTranslate") to pick the session back up:
 > mixed changes into separate PRs, project-board status) autonomously
 > without checking in — only surface things that need hands-on interaction
 > with the running app, or a genuine product/cost decision the spec
-> doesn't answer (e.g. #75's or #97's eventual choice, if a real tradeoff
-> comes up).
+> doesn't answer (e.g. #75's eventual choice, if a real tradeoff comes up)
+> — and while the project owner is away, note those rather than blocking.
 
 ### Notes for whoever picks this up
 
 - **Mandatory interactive-verification workflow (standing instruction,
-  not optional)**: after any UI/OS-facing change, don't just describe what
-  was done in text — either (a) build a fresh installer and send it, or
-  (b) launch the app for the user to test themselves. And do (b) *first*:
-  launch in a separate, visible terminal window (e.g. via PowerShell's
-  `Start-Process cmd.exe -ArgumentList '/k','cd /d <path> && npm run
-  dev'` — not a hidden Bash background job) for a quick interactive check,
-  wait for approval, *then* run the (slower) `npm run package` build. See
+  not optional whenever the project owner IS available)**: after any UI/
+  OS-facing change, don't just describe what was done in text — either
+  (a) build a fresh installer and send it, or (b) launch the app for the
+  user to test themselves. And do (b) *first*: launch in a separate,
+  visible terminal window (e.g. via PowerShell's `Start-Process cmd.exe
+  -ArgumentList '/k','cd /d <path> && npm run dev'` — not a hidden Bash
+  background job) for a quick interactive check, wait for approval,
+  *then* run the (slower) `npm run package` build. See
   [[feedback-autonomous-workflow]] in memory for the exact wording and
-  reasoning — this is a durable preference, don't re-ask about it.
+  reasoning — this is a durable preference, don't re-ask about it. **The
+  one exception**: the 2026-09-01 autonomous stretch above, where no one
+  is available to run it — substitute build+typecheck+tests and say so
+  explicitly rather than silently skipping the step or claiming it ran.
 - If `check-providers` shows Google 429ing, don't chase it — treat it the
   same way past sessions have: a real but temporary upstream limit from
   testing volume, not a bug. Move on and check back later.
@@ -541,11 +688,21 @@ Paste this (or just "continue OpenTranslate") to pick the session back up:
   building+running the app for real over trusting typecheck+tests alone —
   IPC bugs, path-resolution bugs, and OS-level input/audio/focus quirks
   don't show up in typecheck or mocked unit tests. A stubbed-`electronAPI`
-  browser preview of the real bundled JS/CSS (used successfully throughout
-  this session, e.g. for #98/#102) is good for verifying UI logic and
-  layout, but real audio output and the actual hotkey-driven capture flow
-  need the real app, per the mandatory-verification note above.
-- When comparing against or citing another project (e.g. this session's
-  ahatem/QTranslate research behind #107/#108/#109), read its actual
-  source before asserting what it does — READMEs oversell; the real
-  answer was in `plugins/*/src/main/kotlin/**/*.kt` each time.
+  browser preview of the real bundled JS/CSS is good for verifying UI
+  logic and layout, but real audio output and the actual hotkey-driven
+  capture flow need the real app, per the mandatory-verification note
+  above (or the project owner's own testing, if they're away).
+- When comparing against or citing another project (e.g. the ahatem/
+  QTranslate research behind #107/#97/#119), read its actual source
+  before asserting what it does — READMEs oversell; the real answer was
+  in `plugins/*/src/main/kotlin/**/*.kt` each time, and for #119
+  specifically (no Kotlin source existed at all) live network-traffic
+  inspection of the real site found the actual endpoint.
+- Several endpoint/auth shapes this session (#107's Bing TTS auth scrape,
+  #97's translate auth, #119's `tlookupv3`) were discovered or confirmed
+  by opening the real site in the Browser tool and reading its own
+  network requests/response bodies live, not just by reading QTranslate's
+  Kotlin source or guessing — worth doing again for any new unofficial
+  endpoint rather than assuming the Kotlin source alone is enough (it
+  wasn't, for Bing's TTS auth flow — the source needed the exact request
+  shape confirmed live before it actually worked).

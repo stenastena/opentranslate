@@ -46,6 +46,44 @@ root-cause writeups.
 - Google's dictionary/gender-article data is now fetched only when the
   user clicks a new "Show Dictionary" button, not automatically with
   every lookup (#99).
+- Cloud-based, neural text-to-speech: `googleCloudTtsProvider` (Google
+  Translate's own `translate_tts` endpoint) and `bingCloudTtsProvider`
+  (Bing's `tfettts` endpoint, real Azure neural voices, e.g.
+  "de-DE-KatjaNeural") alongside the existing offline SAPI voices. A new
+  Voice-source setting in Settings → Voice picks which one Speak actually
+  uses — defaults to Bing Neural, the direct fix for the recurring
+  "voice quality isn't dramatically better" feedback (#93) — with a
+  Test button, and any cloud request that fails automatically falls back
+  to a system voice for that one call so Speak never goes fully silent
+  (#107).
+- **Microsoft Translator**, via the same unofficial `ttranslatev3`
+  endpoint bing.com/translator's own UI calls — a 4th translation
+  provider tab, sidestepping the official Azure API's real blocker (a
+  non-prepaid card required even to stay on the free tier) entirely
+  (#97).
+- Google and Bing translation tabs now speak Original/Translation with
+  that provider's *own* native cloud voice, regardless of the
+  Voice-source setting — every other provider tab (DeepL/Yandex/
+  MyMemory) still follows whatever's selected in Settings (#112).
+- **MyMemory Translation**, a 5th provider — a real, documented public
+  API (not reverse-engineered), free and anonymous with no signup. Ships
+  off by default: its translation-memory-based answers are strong for
+  common language pairs but can occasionally surface a low-quality
+  stored match ahead of a better one, confirmed live during testing
+  (#96).
+- The definite-article/gender badge (der/die/das, le/la — see #76) now
+  also computes for the *source* word, not just the translated one —
+  translating a German/French/etc. word into a language with no
+  articles of its own (e.g. Russian) previously showed no gender at all
+  even though the source word has one (#117).
+- Bing dictionary breakdown, via the unofficial `tlookupv3` endpoint
+  behind Bing Translator's own dictionary panel — parts of speech,
+  confidence-ranked translation candidates, and back-translations as a
+  synonyms equivalent, parsed into the same shape Google's dictionary
+  uses. "Show Dictionary" is now available on the Bing tab too. Unlike
+  Google's data, Bing's dictionary API doesn't appear to expose
+  grammatical gender at all — confirmed empty across every word tested
+  live, so the Bing tab isn't expected to show a gender badge (#119).
 
 ### Fixed
 - Capture reliability: the first several hotkey presses after launch
@@ -76,6 +114,15 @@ root-cause writeups.
   popup's own File menu); simplified to just opening the main window,
   and the hotkey now opens it even when nothing was selected, instead of
   silently doing nothing (#101).
+- Settings' Voice-source Test button awaited the cloud provider's
+  response but never actually played it, staying silent for Google/Bing
+  while the per-language system-voice Test buttons worked fine (#107
+  follow-up, found via live testing).
+- "Show Dictionary" could complete with nothing to show (e.g. Bing's
+  dictionary endpoint has no data for German→Russian even though it does
+  for German→English) and just make the button vanish with no
+  explanation — now shows "No dictionary data available for this word or
+  language pair." instead (#119 follow-up, found via live testing).
 
 ### Changed
 - Popup window: closes only on Esc instead of on losing focus, is a real
@@ -101,7 +148,10 @@ root-cause writeups.
   lookup opt-in (#99, above) cut the default per-lookup cost further,
   from up to 3 requests to at most 1.
 
-See the [v0.2 milestone](../../milestone/2) for what's next (TTS).
+See the [v0.2 milestone](../../milestone/2) and
+[v0.3 milestone](../../milestone/3) for what's next — Appearance settings
+(font size/family is the current priority) and the remaining backlog
+(Reverso, resilience/rate-limiting patterns, Yandex's CAPTCHA wall).
 
 ## [0.1.0] - 2026-08-28
 

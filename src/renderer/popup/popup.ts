@@ -22,6 +22,7 @@ interface TabResult {
   error?: string;
   dictionary?: GoogleDictionary;
   genderArticle?: string;
+  sourceGenderArticle?: string;
   // Google's dictionary/gender data (issue #76) is opt-in via the "Show
   // Dictionary" button (issue #99) rather than fetched automatically with
   // every lookup — this tracks whether that's been requested yet for this
@@ -99,6 +100,7 @@ const dictionarySection = document.getElementById('dictionary-section') as HTMLD
 const dictionaryContentEl = document.getElementById('dictionary-content')!;
 const loadDictionaryButton = document.getElementById('load-dictionary-btn') as HTMLButtonElement;
 const translationGenderEl = document.getElementById('translation-gender')!;
+const originalGenderEl = document.getElementById('original-gender')!;
 const speakOriginalButton = document.getElementById('speak-original-btn') as HTMLButtonElement;
 const speakTranslationButton = document.getElementById('speak-translation-btn') as HTMLButtonElement;
 
@@ -269,22 +271,25 @@ function renderDictionaryArea(result: TabResult | undefined): void {
 
   if (status === 'loaded') {
     renderDictionary(result?.dictionary);
-    renderGenderBadge(result?.genderArticle);
+    renderGenderBadge(translationGenderEl, result?.genderArticle);
+    renderGenderBadge(originalGenderEl, result?.sourceGenderArticle);
   } else {
     renderDictionary(undefined);
-    renderGenderBadge(undefined);
+    renderGenderBadge(translationGenderEl, undefined);
+    renderGenderBadge(originalGenderEl, undefined);
   }
 }
 
-// Shows the definite article for the current translation right next to
-// the "Translation" heading — the Dictionary section's own entries can
-// list a different word/article than what the translator actually
-// produced (Google's sentence translator and its dictionary lookup are
-// separate subsystems that don't always agree on the top candidate), so
-// this is specifically the article for translatedText itself.
-function renderGenderBadge(genderArticle: string | undefined): void {
-  translationGenderEl.hidden = !genderArticle;
-  translationGenderEl.textContent = genderArticle ?? '';
+// Shows the definite article for a specific word (source or translated)
+// right next to its section's heading — the Dictionary section's own
+// entries can list a different word/article than what the translator
+// actually produced (Google's sentence translator and its dictionary
+// lookup are separate subsystems that don't always agree on the top
+// candidate), so this is specifically the article for that exact word,
+// not necessarily whichever candidate the Dictionary section shows.
+function renderGenderBadge(el: HTMLElement, genderArticle: string | undefined): void {
+  el.hidden = !genderArticle;
+  el.textContent = genderArticle ?? '';
 }
 
 // Auto-Detect's source language is a fully open call to the provider's own
@@ -586,6 +591,7 @@ async function handleLoadDictionary(): Promise<void> {
     ...current,
     dictionary: fullResult.ok ? fullResult.value.dictionary : undefined,
     genderArticle: fullResult.ok ? fullResult.value.genderArticle : undefined,
+    sourceGenderArticle: fullResult.ok ? fullResult.value.sourceGenderArticle : undefined,
     dictionaryStatus: 'loaded',
   });
   if (providerId === state.activeProviderId) renderActiveResult();

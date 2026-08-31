@@ -151,6 +151,19 @@ async function callGoogle(text: string, sourceLang: string, targetLang: string, 
     result.genderArticle = findArticleForWord(data, result.translatedText) ?? (await findTranslationGender(result.translatedText, targetLang, skipCache));
   }
 
+  // Mirrors the block above, for the *source* word instead of the
+  // translated one — findTranslationGender(word, lang, ...) only cares
+  // about word+lang, so the exact same pivot (word -> English gloss ->
+  // dictionary lookup back into lang) works unchanged here, just called
+  // with the source side of the pair instead of the target side. No fast
+  // path via findArticleForWord(data, ...) here: `data`'s dict entries are
+  // in targetLang, not sourceLang, so they'd never match the source word.
+  const resolvedSourceLang = result.detectedSourceLang ?? sourceLang;
+  const trimmedText = text.trim();
+  if (includeExtras && ARTICLE_LANGUAGES.has(resolvedSourceLang) && !trimmedText.includes(' ')) {
+    result.sourceGenderArticle = await findTranslationGender(trimmedText, resolvedSourceLang, skipCache);
+  }
+
   return result;
 }
 

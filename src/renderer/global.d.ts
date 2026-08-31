@@ -12,7 +12,7 @@ interface AppSettings {
   languages: { autoDetectFirst: string; autoDetectSecond: string };
   services: { deepl: boolean; yandex: boolean; google: boolean; bing: boolean; mymemory: boolean };
   tts: { provider: TTSProviderId; voiceByLang: Record<string, string> };
-  appearance: { fontSize: number; fontFamily: string };
+  appearance: { fontSize: number; fontFamily: string; opacity: number };
 }
 
 // null means the selected provider already played the audio itself

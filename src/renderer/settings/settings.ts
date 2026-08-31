@@ -43,6 +43,8 @@ const fontSizeRange = document.getElementById('font-size-range') as HTMLInputEle
 const fontSizeValue = document.getElementById('font-size-value')!;
 const fontFamilySelect = document.getElementById('font-family-select') as HTMLSelectElement;
 const fontPreview = document.getElementById('font-preview')!;
+const opacityRange = document.getElementById('opacity-range') as HTMLInputElement;
+const opacityValue = document.getElementById('opacity-value')!;
 
 interface VoiceRow {
   lang: string;
@@ -76,6 +78,13 @@ function updateFontPreview(): void {
   fontSizeValue.textContent = `${size}px`;
   fontPreview.style.fontSize = `${size}px`;
   fontPreview.style.fontFamily = fontStackFor(fontFamilySelect.value);
+}
+
+// No live preview here (unlike font size/family) — opacity is a property
+// of the *popup* window, a different window from this one, so there's
+// nothing in this document to visibly apply it to.
+function updateOpacityValue(): void {
+  opacityValue.textContent = `${opacityRange.value}%`;
 }
 
 function setupTabs(): void {
@@ -271,6 +280,8 @@ async function loadSettings(): Promise<void> {
   fontSizeRange.value = String(settings.appearance.fontSize);
   fontFamilySelect.value = settings.appearance.fontFamily;
   updateFontPreview();
+  opacityRange.value = String(Math.round(settings.appearance.opacity * 100));
+  updateOpacityValue();
 }
 
 async function handleSave(): Promise<void> {
@@ -291,7 +302,11 @@ async function handleSave(): Promise<void> {
         mymemory: serviceCheckboxes.mymemory.checked,
       },
       tts: { provider: ttsProviderSelect.value as TTSProviderId, voiceByLang },
-      appearance: { fontSize: Number(fontSizeRange.value), fontFamily: fontFamilySelect.value },
+      appearance: {
+        fontSize: Number(fontSizeRange.value),
+        fontFamily: fontFamilySelect.value,
+        opacity: Number(opacityRange.value) / 100,
+      },
     });
     statusText.textContent = 'Saved.';
   } catch (error) {
@@ -319,6 +334,7 @@ async function init(): Promise<void> {
   ttsProviderTestButton.addEventListener('click', () => void handleTestTtsProvider());
   fontSizeRange.addEventListener('input', updateFontPreview);
   fontFamilySelect.addEventListener('change', updateFontPreview);
+  opacityRange.addEventListener('input', updateOpacityValue);
   naturalVoiceLink.addEventListener('click', () => {
     window.electronAPI.tts.openNaturalVoiceAdapterPage().catch((error) => console.error('[settings] failed to open NaturalVoiceSAPIAdapter page', error));
   });

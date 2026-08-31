@@ -50,6 +50,13 @@ export interface TTSSettings {
 export interface AppearanceSettings {
   fontSize: number; // px
   fontFamily: string;
+  // Issue #17: the popup *window's* opacity (Electron's native
+  // BrowserWindow.opacity, applied at creation — not a CSS effect on
+  // content). 0.3-1.0; clamped defensively wherever it's read, since a
+  // hand-edited settings.json with an out-of-range or 0 value would
+  // otherwise make the popup invisible/unusable with no obvious way back
+  // in from the UI alone.
+  opacity: number;
 }
 
 export interface AppSettings {
@@ -74,5 +81,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
   tts: { provider: 'bing-cloud', voiceByLang: {} },
   // Matches popup.css's pre-#116 hardcoded values exactly, so anyone who
   // never opens Appearance settings sees the popup completely unchanged.
-  appearance: { fontSize: 13, fontFamily: 'default' },
+  // opacity: 1 (fully opaque) is today's implicit behavior — Electron's
+  // own default when no `opacity` constructor option is given at all.
+  appearance: { fontSize: 13, fontFamily: 'default', opacity: 1 },
 };
+
+export const MIN_OPACITY = 0.3;
+export const MAX_OPACITY = 1;
+
+export function clampOpacity(value: number): number {
+  if (!Number.isFinite(value)) return MAX_OPACITY;
+  return Math.min(MAX_OPACITY, Math.max(MIN_OPACITY, value));
+}

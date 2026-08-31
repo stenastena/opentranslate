@@ -76,9 +76,37 @@
       </section>
 
       <section id="panel-appearance" class="panel">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="custom">Custom</option>
+        </select>
+
+        <div id="custom-colors-row" class="custom-colors-row" hidden>
+          <label>Background <input id="custom-color-background" type="color" /></label>
+          <label>Text <input id="custom-color-text" type="color" /></label>
+          <label>Accent <input id="custom-color-accent" type="color" /></label>
+        </div>
+
+        <div id="theme-preview" class="theme-preview">
+          <div class="theme-preview-tabs">
+            <span class="theme-preview-tab active">DeepL</span>
+            <span class="theme-preview-tab">Google</span>
+          </div>
+          <div class="theme-preview-label">Original</div>
+          <div class="theme-preview-block">Hello, world!</div>
+          <div class="theme-preview-label">Translation<span class="gender-badge-preview">die</span></div>
+          <div class="theme-preview-block">Привет, мир!</div>
+        </div>
         <p class="hint">
-          Applies to the popup's Original, Translation, and Back-translation text — not the surrounding buttons,
-          tabs, or labels.
+          Applies to the whole popup window. Custom lets you pick three colors (background, text, accent) — every
+          other shade is derived from those automatically.
+        </p>
+
+        <p class="hint">
+          Font settings below apply to the popup's Original, Translation, and Back-translation text specifically —
+          not the surrounding buttons, tabs, or labels.
         </p>
 
         <label for="font-size-range">Font size</label>

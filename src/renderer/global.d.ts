@@ -6,13 +6,20 @@
 export {};
 
 type TTSProviderId = 'system' | 'google-cloud' | 'bing-cloud';
+type ThemeMode = 'light' | 'dark' | 'custom';
+
+interface CustomThemeColors {
+  background: string;
+  text: string;
+  accent: string;
+}
 
 interface AppSettings {
   hotkeys: { captureAndTranslate: string };
   languages: { autoDetectFirst: string; autoDetectSecond: string };
   services: { deepl: boolean; yandex: boolean; google: boolean; bing: boolean; mymemory: boolean };
   tts: { provider: TTSProviderId; voiceByLang: Record<string, string> };
-  appearance: { fontSize: number; fontFamily: string; opacity: number };
+  appearance: { fontSize: number; fontFamily: string; opacity: number; theme: ThemeMode; customColors: CustomThemeColors };
 }
 
 // null means the selected provider already played the audio itself
@@ -119,5 +126,13 @@ declare global {
   interface TTSSpeakResponse {
     audioBase64: string;
     mimeType: string;
+  }
+
+  type ThemeMode = 'light' | 'dark' | 'custom';
+
+  interface CustomThemeColors {
+    background: string;
+    text: string;
+    accent: string;
   }
 }

@@ -1,5 +1,6 @@
 import { fontStackFor } from '../shared/fonts.js';
 import { LANGUAGES, languageLabel } from '../shared/languages.js';
+import { applyTheme } from '../shared/theme.js';
 
 const PROVIDER_LABELS: Record<string, string> = {
   deepl: 'DeepL',
@@ -793,9 +794,10 @@ async function handleSwap(): Promise<void> {
 // already-open popup if Settings changes elsewhere — matches how every
 // other setting here already behaves (e.g. voiceByLang), and the popup is
 // normally closed/reopened per capture anyway.
-function applyAppearance(appearance: { fontSize: number; fontFamily: string }): void {
+function applyAppearance(appearance: { fontSize: number; fontFamily: string; theme: ThemeMode; customColors: CustomThemeColors }): void {
   document.documentElement.style.setProperty('--content-font-size', `${appearance.fontSize}px`);
   document.documentElement.style.setProperty('--content-font-family', fontStackFor(appearance.fontFamily));
+  applyTheme(document.documentElement, appearance.theme, appearance.customColors);
 }
 
 async function init(): Promise<void> {

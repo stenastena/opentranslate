@@ -255,26 +255,28 @@ function renderActiveResult(): void {
   speakTranslationButton.disabled = !result || result.status !== 'ok' || !translationTextEl.value.trim();
 }
 
-// Google's dictionary/gender data (issue #76) is only ever fetched when the
-// user explicitly clicks "Show Dictionary" (issue #99) rather than with
-// every lookup, to cut Google's automatic per-lookup request cost — this
-// renders whichever of {button, loading, content} matches dictionaryStatus.
-// Only Google ever returns this data, so the button is hidden for every
-// other provider tab regardless of status.
+// Dictionary/gender data (Google: issue #76, Bing: issue #119) is only
+// ever fetched when the user explicitly clicks "Show Dictionary" (issue
+// #99) rather than with every lookup, to cut the extra per-lookup request
+// cost — this renders whichever of {button, loading, content} matches
+// dictionaryStatus. Only Google and Bing ever return this data, so the
+// button stays hidden for every other provider tab regardless of status.
+const DICTIONARY_CAPABLE_PROVIDERS = new Set(['google', 'bing']);
+
 function renderDictionaryArea(result: TabResult | undefined): void {
-  const isGoogle = state.activeProviderId === 'google';
+  const supportsDictionary = state.activeProviderId !== null && DICTIONARY_CAPABLE_PROVIDERS.has(state.activeProviderId);
   const status = result?.dictionaryStatus ?? 'idle';
 
-  loadDictionaryButton.hidden = !(isGoogle && result && status !== 'loaded');
+  loadDictionaryButton.hidden = !(supportsDictionary && result && status !== 'loaded');
   loadDictionaryButton.disabled = status === 'loading';
   loadDictionaryButton.textContent = status === 'loading' ? 'Loading…' : 'Show Dictionary';
 
   if (status === 'loaded') {
-    renderDictionary(result?.dictionary);
+    renderDictionary(result?.dictionary, true);
     renderGenderBadge(translationGenderEl, result?.genderArticle);
     renderGenderBadge(originalGenderEl, result?.sourceGenderArticle);
   } else {
-    renderDictionary(undefined);
+    renderDictionary(undefined, false);
     renderGenderBadge(translationGenderEl, undefined);
     renderGenderBadge(originalGenderEl, undefined);
   }
@@ -420,18 +422,34 @@ async function handleSpeakClick(button: HTMLButtonElement, getData: () => SpeakD
   }
 }
 
-// Only Google ever returns dictionary data (issue #76); every other
-// provider/tab simply has no dictionary field, and a translated phrase has
-// no part-of-speech entries even from Google — in both cases the section
-// stays hidden rather than showing an empty shell.
-function renderDictionary(dictionary: GoogleDictionary | undefined): void {
+// `attempted` distinguishes "no lookup has happened yet" (idle/loading —
+// section stays hidden, nothing to say) from "a lookup just ran and came
+// back with nothing" (loaded but empty — worth telling the user, rather
+// than the button silently vanishing with no explanation). The latter is
+// a real, expected outcome, not a bug: Bing's dictionary endpoint (issue
+// #119) only covers a subset of language pairs — confirmed live that
+// German -> Russian, for example, returns no data at all even though
+// German -> English does for the exact same word.
+function renderDictionary(dictionary: GoogleDictionary | undefined, attempted: boolean): void {
   dictionaryContentEl.innerHTML = '';
 
   const hasContent = Boolean(
     dictionary && (dictionary.entries.length > 0 || dictionary.examples.length > 0 || dictionary.alternativeTranslations.length > 0),
   );
-  dictionarySection.hidden = !hasContent;
-  if (!dictionary || !hasContent) return;
+
+  if (!hasContent) {
+    dictionarySection.hidden = !attempted;
+    if (attempted) {
+      const empty = document.createElement('p');
+      empty.className = 'dict-empty';
+      empty.textContent = 'No dictionary data available for this word or language pair.';
+      dictionaryContentEl.appendChild(empty);
+    }
+    return;
+  }
+
+  if (!dictionary) return; // unreachable — hasContent already implies this, just narrowing for TS
+  dictionarySection.hidden = false;
 
   for (const entry of dictionary.entries) {
     const entryEl = document.createElement('div');

@@ -3,9 +3,11 @@ import { GoogleDictionary } from './googleDictionary';
 export interface TranslationResult {
   translatedText: string;
   detectedSourceLang?: string;
-  // Only ever populated by the Google provider (issue #76) — its unofficial
-  // endpoint can return a dictionary breakdown (parts of speech, synonyms,
-  // definitions, examples) that DeepL/Yandex have no equivalent for.
+  // Populated by the Google (issue #76) and Bing (issue #119) providers —
+  // both have an unofficial dictionary-breakdown endpoint (parts of speech,
+  // synonyms, definitions/back-translations) that DeepL/Yandex/MyMemory
+  // have no equivalent for. The type is still named after Google (its
+  // first source) but the shape fits both.
   dictionary?: GoogleDictionary;
   // The definite article for translatedText specifically (e.g. "das" for
   // "Geschäft") when the target language uses grammatical articles — see

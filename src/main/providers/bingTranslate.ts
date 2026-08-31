@@ -1,4 +1,5 @@
 import { getBingAuth } from './bingAuth';
+import { findBingGenderArticle, parseBingDictionary, RawBingLookupEntry } from './bingDictionary';
 import { CHROME_USER_AGENT } from './browserHeaders';
 import { curlPostForm } from './curlFetch';
 import { logProviderParseError } from './logger';
@@ -13,6 +14,11 @@ import { ProviderError, TranslationProvider, TranslationResult } from './types';
 // scrapes from bing.com/translator. Confirmed live end-to-end (2026-09-01)
 // against every language this app supports.
 const TRANSLATE_URL = 'https://www.bing.com/ttranslatev3';
+// Issue #119: the dictionary-breakdown endpoint behind Bing Translator's
+// own dictionary panel — same auth as TRANSLATE_URL, but needs the
+// already-known translation as an extra field (it's a lookup keyed off an
+// existing translate result, not a standalone call).
+const LOOKUP_URL = 'https://www.bing.com/tlookupv3';
 const HEALTH_CHECK_TEXT = 'hello';
 
 // Bing's own language codes match this app's bare ISO codes directly for
@@ -98,30 +104,74 @@ async function requestBing(text: string, sourceLang: string, targetLang: string,
   return parseTranslateResponse(response.body);
 }
 
+// Issue #119: dictionary data is a nice-to-have layered on top of an
+// already-successful translation — unlike requestBing's main call, a
+// failure here (network, parse, an unexpected response shape) must not
+// fail the whole translate() call, just leave dictionary/genderArticle
+// unset. No auth-refresh retry either: this always runs immediately after
+// a successful requestBing call, which already validated (and refreshed,
+// if needed) the shared auth cache.
+async function attachDictionary(result: TranslationResult, text: string, sourceLang: string, targetLang: string): Promise<void> {
+  try {
+    const auth = await getBingAuth(false);
+    const response = await curlPostForm(
+      LOOKUP_URL,
+      { isVertical: '1', IG: auth.ig, IID: auth.iid },
+      { from: toBingLang(sourceLang), to: toBingLang(targetLang), text, translatedtext: result.translatedText, token: auth.token, key: auth.key },
+      { 'User-Agent': CHROME_USER_AGENT },
+      auth.muid ? `MUID=${auth.muid}` : '',
+    );
+    if (response.status !== 200) return;
+
+    const raw = JSON.parse(response.body);
+    if (!Array.isArray(raw)) return;
+    const entries = raw as RawBingLookupEntry[];
+
+    result.dictionary = parseBingDictionary(entries);
+    const genderArticle = findBingGenderArticle(entries, result.translatedText);
+    if (genderArticle) result.genderArticle = genderArticle;
+  } catch (error) {
+    console.error('[provider:bing] dictionary lookup failed (non-fatal)', error);
+  }
+}
+
 // One forced-auth-refresh retry on any failure — same reasoning as
 // bingCloudProvider.ts's synthesize(): a cached token can go stale between
 // requests (Bing's own ~1hr lifetime, an earlier-than-expected server-side
 // revocation, or — confirmed live — a *previous* request using a bad
 // token/key poisoning that same IG session even for otherwise-valid
 // follow-up requests).
-async function callBing(text: string, sourceLang: string, targetLang: string): Promise<TranslationResult> {
+//
+// includeExtras mirrors google.ts's own includeExtras: skipped for
+// lightweight calls (detectLanguage, isHealthy, the popup's
+// back-translation) and for multi-word text, where a dictionary breakdown
+// isn't meaningful — same gating Google's provider already uses.
+async function callBing(text: string, sourceLang: string, targetLang: string, includeExtras: boolean): Promise<TranslationResult> {
+  let result: TranslationResult;
   try {
-    return await requestBing(text, sourceLang, targetLang, false);
+    result = await requestBing(text, sourceLang, targetLang, false);
   } catch (error) {
     console.error('[provider:bing] request failed, retrying once with a fresh auth token', error);
-    return requestBing(text, sourceLang, targetLang, true);
+    result = await requestBing(text, sourceLang, targetLang, true);
   }
+
+  const trimmed = text.trim();
+  if (includeExtras && trimmed && !trimmed.includes(' ')) {
+    await attachDictionary(result, trimmed, sourceLang, targetLang);
+  }
+
+  return result;
 }
 
 export const bingProvider: TranslationProvider = {
   id: 'bing',
 
-  translate(text, sourceLang, targetLang) {
-    return callBing(text, sourceLang, targetLang);
+  translate(text, sourceLang, targetLang, options) {
+    return callBing(text, sourceLang, targetLang, !options?.lightweight);
   },
 
   async detectLanguage(text) {
-    const result = await callBing(text, 'auto', 'en');
+    const result = await callBing(text, 'auto', 'en', false);
     if (!result.detectedSourceLang) {
       throw new ProviderError('bing', 'Bing Translate did not return a detected source language');
     }
@@ -129,7 +179,7 @@ export const bingProvider: TranslationProvider = {
   },
 
   async isHealthy() {
-    const result = await callBing(HEALTH_CHECK_TEXT, 'en', 'de');
+    const result = await callBing(HEALTH_CHECK_TEXT, 'en', 'de', false);
     return Boolean(result.translatedText);
   },
 };

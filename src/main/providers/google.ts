@@ -2,10 +2,44 @@ import { CHROME_USER_AGENT } from './browserHeaders';
 import { CurlResponse, curlGet } from './curlFetch';
 import { findArticleForWord, parseGoogleDictionary, RawGoogleFullResponse } from './googleDictionary';
 import { logProviderParseError } from './logger';
+import { createRateLimiter } from './rateLimiter';
 import { ProviderError, TranslationProvider, TranslationResult } from './types';
 
 const ENDPOINT = 'https://translate.googleapis.com/translate_a/single';
+// Issue #109: a second, independent unofficial endpoint — Google's
+// `dict-chrome-ex` browser-extension client, ported from ahatem/
+// QTranslate's own Google plugin, confirmed live (2026-09-01) that it
+// still works and is a genuinely separate service from ENDPOINT above
+// (translate.googleapis.com vs. clients5.google.com). Only ever tried
+// when the primary request fails — see fetchGoogleFallback. Its response
+// has no dictionary/gender data at all, just the bare translation, so a
+// result built from it never gets genderArticle/sourceGenderArticle —
+// degraded-but-working beats a hard error during a primary-endpoint
+// outage.
+const FALLBACK_ENDPOINT = 'https://clients5.google.com/translate_a/t';
 const HEALTH_CHECK_TEXT = 'hello';
+
+// Issue #109: proactive self-throttling, a light one — this endpoint
+// already has #94's retry-after-429 and 5-minute response cache, so this
+// is just extra insurance against a rapid-fire *burst* of new (cache-miss)
+// lookups, e.g. clicking through several different words quickly. Not a
+// value taken from QTranslate (their Google plugin doesn't throttle
+// proactively at all) — a conservative engineering judgment call given
+// #94's own finding that this endpoint is unusually easy to rate-limit.
+const rateLimiter = createRateLimiter(300);
+
+export function __resetGoogleRateLimiterForTests(): void {
+  rateLimiter.__resetForTests();
+}
+
+// A test suite exercising a multi-request case (retry, fallback, gender
+// pivot) would otherwise pay the real 300ms between each mocked call —
+// real seconds added to a suite where the network is entirely faked and
+// nothing is actually testing the throttle's timing itself (that's
+// rateLimiter.test.ts's job).
+export function __setGoogleRateLimitForTests(ms: number): void {
+  rateLimiter.__setIntervalForTests(ms);
+}
 
 // Target languages where Google's dict data attaches a definite article to
 // noun entries (confirmed for de/fr; the rest are the other common
@@ -37,7 +71,7 @@ async function fetchGoogle(url: string, skipCache = false): Promise<CurlResponse
     }
   }
 
-  const response = await curlGet(url, { 'User-Agent': CHROME_USER_AGENT });
+  const response = await rateLimiter.throttle(() => curlGet(url, { 'User-Agent': CHROME_USER_AGENT }));
   if (response.status === 200) {
     if (requestCache.size >= CACHE_MAX_ENTRIES) {
       const oldestKey = requestCache.keys().next().value;
@@ -59,6 +93,42 @@ async function fetchGoogle(url: string, skipCache = false): Promise<CurlResponse
 export function __clearGoogleRequestCacheForTests(): void {
   requestCache.clear();
   cacheExpiry.clear();
+}
+
+// The fallback endpoint's response shape depends on whether `sl` was
+// explicit or "auto" — confirmed live:
+//   sl=en (explicit): ["Hallo Welt"]
+//   sl=auto:           [["Hello world","fr"]]  (translatedText, detectedLang)
+type RawGoogleFallbackResponse = [string] | [[string, string]];
+
+function parseFallbackResult(raw: string): TranslationResult {
+  const data: RawGoogleFallbackResponse = JSON.parse(raw);
+  const first = data[0];
+  if (typeof first === 'string') {
+    if (!first) throw new Error('empty translation');
+    return { translatedText: first };
+  }
+  const [translatedText, detectedSourceLang] = first;
+  if (!translatedText) throw new Error('empty translation');
+  return { translatedText, detectedSourceLang };
+}
+
+// Only ever called after the primary endpoint has already failed (see
+// callGoogle) — a second failure here just means both are down, which the
+// caller reports using the *primary* endpoint's error (more informative:
+// this fallback has no dictionary data to explain a shape mismatch with).
+async function fetchGoogleFallback(text: string, sourceLang: string, targetLang: string, skipCache: boolean): Promise<TranslationResult> {
+  const params = new URLSearchParams({ client: 'dict-chrome-ex', sl: sourceLang, tl: targetLang, q: text });
+  const response = await fetchGoogle(`${FALLBACK_ENDPOINT}?${params.toString()}`, skipCache);
+  if (response.status !== 200) {
+    throw new ProviderError('google', `Google Translate fallback endpoint also failed with status ${response.status}`);
+  }
+  try {
+    return parseFallbackResult(response.body);
+  } catch (error) {
+    logProviderParseError('google', response.body, error);
+    throw new ProviderError('google', 'Failed to parse Google Translate fallback response', error);
+  }
 }
 
 function buildResult(data: RawGoogleFullResponse): TranslationResult {
@@ -128,7 +198,15 @@ async function callGoogle(text: string, sourceLang: string, targetLang: string, 
   const response = await fetchGoogle(`${ENDPOINT}?${params.toString()}`, skipCache);
   if (response.status !== 200) {
     console.error(`[provider:google] request failed with status ${response.status} for text ${JSON.stringify(text)} (${sourceLang}->${targetLang})`, response.body.slice(0, 500));
-    throw new ProviderError('google', `Google Translate request failed with status ${response.status}`);
+    // Issue #109: dual-endpoint fallback — degraded (translation only, no
+    // dictionary/gender data) beats a hard error while the primary
+    // endpoint is down/rate-limited.
+    try {
+      return await fetchGoogleFallback(text, sourceLang, targetLang, skipCache);
+    } catch (fallbackError) {
+      console.error('[provider:google] fallback endpoint also failed', fallbackError);
+      throw new ProviderError('google', `Google Translate request failed with status ${response.status}`);
+    }
   }
 
   let data: RawGoogleFullResponse;

@@ -1,11 +1,24 @@
 import { randomUUID } from 'node:crypto';
 import { CHROME_USER_AGENT } from './browserHeaders';
 import { logProviderParseError } from './logger';
+import { createRateLimiter } from './rateLimiter';
 import { ProviderError, TranslationProvider, TranslationResult } from './types';
 
 const TRANSLATE_ENDPOINT = 'https://translate.yandex.net/api/v1/tr.json/translate';
 const DETECT_ENDPOINT = 'https://translate.yandex.net/api/v1/tr.json/detect';
 const HEALTH_CHECK_TEXT = 'hello';
+
+// Issue #109: proactive self-throttling — ported directly from ahatem/
+// QTranslate's Yandex Web client, which enforces this exact interval via
+// its own Mutex before ever sending a request, not just reacting after a
+// 429. Currently moot in practice (SmartCaptcha blocks every request
+// regardless — see below), but cheap, correct, and ready for whenever
+// that clears.
+const rateLimiter = createRateLimiter(750);
+
+export function __resetYandexRateLimiterForTests(): void {
+  rateLimiter.__resetForTests();
+}
 
 interface RawTranslateResponse {
   code: number;
@@ -37,18 +50,20 @@ function newRequestId(): string {
 }
 
 async function callYandex<T>(url: string, params: Record<string, string>, parse: (raw: string) => T): Promise<T> {
-  const query = new URLSearchParams({ id: newRequestId(), srv: 'tr-text', ...params });
-  const response = await fetch(`${url}?${query.toString()}`, {
-    headers: {
-      'User-Agent': CHROME_USER_AGENT,
-      Referer: 'https://translate.yandex.com/',
-    },
+  return rateLimiter.throttle(async () => {
+    const query = new URLSearchParams({ id: newRequestId(), srv: 'tr-text', ...params });
+    const response = await fetch(`${url}?${query.toString()}`, {
+      headers: {
+        'User-Agent': CHROME_USER_AGENT,
+        Referer: 'https://translate.yandex.com/',
+      },
+    });
+    const raw = await response.text();
+    if (!response.ok) {
+      throw new ProviderError('yandex', `Yandex Translate request failed with status ${response.status}`);
+    }
+    return parse(raw);
   });
-  const raw = await response.text();
-  if (!response.ok) {
-    throw new ProviderError('yandex', `Yandex Translate request failed with status ${response.status}`);
-  }
-  return parse(raw);
 }
 
 function parseTranslateResponse(raw: string): TranslationResult {

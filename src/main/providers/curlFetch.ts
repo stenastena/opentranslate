@@ -86,6 +86,50 @@ export function curlGet(
   return withRetries(() => curlGetOnce(url, headers), maxAttempts, baseDelayMs);
 }
 
+// Text counterpart of curlPostFormBytesOnce below — for POST endpoints that
+// return text/JSON (issue #97's Bing translation provider) rather than
+// binary bytes. Bing's translate endpoint needs the same query-param +
+// form-body + cookie shape as its TTS endpoint (tfettts), just with a text
+// response to parse instead of audio to play.
+async function curlPostFormOnce(
+  url: string,
+  queryParams: Record<string, string>,
+  formData: Record<string, string>,
+  headers: Record<string, string>,
+  cookieHeader: string,
+): Promise<CurlResponse> {
+  const fullUrl = `${url}?${new URLSearchParams(queryParams).toString()}`;
+  const headerArgs = Object.entries(headers).flatMap(([name, value]) => ['-H', `${name}: ${value}`]);
+  const cookieArgs = cookieHeader ? ['-H', `Cookie: ${cookieHeader}`] : [];
+  const dataArgs = Object.entries(formData).flatMap(([name, value]) => ['--data-urlencode', `${name}=${value}`]);
+  const { stdout } = await execFileAsync(
+    'curl',
+    ['-s', '--max-time', String(TIMEOUT_SECONDS), '-w', `${STATUS_DELIMITER}%{http_code}`, fullUrl, ...headerArgs, ...cookieArgs, ...dataArgs],
+    { maxBuffer: 10 * 1024 * 1024 },
+  );
+
+  const delimiterIndex = stdout.lastIndexOf(STATUS_DELIMITER);
+  if (delimiterIndex === -1) {
+    throw new Error('curl output did not contain the expected status delimiter');
+  }
+  return {
+    body: stdout.slice(0, delimiterIndex),
+    status: Number(stdout.slice(delimiterIndex + STATUS_DELIMITER.length)),
+  };
+}
+
+export function curlPostForm(
+  url: string,
+  queryParams: Record<string, string>,
+  formData: Record<string, string>,
+  headers: Record<string, string>,
+  cookieHeader: string,
+  maxAttempts = DEFAULT_MAX_ATTEMPTS,
+  baseDelayMs = DEFAULT_BASE_DELAY_MS,
+): Promise<CurlResponse> {
+  return withRetries(() => curlPostFormOnce(url, queryParams, formData, headers, cookieHeader), maxAttempts, baseDelayMs);
+}
+
 // Binary counterpart of curlGetOnce, for endpoints that return audio/image
 // bytes rather than text (issue #107's cloud TTS providers). Node's stdout
 // is captured as a Buffer (encoding: 'buffer') rather than auto-decoded as

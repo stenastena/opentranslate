@@ -28,6 +28,7 @@ const serviceCheckboxes = {
   deepl: document.getElementById('service-deepl') as HTMLInputElement,
   yandex: document.getElementById('service-yandex') as HTMLInputElement,
   google: document.getElementById('service-google') as HTMLInputElement,
+  bing: document.getElementById('service-bing') as HTMLInputElement,
 };
 const saveButton = document.getElementById('save-button') as HTMLButtonElement;
 const statusText = document.getElementById('status-text')!;
@@ -239,6 +240,7 @@ async function loadSettings(): Promise<void> {
   serviceCheckboxes.deepl.checked = settings.services.deepl;
   serviceCheckboxes.yandex.checked = settings.services.yandex;
   serviceCheckboxes.google.checked = settings.services.google;
+  serviceCheckboxes.bing.checked = settings.services.bing;
   ttsProviderSelect.value = settings.tts.provider;
   loadedVoiceByLang = settings.tts.voiceByLang;
   applySavedVoiceSelections(loadedVoiceByLang);
@@ -258,6 +260,7 @@ async function handleSave(): Promise<void> {
         deepl: serviceCheckboxes.deepl.checked,
         yandex: serviceCheckboxes.yandex.checked,
         google: serviceCheckboxes.google.checked,
+        bing: serviceCheckboxes.bing.checked,
       },
       tts: { provider: ttsProviderSelect.value as TTSProviderId, voiceByLang },
     });

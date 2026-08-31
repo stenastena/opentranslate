@@ -5,7 +5,7 @@ vi.mock('node:child_process', () => ({
   execFile: (...args: unknown[]) => execFileMock(...args),
 }));
 
-const { curlGet, curlGetBytes, curlPostFormBytes } = await import('./curlFetch');
+const { curlGet, curlGetBytes, curlPostForm, curlPostFormBytes } = await import('./curlFetch');
 
 type ExecFileCallback = (error: Error | null, result?: { stdout: string; stderr: string }) => void;
 type ExecFileBufferCallback = (error: Error | null, stdout?: Buffer) => void;
@@ -80,6 +80,42 @@ describe('curlGet', () => {
     });
 
     await expect(curlGet('https://example.com', {})).rejects.toThrow('did not contain the expected status delimiter');
+  });
+});
+
+describe('curlPostForm', () => {
+  afterEach(() => {
+    execFileMock.mockReset();
+  });
+
+  it('posts form data and query params, returning text on success', async () => {
+    execFileMock.mockImplementation(respondWith(200, '[{"translations":[{"text":"Hallo"}]}]'));
+
+    const result = await curlPostForm('https://example.com/translate', { IG: 'abc' }, { text: 'hello' }, { 'User-Agent': 'x' }, 'MUID=abc');
+
+    expect(result).toEqual({ status: 200, body: '[{"translations":[{"text":"Hallo"}]}]' });
+    const args = execFileMock.mock.calls[0][1] as string[];
+    expect(args).toContain('https://example.com/translate?IG=abc');
+    expect(args).toContain('Cookie: MUID=abc');
+    expect(args).toContain('text=hello');
+  });
+
+  it('retries a 429 and returns the successful response once it clears', async () => {
+    execFileMock.mockImplementationOnce(respondWith(429, '')).mockImplementationOnce(respondWith(200, 'ok'));
+
+    const result = await curlPostForm('https://example.com', {}, {}, {}, '', 3, 0);
+
+    expect(result).toEqual({ status: 200, body: 'ok' });
+    expect(execFileMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry a non-retryable status like 401', async () => {
+    execFileMock.mockImplementation(respondWith(401, '{"ShowCaptcha":false}'));
+
+    const result = await curlPostForm('https://example.com', {}, {}, {}, '', 3, 0);
+
+    expect(result).toEqual({ status: 401, body: '{"ShowCaptcha":false}' });
+    expect(execFileMock).toHaveBeenCalledTimes(1);
   });
 });
 

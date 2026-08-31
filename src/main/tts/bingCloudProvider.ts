@@ -1,27 +1,21 @@
+import { BingAuth, getBingAuth } from '../providers/bingAuth';
 import { CHROME_USER_AGENT } from '../providers/browserHeaders';
-import { curlGet, curlPostFormBytes } from '../providers/curlFetch';
+import { curlPostFormBytes } from '../providers/curlFetch';
 import { TTSProvider, TTSVoice } from './types';
 
 // Issue #107: Bing Translator's own "listen" feature, via the same
 // unofficial endpoint (www.bing.com/tfettts) ahatem/QTranslate's
 // BingTTSService.kt uses — real Azure neural voices (e.g.
 // "de-DE-KatjaNeural"), noticeably higher quality than both the local SAPI
-// voices (#93) and Google's translate_tts (googleCloudProvider.ts).
-//
-// Unlike Google's endpoint, this one needs a short-lived auth token: an
-// IG/IID pair plus a key+token from Bing's anti-abuse mechanism, all
-// scraped from www.bing.com/translator's own HTML (the same page Bing's
-// site loads before letting you click "listen") — ported from
-// BingAuthManager.kt. Confirmed live end-to-end (2026-08-31): fetching the
-// translator page, extracting these four values, and POSTing SSML with
-// them to tfettts returns real audio/mpeg bytes.
-const TRANSLATOR_PAGE_URL = 'https://www.bing.com/translator';
+// voices (#93) and Google's translate_tts (googleCloudProvider.ts). Auth
+// (IG/IID/key/token/muid) comes from the shared providers/bingAuth.ts —
+// also used by the Bing translation provider (issue #97), since both hit
+// the same site with the same short-lived token. Confirmed live end-to-end
+// (2026-08-31): fetching the translator page, extracting these values, and
+// POSTing SSML with them to tfettts returns real audio/mpeg bytes.
 const TTS_URL = 'https://www.bing.com/tfettts';
 const MAX_CHUNK_LENGTH = 500;
 const MIME_TYPE = 'audio/mpeg';
-// Bing's own token lifetime is ~1 hour (BingAuthManager.kt); refreshing a
-// little early avoids a request landing right on the expiry boundary.
-const AUTH_TTL_MS = 55 * 60 * 1000;
 
 interface BingVoiceInfo {
   locale: string;
@@ -98,61 +92,6 @@ const VOICE_MAP: Record<string, BingVoiceInfo> = {
   zh: { locale: 'zh-CN', gender: 'Female', shortName: 'zh-CN-XiaoxiaoNeural' },
 };
 
-interface BingAuth {
-  ig: string;
-  iid: string;
-  key: string;
-  token: string;
-  muid: string;
-}
-
-let cachedAuth: { auth: BingAuth; fetchedAt: number } | null = null;
-
-// Test-only escape hatch, matching systemProvider.ts's
-// __resetShellResolutionForTests — without this, a test that runs after an
-// earlier one that already populated the module-level cache would silently
-// reuse stale auth instead of exercising the fetch path it means to test.
-export function __resetBingAuthCacheForTests(): void {
-  cachedAuth = null;
-}
-
-function extractPattern(html: string, pattern: RegExp): string | undefined {
-  return pattern.exec(html)?.[1];
-}
-
-async function fetchAuth(): Promise<BingAuth> {
-  const response = await curlGet(TRANSLATOR_PAGE_URL, { 'User-Agent': CHROME_USER_AGENT });
-  if (response.status !== 200) {
-    throw new Error(`Failed to load Bing translator page for auth: status ${response.status}`);
-  }
-  const html = response.body;
-  const ig = extractPattern(html, /IG:"(.*?)"/);
-  const iid = extractPattern(html, /data-iid="(.*?)"/);
-  const helperRaw = extractPattern(html, /params_AbusePreventionHelper\s*=\s*(\[.*?\]);/);
-  const muid = extractPattern(html, /"muid":\s*"(.*?)"/) ?? '';
-  if (!ig || !iid || !helperRaw) {
-    throw new Error('Failed to extract Bing auth tokens from translator page (page layout may have changed)');
-  }
-
-  let helper: [number, string, number];
-  try {
-    helper = JSON.parse(helperRaw);
-  } catch (error) {
-    throw new Error(`Failed to parse Bing abuse-prevention helper data: ${(error as Error).message}`);
-  }
-
-  return { ig, iid, key: String(helper[0]), token: helper[1], muid };
-}
-
-async function getAuth(forceRefresh: boolean): Promise<BingAuth> {
-  if (!forceRefresh && cachedAuth && Date.now() - cachedAuth.fetchedAt < AUTH_TTL_MS) {
-    return cachedAuth.auth;
-  }
-  const auth = await fetchAuth();
-  cachedAuth = { auth, fetchedAt: Date.now() };
-  return auth;
-}
-
 function escapeSsml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
@@ -211,7 +150,7 @@ async function synthesize(text: string, lang: string | undefined, voiceName: str
   const voice = voiceInfoFor(lang, voiceName);
 
   const attempt = async (forceRefresh: boolean): Promise<Buffer> => {
-    const auth = await getAuth(forceRefresh);
+    const auth = await getBingAuth(forceRefresh);
     const parts = await Promise.all(chunks.map((chunk) => synthesizeChunk(chunk, voice, auth)));
     return Buffer.concat(parts);
   };

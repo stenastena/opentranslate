@@ -99,10 +99,9 @@ items, none started yet:
   blocker entirely — could ship as its own simpler adapter without
   waiting on any Azure decision.
 
-Remaining backlog: **#116 — font size and font family selection**
-(Appearance, sub-issue of #15; the project owner's explicit next priority,
-ahead of the rest of Appearance — not started), the rest of Appearance
-settings (#17–20, theme/opacity/auto-position/border, all backlog),
+**#116 — font size and font family selection is now shipped too** (see
+below). Remaining backlog: the rest of Appearance settings (#17–20,
+theme/opacity/auto-position/border, all backlog),
 Advanced settings (#25–29), Yandex (#75, needs a product decision, or try
 the free Mozhi-fallback route first), **#109** (resilience patterns —
 rate-limiting, dual-endpoint fallback, official-key-first, backlog), and
@@ -578,11 +577,32 @@ three bugs, all now fixed:
     silently hiding. Confirmed fixed live by the project owner.
 - **#108 — Reverso deprioritized**, at the project owner's explicit
   request (2026-09-01) — moved from the v0.2 to the **v0.4** milestone,
-  no code changes. **#116 — font size and font family selection** filed
-  as a new sub-issue of #15 (Appearance) and marked the project owner's
-  priority for the *next* piece of work, ahead of the rest of Appearance
-  — not started yet ("Род - важнее UI" paused it once already this
-  session in favor of #117; pick it back up next).
+  no code changes.
+- **#116 — font size and font family selection**, fully shipped (PR
+  #121) — filed and implemented the same session, the project owner's
+  explicit next priority ahead of the rest of Appearance ("Меня больше
+  интересует настройка размеров шрифтов и возможно выбор шрифтов").
+  - New Appearance tab in Settings: a font-size slider (10-24px) and a
+    font-family dropdown (a curated list of Windows-bundled fonts —
+    System Default, Arial, Calibri, Verdana, Tahoma, Georgia, Times New
+    Roman, Consolas), with a live preview.
+  - Deliberately scoped to only the popup's Original/Translation/Back-
+    translation text (`.text-block`), via two CSS custom properties set
+    once at popup init — the surrounding UI chrome (tabs, buttons,
+    labels) keeps its own fixed sizes, avoiding any risk of accidentally
+    restyling controls that should stay put.
+  - **This is the first feature shipped during the 2026-09-01 autonomous
+    stretch** (project owner away, no hands-on testing available — see
+    "How to resume" below). Verified instead via a stubbed-`electronAPI`
+    browser preview of the *real built* `settings.js`/`popup.js`/CSS,
+    served from the actual `dist` output over a local static server
+    (not hand-copied markup) — confirmed the Appearance tab renders and
+    switches correctly, the live preview updates on slider/dropdown
+    change, Save sends the right payload, and — the important check —
+    the popup's Original text area's *computed* style actually matches
+    a non-default setting (18px Georgia) end to end, not just that a
+    CSS variable got set. Still flagged as not hands-on-tested in the
+    real Electron app.
 
 Two notes on the merged history (informational, no action needed):
 - PR #64 (popup window) left one harmless empty extra commit on `main`
@@ -612,8 +632,8 @@ Paste this (or just "continue OpenTranslate") to pick the session back up:
 > data (Google #76 + source-side #117, Bing #119), text-to-speech —
 > offline SAPI *and* cloud-neural (#12–#14, #89/#90/#93/#103/#107),
 > five translation providers (DeepL/Yandex/Google/Bing #97/MyMemory #96),
-> per-tab native cloud voice (#112), and the request-volume/reliability
-> fixes (#94) are all done and merged.
+> per-tab native cloud voice (#112), font size/family (#116), and the
+> request-volume/reliability fixes (#94) are all done and merged.
 >
 > **2026-09-01: the project owner stepped away for an unknown period and
 > explicitly asked for autonomous work to continue in their absence**
@@ -622,20 +642,18 @@ Paste this (or just "continue OpenTranslate") to pick the session back up:
 > выполнения каждой задачи."). This session's own mandatory
 > interactive-verification workflow (see the Notes below) **cannot run
 > hands-on checks during this stretch** — there's no one to click Test or
-> confirm audio output. Substitute: build + typecheck + unit tests +
-> (for renderer-only changes) a stubbed-`electronAPI` browser preview,
-> merge once CI is green per the usual autonomous PR workflow, and note
-> plainly in both the PR and here whenever something genuinely needs a
-> real hands-on check (audio, hotkey capture, OS-level focus/input) that
+> confirm audio output. Substitute, proven out on #116 already: build +
+> typecheck + unit tests + (for renderer-only changes) a stubbed-
+> `electronAPI` browser preview of the *real built* JS/CSS served over a
+> local static HTTP server (not `file://` — static snapshots there don't
+> execute JS — and not hand-copied markup), checking *computed* styles/
+> values end to end rather than just that a variable got set. Merge once
+> CI is green per the usual autonomous PR workflow, and note plainly in
+> both the PR and here whenever something genuinely needs a real
+> hands-on check (audio, hotkey capture, OS-level focus/input) that
 > hasn't happened yet — don't claim it's confirmed when it isn't.
 >
-> **Immediate next step, the project owner's explicit priority:**
-> **#116 — font size and font family selection** (sub-issue of #15,
-> Appearance). Requested directly ahead of the rest of Appearance
-> ("Меня больше интересует настройка размеров шрифтов и возможно выбор
-> шрифтов") — start here.
->
-> Everything else is backlog, not blocking anything — work through it
+> **Immediate next step:** work through the rest of the backlog
 > autonomously, in this rough order:
 >
 > 1. **Rest of Appearance (#17–20)** — window opacity, auto-position/
@@ -692,6 +710,23 @@ Paste this (or just "continue OpenTranslate") to pick the session back up:
   logic and layout, but real audio output and the actual hotkey-driven
   capture flow need the real app, per the mandatory-verification note
   above (or the project owner's own testing, if they're away).
+  - **How to actually do the stubbed preview** (used successfully for
+    #116): write a throwaway `preview.html` into `dist/renderer/<window>/`
+    (gitignored, safe to leave) with an inline `<script>` that sets
+    `window.electronAPI` to a stub object *before* the real
+    `<script type="module" src="....js">` tag, copying the target
+    window's real `index.html` body verbatim underneath. Then serve
+    `dist/renderer/` (not the window's own subfolder — sibling imports
+    like `../shared/fonts.js` need the parent directory as web root) over
+    a plain local HTTP server and navigate the Browser tool there.
+    **`file://` doesn't work** — a file outside the project root renders
+    as a static snapshot with no JS execution, so nothing (tabs, live
+    previews, event listeners) will actually respond; the error only
+    shows up as "nothing happens when I click", not an explicit warning.
+    Verify with `getComputedStyle(...)`/DOM state via `javascript_tool`,
+    not just a screenshot — a screenshot can look right by coincidence
+    (or miss something off-screen) where reading the actual computed
+    value can't.
 - When comparing against or citing another project (e.g. the ahatem/
   QTranslate research behind #107/#97/#119), read its actual source
   before asserting what it does — READMEs oversell; the real answer was

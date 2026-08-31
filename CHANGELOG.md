@@ -84,6 +84,11 @@ root-cause writeups.
   Google's data, Bing's dictionary API doesn't appear to expose
   grammatical gender at all — confirmed empty across every word tested
   live, so the Bing tab isn't expected to show a gender badge (#119).
+- Settings → Appearance: font size (10-24px, via a slider) and font
+  family (a curated list of Windows-bundled fonts) for the popup's
+  Original/Translation/Back-translation text specifically, with a live
+  preview — the surrounding UI chrome (tabs, buttons, labels) keeps its
+  own fixed sizes regardless (#116).
 
 ### Fixed
 - Capture reliability: the first several hotkey presses after launch
@@ -149,9 +154,10 @@ root-cause writeups.
   from up to 3 requests to at most 1.
 
 See the [v0.2 milestone](../../milestone/2) and
-[v0.3 milestone](../../milestone/3) for what's next — Appearance settings
-(font size/family is the current priority) and the remaining backlog
-(Reverso, resilience/rate-limiting patterns, Yandex's CAPTCHA wall).
+[v0.3 milestone](../../milestone/3) for what's next — the rest of
+Appearance settings (opacity, auto-position/size, borders, pin-when-
+dragged), Advanced settings, and the remaining backlog (Reverso in v0.4,
+resilience/rate-limiting patterns, Yandex's CAPTCHA wall).
 
 ## [0.1.0] - 2026-08-28
 

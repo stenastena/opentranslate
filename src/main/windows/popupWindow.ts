@@ -12,17 +12,52 @@ let lastBounds: { x: number; y: number; width: number; height: number } | null =
 
 const DEFAULT_WIDTH = 480;
 const DEFAULT_HEIGHT = 360;
+const CURSOR_ANCHOR_OFFSET = 12;
 
-// Anchoring the window directly at the cursor pushed part or all of it
-// off-screen when the selected text was near a screen edge (issue #69
-// follow-up). Clamp against the work area of whichever display the anchor
-// point is on so the whole window always stays visible.
-function clampToWorkArea(x: number, y: number, width: number, height: number): { x: number; y: number } {
-  const { x: areaX, y: areaY, width: areaWidth, height: areaHeight } = screen.getDisplayNearestPoint({ x, y }).workArea;
+interface WorkArea {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+// Anchoring the window directly at a point pushed part or all of it
+// off-screen when that point was near a screen edge (issue #69 follow-up).
+// Clamp against the work area of whichever display the point is on so the
+// whole window always stays visible. Pure (workArea passed in rather than
+// fetched via Electron's `screen` module internally) so the geometry can
+// be unit-tested without mocking Electron — see popupWindow.test.ts.
+export function clampToWorkArea(x: number, y: number, width: number, height: number, workArea: WorkArea): { x: number; y: number } {
   return {
-    x: Math.min(Math.max(x, areaX), areaX + areaWidth - width),
-    y: Math.min(Math.max(y, areaY), areaY + areaHeight - height),
+    x: Math.min(Math.max(x, workArea.x), workArea.x + workArea.width - width),
+    y: Math.min(Math.max(y, workArea.y), workArea.y + workArea.height - height),
   };
+}
+
+// Issue #18: places a *fresh* popup (no remembered position — see
+// lastBounds below) so it doesn't sit directly on top of the cursor that
+// opened it. Flips to the opposite side of the cursor first when the
+// default offset would spill past a work-area edge, falling back to
+// clamping only if even the flipped position still doesn't fit (e.g. a
+// popup wider/taller than the whole screen). Ported from ahatem/
+// QTranslate's FloatingPopupBehavior.positionNearMouse, whose own comment
+// states exactly the problem this fixes: plain clamping slides the popup
+// back under the cursor, covering the very selection the user just made —
+// confirmed by reading the reasoning in that Kotlin source, not guessed.
+export function resolveCursorAnchor(cursorX: number, cursorY: number, width: number, height: number, workArea: WorkArea, offset = CURSOR_ANCHOR_OFFSET): { x: number; y: number } {
+  let x = cursorX + offset;
+  let y = cursorY + offset;
+  if (x + width > workArea.x + workArea.width) x = cursorX - width - offset;
+  if (y + height > workArea.y + workArea.height) y = cursorY - height - offset;
+  return clampToWorkArea(x, y, width, height, workArea);
+}
+
+function resolvePopupPosition(bounds: { x: number; y: number } | null, width: number, height: number): { x: number; y: number } {
+  if (bounds) {
+    return clampToWorkArea(bounds.x, bounds.y, width, height, screen.getDisplayNearestPoint(bounds).workArea);
+  }
+  const cursor = screen.getCursorScreenPoint();
+  return resolveCursorAnchor(cursor.x, cursor.y, width, height, screen.getDisplayNearestPoint(cursor).workArea);
 }
 
 // capturedText omitted (undefined) means "just make sure the main window is
@@ -41,8 +76,12 @@ export function showPopupWindow(capturedText?: string): BrowserWindow {
 
   const width = lastBounds?.width ?? DEFAULT_WIDTH;
   const height = lastBounds?.height ?? DEFAULT_HEIGHT;
-  const anchor = lastBounds ?? screen.getCursorScreenPoint();
-  const { x, y } = clampToWorkArea(anchor.x, anchor.y, width, height);
+  // A remembered manual position/size is just re-clamped in place — there's
+  // no cursor context to flip around, and re-anchoring it near whatever the
+  // cursor happens to be this time would fight the user's own placement,
+  // the exact thing lastBounds exists to avoid. Only a genuinely fresh
+  // popup (no lastBounds yet) gets the cursor-flip treatment.
+  const { x, y } = resolvePopupPosition(lastBounds, width, height);
 
   // Issue #17: read fresh on every fresh popup (not cached at app startup),
   // so an opacity change in Settings takes effect the next time a capture

@@ -12,7 +12,7 @@
         <select id="source-lang" aria-label="Source language">
           <option value="auto">Auto-Detect</option>
         </select>
-        <span id="detected-lang-badge" class="detected-lang-badge" hidden></span>
+        <select id="detected-lang-select" class="detected-lang-select" aria-label="Detected language (override)" hidden></select>
         <button id="swap-langs" type="button" title="Swap languages">&#8646;</button>
         <select id="target-lang" aria-label="Target language"></select>
         <button id="translate-btn" type="button">Translate</button>
@@ -37,10 +37,14 @@
       </section>
 
       <section class="section">
-        <h2>Back-translation</h2>
+        <h2>
+          Back-translation
+          <select id="back-lang-select" class="back-lang-select" aria-label="Back-translation language" hidden></select>
+        </h2>
         <div id="back-translation-text" class="text-block"></div>
       </section>
 
+      <button id="load-dictionary-btn" type="button" class="load-dictionary-btn" hidden>Show Dictionary</button>
       <details id="dictionary-section" class="dictionary-section" hidden>
         <summary>Dictionary</summary>
         <div id="dictionary-content"></div>

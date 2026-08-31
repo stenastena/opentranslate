@@ -13,9 +13,20 @@ interface TabResult {
   backTranslatedText?: string;
   detectedLang?: string;
   targetLang?: string;
+  // The language back-translation was actually done into for this result —
+  // defaults to detectedLang, but can be overridden independently (see
+  // handleBackLangOverrideChange).
+  backLang?: string;
   error?: string;
   dictionary?: GoogleDictionary;
   genderArticle?: string;
+  // Google's dictionary/gender data (issue #76) is opt-in via the "Show
+  // Dictionary" button (issue #99) rather than fetched automatically with
+  // every lookup — this tracks whether that's been requested yet for this
+  // result. Absent/undefined means 'idle' (not yet requested); irrelevant
+  // for providers other than Google, which never populate dictionary/
+  // gender regardless.
+  dictionaryStatus?: 'idle' | 'loading' | 'loaded';
 }
 
 interface State {
@@ -34,6 +45,16 @@ interface State {
   // A language with no entry here falls back to systemTtsProvider's
   // automatic locale matching — same as before this setting existed.
   voiceByLang: Record<string, string>;
+  // A manual correction of Auto-Detect's source-language pick for the
+  // *current* captured text — set via the detected-language select.
+  // Deliberately scoped to this capture, not a persistent setting: cleared
+  // on a new capture or an explicit manual language-selector change, so
+  // Auto-Detect still detects fresh next time rather than getting "stuck".
+  sourceLangOverride?: string;
+  // Per-provider override of which language back-translation targets,
+  // independent of the source language — a user may want to sanity-check
+  // the translation in a language other than the detected/chosen source.
+  backLangOverrideByProvider: Map<string, string>;
   providerIds: string[];
   activeProviderId: string | null;
   resultsByProvider: Map<string, TabResult>;
@@ -46,6 +67,7 @@ const state: State = {
   autoDetectFirst: 'en',
   autoDetectSecond: 'de',
   voiceByLang: {},
+  backLangOverrideByProvider: new Map(),
   providerIds: [],
   activeProviderId: null,
   resultsByProvider: new Map(),
@@ -61,11 +83,13 @@ const backTranslationTextEl = document.getElementById('back-translation-text')!;
 const tabsEl = document.getElementById('provider-tabs')!;
 const sourceLangSelect = document.getElementById('source-lang') as HTMLSelectElement;
 const targetLangSelect = document.getElementById('target-lang') as HTMLSelectElement;
-const detectedLangBadge = document.getElementById('detected-lang-badge')!;
+const detectedLangSelect = document.getElementById('detected-lang-select') as HTMLSelectElement;
+const backLangSelect = document.getElementById('back-lang-select') as HTMLSelectElement;
 const swapButton = document.getElementById('swap-langs') as HTMLButtonElement;
 const translateButton = document.getElementById('translate-btn') as HTMLButtonElement;
 const dictionarySection = document.getElementById('dictionary-section') as HTMLDetailsElement;
 const dictionaryContentEl = document.getElementById('dictionary-content')!;
+const loadDictionaryButton = document.getElementById('load-dictionary-btn') as HTMLButtonElement;
 const translationGenderEl = document.getElementById('translation-gender')!;
 const speakOriginalButton = document.getElementById('speak-original-btn') as HTMLButtonElement;
 const speakTranslationButton = document.getElementById('speak-translation-btn') as HTMLButtonElement;
@@ -76,15 +100,46 @@ const speakTranslationButton = document.getElementById('speak-translation-btn') 
 // be reset back once playback ends (naturally or via stop()).
 let activeSpeakButton: HTMLButtonElement | null = null;
 
+const BASE_LANG_CODES = new Set(LANGUAGES.map((lang) => lang.code));
+
 function populateLanguageSelects(): void {
   targetLangSelect.appendChild(new Option('Auto', 'auto'));
   for (const lang of LANGUAGES) {
     sourceLangSelect.appendChild(new Option(lang.label, lang.code));
     targetLangSelect.appendChild(new Option(lang.label, lang.code));
+    detectedLangSelect.appendChild(new Option(lang.label, lang.code));
+    backLangSelect.appendChild(new Option(lang.label, lang.code));
   }
   sourceLangSelect.value = state.sourceLang;
   targetLangSelect.value = state.targetLang;
 }
+
+// Keeps `select` able to display/select `code` even when it's outside the
+// app's own LANGUAGES list (e.g. a provider detecting "ro" for a word this
+// app doesn't otherwise offer as a language choice) — appends a fallback
+// option labelled with the bare code, and removes whichever fallback
+// option this select previously had (if any and if different), so
+// switching between several out-of-list detections across captures/tabs
+// doesn't leave a pile of stale one-off options behind.
+function syncSelectWithFallback(select: HTMLSelectElement, code: string, previousExtra: string | undefined): string | undefined {
+  if (previousExtra !== undefined && previousExtra !== code && !BASE_LANG_CODES.has(previousExtra)) {
+    select.querySelector(`option[value="${CSS.escape(previousExtra)}"]`)?.remove();
+  }
+  let nextExtra = previousExtra;
+  if (BASE_LANG_CODES.has(code)) {
+    nextExtra = undefined;
+  } else {
+    if (!Array.from(select.options).some((option) => option.value === code)) {
+      select.appendChild(new Option(languageLabel(code), code));
+    }
+    nextExtra = code;
+  }
+  select.value = code;
+  return nextExtra;
+}
+
+let detectedSelectExtra: string | undefined;
+let backSelectExtra: string | undefined;
 
 function renderTabs(): void {
   tabsEl.innerHTML = '';
@@ -123,29 +178,52 @@ function renderActiveResult(): void {
     translationTextEl.readOnly = true;
     translationTextEl.classList.add('loading');
     backTranslationTextEl.textContent = '';
-    renderDictionary(undefined);
-    renderGenderBadge(undefined);
-    renderDetectedLangBadge(undefined);
+    renderDictionaryArea(undefined);
+    renderDetectedLangSelect(undefined);
+    renderBackLangSelect(undefined);
   } else if (result.status === 'error') {
     translationTextEl.value = result.error ?? 'Translation failed.';
     translationTextEl.readOnly = true;
     translationTextEl.classList.add('error');
     backTranslationTextEl.textContent = '';
-    renderDictionary(undefined);
-    renderGenderBadge(undefined);
-    renderDetectedLangBadge(undefined);
+    renderDictionaryArea(undefined);
+    renderDetectedLangSelect(undefined);
+    renderBackLangSelect(undefined);
   } else {
     translationTextEl.readOnly = false;
     if (document.activeElement !== translationTextEl) {
       translationTextEl.value = result.translatedText ?? '';
     }
     backTranslationTextEl.textContent = result.backTranslatedText ?? '(back-translation unavailable)';
-    renderDictionary(result.dictionary);
-    renderGenderBadge(result.genderArticle);
-    renderDetectedLangBadge(result.detectedLang);
+    renderDictionaryArea(result);
+    renderDetectedLangSelect(result.detectedLang);
+    renderBackLangSelect(result.backLang);
   }
 
   speakTranslationButton.disabled = !result || result.status !== 'ok' || !translationTextEl.value.trim();
+}
+
+// Google's dictionary/gender data (issue #76) is only ever fetched when the
+// user explicitly clicks "Show Dictionary" (issue #99) rather than with
+// every lookup, to cut Google's automatic per-lookup request cost — this
+// renders whichever of {button, loading, content} matches dictionaryStatus.
+// Only Google ever returns this data, so the button is hidden for every
+// other provider tab regardless of status.
+function renderDictionaryArea(result: TabResult | undefined): void {
+  const isGoogle = state.activeProviderId === 'google';
+  const status = result?.dictionaryStatus ?? 'idle';
+
+  loadDictionaryButton.hidden = !(isGoogle && result && status !== 'loaded');
+  loadDictionaryButton.disabled = status === 'loading';
+  loadDictionaryButton.textContent = status === 'loading' ? 'Loading…' : 'Show Dictionary';
+
+  if (status === 'loaded') {
+    renderDictionary(result?.dictionary);
+    renderGenderBadge(result?.genderArticle);
+  } else {
+    renderDictionary(undefined);
+    renderGenderBadge(undefined);
+  }
 }
 
 // Shows the definite article for the current translation right next to
@@ -165,13 +243,29 @@ function renderGenderBadge(genderArticle: string | undefined): void {
 // *target* once a source is known (see resolveAutoTargetLang). Without
 // this, a detection landing outside the configured pair (e.g. a real word
 // in a third language) was invisible, and looked like the app was
-// ignoring the configured languages entirely. Only shown when the source
-// selector is actually on Auto-Detect — a manually-picked source isn't
-// "detected", so labelling it as such would be misleading.
-function renderDetectedLangBadge(detectedLang: string | undefined): void {
+// ignoring the configured languages entirely. Editable (not just a label)
+// so a wrong pick can be corrected without leaving Auto-Detect mode — see
+// handleSourceOverrideChange. Only shown when the source selector is
+// actually on Auto-Detect — a manually-picked source isn't "detected", so
+// offering to "correct" it would be misleading.
+function renderDetectedLangSelect(detectedLang: string | undefined): void {
   const show = state.sourceLang === 'auto' && Boolean(detectedLang);
-  detectedLangBadge.hidden = !show;
-  detectedLangBadge.textContent = show ? `Detected: ${languageLabel(detectedLang!)}` : '';
+  detectedLangSelect.hidden = !show;
+  if (show && detectedLang) {
+    detectedSelectExtra = syncSelectWithFallback(detectedLangSelect, detectedLang, detectedSelectExtra);
+  }
+}
+
+// Which language back-translation targets — independent of the source
+// language, since a user may want to sanity-check against a language other
+// than the one actually used/detected as the source. Shown whenever a
+// result has resolved, regardless of Auto-Detect vs. manual source mode.
+function renderBackLangSelect(backLang: string | undefined): void {
+  const show = Boolean(backLang);
+  backLangSelect.hidden = !show;
+  if (show && backLang) {
+    backSelectExtra = syncSelectWithFallback(backLangSelect, backLang, backSelectExtra);
+  }
 }
 
 interface SpeakData {
@@ -287,7 +381,13 @@ function dictRow(label: string, values: string[]): HTMLParagraphElement {
   return row;
 }
 
-async function ensureActiveResultLoaded(): Promise<void> {
+// forceFresh bypasses Google's request cache (google.ts, #94) for this
+// specific run — set true when the caller is acting on an explicit user
+// correction (a manual language-selector change, or overriding a wrong
+// Auto-Detect pick) where a guaranteed-live answer matters more than the
+// dedup savings. Left false for routine flows (a fresh capture, switching
+// tabs) where the cache is exactly the intended optimization.
+async function ensureActiveResultLoaded(forceFresh = false): Promise<void> {
   const providerId = state.activeProviderId;
   if (!providerId || !state.originalText) return;
 
@@ -303,9 +403,16 @@ async function ensureActiveResultLoaded(): Promise<void> {
     let effectiveTargetLang = state.targetLang;
 
     if (effectiveSourceLang === 'auto') {
-      const detectResult = await window.electronAPI.providers.detectLanguage(providerId, state.originalText);
-      if (!detectResult.ok) throw new Error(detectResult.error);
-      effectiveSourceLang = detectResult.value;
+      if (state.sourceLangOverride) {
+        // A manual correction of a previous (wrong) Auto-Detect pick for
+        // this same captured text — use it directly instead of asking the
+        // provider to detect again (see handleSourceOverrideChange).
+        effectiveSourceLang = state.sourceLangOverride;
+      } else {
+        const detectResult = await window.electronAPI.providers.detectLanguage(providerId, state.originalText);
+        if (!detectResult.ok) throw new Error(detectResult.error);
+        effectiveSourceLang = detectResult.value;
+      }
       state.lastDetectedLang = effectiveSourceLang;
     }
 
@@ -314,7 +421,14 @@ async function ensureActiveResultLoaded(): Promise<void> {
       state.lastResolvedTargetLang = effectiveTargetLang;
     }
 
-    const translateResult = await window.electronAPI.providers.translate(providerId, state.originalText, effectiveSourceLang, effectiveTargetLang);
+    // Issue #99: the dictionary/gender-pivot cost is opt-in via "Show
+    // Dictionary" now, not automatic — this initial call stays lightweight
+    // regardless of provider (a no-op option for DeepL/Yandex, which never
+    // had dictionary data anyway).
+    const translateResult = await window.electronAPI.providers.translate(providerId, state.originalText, effectiveSourceLang, effectiveTargetLang, {
+      lightweight: true,
+      skipCache: forceFresh,
+    });
     if (!translateResult.ok) throw new Error(translateResult.error);
 
     // Fire-and-forget: a history-write failure shouldn't block showing the
@@ -329,7 +443,11 @@ async function ensureActiveResultLoaded(): Promise<void> {
       })
       .catch((error) => console.error('[popup] failed to record history entry', error));
 
-    const backResult = await window.electronAPI.providers.translate(providerId, translateResult.value.translatedText, effectiveTargetLang, effectiveSourceLang, { lightweight: true });
+    const backLang = state.backLangOverrideByProvider.get(providerId) ?? effectiveSourceLang;
+    const backResult = await window.electronAPI.providers.translate(providerId, translateResult.value.translatedText, effectiveTargetLang, backLang, {
+      lightweight: true,
+      skipCache: forceFresh,
+    });
 
     state.resultsByProvider.set(providerId, {
       status: 'ok',
@@ -337,8 +455,8 @@ async function ensureActiveResultLoaded(): Promise<void> {
       backTranslatedText: backResult.ok ? backResult.value.translatedText : undefined,
       detectedLang: effectiveSourceLang,
       targetLang: effectiveTargetLang,
-      dictionary: translateResult.value.dictionary,
-      genderArticle: translateResult.value.genderArticle,
+      backLang,
+      dictionaryStatus: 'idle',
     });
   } catch (error) {
     state.resultsByProvider.set(providerId, {
@@ -351,6 +469,33 @@ async function ensureActiveResultLoaded(): Promise<void> {
     renderTabs();
     renderActiveResult();
   }
+}
+
+// Issue #99: fetches Google's dictionary/gender data on demand — the
+// initial lookup above deliberately never requests it, to keep the
+// default per-lookup cost at 1 request instead of up to 3. A cached
+// answer for the same word (google.ts's 5-minute TTL) is fine to reuse
+// here, unlike the forced-language-correction flows, so this doesn't set
+// skipCache.
+async function handleLoadDictionary(): Promise<void> {
+  const providerId = state.activeProviderId;
+  const result = providerId ? state.resultsByProvider.get(providerId) : undefined;
+  if (!providerId || !result || result.status !== 'ok' || result.dictionaryStatus === 'loading' || result.dictionaryStatus === 'loaded') return;
+  if (!result.detectedLang || !result.targetLang) return;
+
+  state.resultsByProvider.set(providerId, { ...result, dictionaryStatus: 'loading' });
+  renderActiveResult();
+
+  const fullResult = await window.electronAPI.providers.translate(providerId, state.originalText, result.detectedLang, result.targetLang);
+  const current = state.resultsByProvider.get(providerId);
+  if (!current) return;
+  state.resultsByProvider.set(providerId, {
+    ...current,
+    dictionary: fullResult.ok ? fullResult.value.dictionary : undefined,
+    genderArticle: fullResult.ok ? fullResult.value.genderArticle : undefined,
+    dictionaryStatus: 'loaded',
+  });
+  if (providerId === state.activeProviderId) renderActiveResult();
 }
 
 // The first translation for a captured selection happens automatically;
@@ -386,38 +531,90 @@ async function retranslateFromEditedTranslation(): Promise<void> {
   const editedTranslation = translationTextEl.value;
   if (editedTranslation === result.translatedText) return;
 
-  const effectiveSourceLang = result.detectedLang ?? (state.sourceLang !== 'auto' ? state.sourceLang : undefined);
+  const backLang = state.backLangOverrideByProvider.get(providerId) ?? result.detectedLang ?? (state.sourceLang !== 'auto' ? state.sourceLang : undefined);
 
   // Dictionary/gender data describes the *original* translatedText — once
   // the user has overwritten it, that data no longer applies to what's
-  // actually in the field, so drop it rather than show it as if it still did.
+  // actually in the field, so drop it (and reset dictionaryStatus so "Show
+  // Dictionary" is offered again for the new text) rather than show it as
+  // if it still did.
   state.resultsByProvider.set(providerId, {
     ...result,
     translatedText: editedTranslation,
     backTranslatedText: undefined,
     dictionary: undefined,
     genderArticle: undefined,
+    dictionaryStatus: 'idle',
   });
   if (providerId === state.activeProviderId) {
     backTranslationTextEl.textContent = 'Translating…';
     backTranslationTextEl.classList.add('loading');
-    renderDictionary(undefined);
-    renderGenderBadge(undefined);
+    renderDictionaryArea(state.resultsByProvider.get(providerId));
   }
 
-  if (!effectiveSourceLang) return;
+  if (!backLang) return;
 
   try {
-    const backResult = await window.electronAPI.providers.translate(providerId, editedTranslation, result.targetLang ?? state.targetLang, effectiveSourceLang, { lightweight: true });
+    const backResult = await window.electronAPI.providers.translate(providerId, editedTranslation, result.targetLang ?? state.targetLang, backLang, { lightweight: true });
     const current = state.resultsByProvider.get(providerId);
     if (!current) return;
     state.resultsByProvider.set(providerId, {
       ...current,
+      backLang,
       backTranslatedText: backResult.ok ? backResult.value.translatedText : undefined,
     });
   } finally {
     if (providerId === state.activeProviderId) renderActiveResult();
   }
+}
+
+// Issue #98: forces a re-check with an explicit backLang, bypassing the
+// Google cache (skipCache) since this is a deliberate user correction
+// where a guaranteed-live answer matters more than dedup savings.
+async function retranslateBackWithLang(providerId: string, newBackLang: string): Promise<void> {
+  const result = state.resultsByProvider.get(providerId);
+  if (!result || result.status !== 'ok' || !result.targetLang || result.translatedText === undefined) return;
+
+  if (providerId === state.activeProviderId) {
+    backTranslationTextEl.textContent = 'Translating…';
+    backTranslationTextEl.classList.add('loading');
+  }
+
+  try {
+    const backResult = await window.electronAPI.providers.translate(providerId, result.translatedText, result.targetLang, newBackLang, { lightweight: true, skipCache: true });
+    const current = state.resultsByProvider.get(providerId);
+    if (!current) return;
+    state.resultsByProvider.set(providerId, {
+      ...current,
+      backLang: newBackLang,
+      backTranslatedText: backResult.ok ? backResult.value.translatedText : undefined,
+    });
+  } finally {
+    if (providerId === state.activeProviderId) renderActiveResult();
+  }
+}
+
+// Issue #98: corrects a wrong Auto-Detect pick for the *current* captured
+// text without leaving Auto-Detect mode — the Source dropdown keeps
+// showing "Auto-Detect" so the next capture still detects fresh. Applies
+// to every provider tab (invalidateAllResults), since they all detected
+// from the same text and could share the same mistake. Forces a live
+// re-check (forceFresh) rather than risking a cached response from before
+// the correction.
+async function handleSourceOverrideChange(newLang: string): Promise<void> {
+  state.sourceLangOverride = newLang;
+  state.backLangOverrideByProvider.clear();
+  invalidateAllResults();
+  renderTabs();
+  renderActiveResult();
+  await ensureActiveResultLoaded(true);
+}
+
+async function handleBackLangOverrideChange(newLang: string): Promise<void> {
+  const providerId = state.activeProviderId;
+  if (!providerId) return;
+  state.backLangOverrideByProvider.set(providerId, newLang);
+  await retranslateBackWithLang(providerId, newLang);
 }
 
 function invalidateAllResults(): void {
@@ -429,10 +626,16 @@ function invalidateAllResults(): void {
 async function handleLanguageChange(): Promise<void> {
   state.sourceLang = sourceLangSelect.value;
   state.targetLang = targetLangSelect.value;
+  // An explicit manual language pick supersedes any per-capture correction
+  // that was scoped to the *previous* language mode — stale overrides here
+  // would otherwise resurface unexpectedly if the user later switches back
+  // to Auto-Detect.
+  state.sourceLangOverride = undefined;
+  state.backLangOverrideByProvider.clear();
   invalidateAllResults();
   renderTabs();
   renderActiveResult();
-  await ensureActiveResultLoaded();
+  await ensureActiveResultLoaded(true);
 }
 
 async function handleSwap(): Promise<void> {
@@ -466,10 +669,13 @@ async function init(): Promise<void> {
 
   sourceLangSelect.addEventListener('change', () => void handleLanguageChange());
   targetLangSelect.addEventListener('change', () => void handleLanguageChange());
+  detectedLangSelect.addEventListener('change', () => void handleSourceOverrideChange(detectedLangSelect.value));
+  backLangSelect.addEventListener('change', () => void handleBackLangOverrideChange(backLangSelect.value));
   swapButton.addEventListener('click', () => void handleSwap());
   translateButton.addEventListener('click', () => void handleTranslateClick());
   speakOriginalButton.addEventListener('click', () => void handleSpeakClick(speakOriginalButton, getOriginalSpeakData));
   speakTranslationButton.addEventListener('click', () => void handleSpeakClick(speakTranslationButton, getTranslationSpeakData));
+  loadDictionaryButton.addEventListener('click', () => void handleLoadDictionary());
   originalTextEl.addEventListener('input', () => {
     speakOriginalButton.disabled = !originalTextEl.value.trim();
   });
@@ -477,6 +683,10 @@ async function init(): Promise<void> {
   window.electronAPI.popup.onCapturedText((text) => {
     if (activeSpeakButton) void window.electronAPI.tts.stop();
     state.originalText = text;
+    // A fresh capture starts clean — any per-capture correction from the
+    // previous text no longer applies.
+    state.sourceLangOverride = undefined;
+    state.backLangOverrideByProvider.clear();
     invalidateAllResults();
     renderTabs();
     renderActiveResult();

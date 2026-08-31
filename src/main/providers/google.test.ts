@@ -213,4 +213,25 @@ describe('googleProvider', () => {
     expect(lightweight.dictionary).toBeUndefined();
     expect(curlGetMock).toHaveBeenCalledTimes(1);
   });
+
+  it('skipCache bypasses a cached entry and hits the network again (#98)', async () => {
+    mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'привет' }], src: 'en' }));
+    await googleProvider.translate('hello', 'en', 'ru');
+    expect(curlGetMock).toHaveBeenCalledTimes(1);
+
+    mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'привет' }], src: 'en' }));
+    await googleProvider.translate('hello', 'en', 'ru', { skipCache: true });
+
+    expect(curlGetMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('skipCache still writes the fresh response back to the cache for subsequent normal (non-skipCache) calls (#98)', async () => {
+    mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'привет' }], src: 'en' }));
+    await googleProvider.translate('hello', 'en', 'ru', { skipCache: true });
+    expect(curlGetMock).toHaveBeenCalledTimes(1);
+
+    await googleProvider.translate('hello', 'en', 'ru');
+
+    expect(curlGetMock).toHaveBeenCalledTimes(1); // second call served from the cache the first (skipCache) call populated
+  });
 });

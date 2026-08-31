@@ -30,6 +30,15 @@ export interface TranslateOptions {
   // more the request count for no UI benefit — e.g. the popup's
   // back-translation call, which never displays dictionary/gender data.
   lightweight?: boolean;
+  // Bypasses the Google provider's request cache (google.ts) for this call
+  // — the fresh response still gets written back to the cache afterward,
+  // so it's "don't read a possibly-stale entry", not "disable caching
+  // entirely". Set by callers acting on an explicit user correction (e.g.
+  // overriding a wrong Auto-Detect pick) where a guaranteed-live answer
+  // matters more than the dedup savings — see popup.ts's
+  // ensureActiveResultLoaded(forceFresh) and retranslateBackWithLang().
+  // A no-op for providers with no cache (DeepL/Yandex).
+  skipCache?: boolean;
 }
 
 export interface TranslationProvider {

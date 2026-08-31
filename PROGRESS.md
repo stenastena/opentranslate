@@ -114,9 +114,12 @@ a substantial unverifiable-without-hands-on-testing OS-integration feature
 for #29); full analysis on each issue. **#75 (Yandex)'s free Mozhi route
 was investigated live and thoroughly, and genuinely doesn't pan out right
 now** — see below; still needs a product decision (paid key vs.
-self-hosted Mozhi). Remaining backlog: **#109**
-(resilience patterns — rate-limiting, dual-endpoint fallback,
-official-key-first, backlog), and **#108 — Reverso**, explicitly
+self-hosted Mozhi). **#109 is 2/3 shipped**: proactive rate-limiting
+(Yandex 750ms, Google 300ms) and Google's dual-endpoint fallback are done;
+the third piece (official-key-first, free-fallback) is deliberately
+deferred as its own real feature (settings UI + separate official-API
+integration per provider), not drop-in hardening. Remaining backlog:
+**#108 — Reverso**, explicitly
 deprioritized by the project owner (2026-09-01: "выносим из текущего
 0.2 milestone... Переносим куда-то
 позже") and moved from the v0.2 to the **v0.4** milestone.
@@ -756,6 +759,37 @@ three bugs, all now fixed:
     Mozhi instance (might dodge the shared-IP/DNS problems the public
     ones hit, unverifiable without an actual server to test against),
     or the original paid Yandex Cloud API key plan.
+- **#109 — resilience patterns, 2 of 3 techniques shipped (PR #126)**:
+  - **Proactive self-throttling** (`rateLimiter.ts`, a request queue
+    spacing calls at least N ms apart *before* ever hitting a limit,
+    complementing #94's existing react-after-a-429 retry): Yandex at
+    750ms, ported exactly from QTranslate's own Mutex interval; Google
+    at 300ms, a conservative call of our own (QTranslate doesn't
+    throttle Google proactively at all) given #94's own finding that
+    endpoint is unusually easy to rate-limit.
+  - **Google dual-endpoint fallback**: `clients5.google.com/
+    translate_a/t` (Google's `dict-chrome-ex` browser-extension
+    client), confirmed live to still work independently of the primary
+    endpoint, tried only on a primary failure. No dictionary/gender
+    data in its response — a fallback result never gets
+    `genderArticle`/`sourceGenderArticle` — degraded but working beats
+    a hard error during an outage.
+  - **Item 3 (official-key-first, free-fallback) deliberately deferred**
+    — unlike the other two, it's a real product/UX surface (a settings
+    field per provider, guidance on getting a key, genuinely separate
+    official-API request/response handling for Google Cloud Translate
+    and DeepL) comparable in scope to a small new feature, not drop-in
+    hardening. Left open on #109 for a dedicated follow-up.
+  - **Real testing gotcha, worth remembering**: the new proactive
+    throttle initially added real wall-clock delay to every
+    multi-request test in `google.test.ts` (retries, the new fallback,
+    the existing gender-pivot tests) — file runtime went from under
+    100ms to over 8 seconds. Fixed by giving `rateLimiter.ts` a
+    test-only `__setIntervalForTests(0)` escape hatch, called once at
+    the top of `google.test.ts`; `rateLimiter.test.ts` itself still
+    tests real timing behavior, just with fake timers instead of an
+    unmocked network suite eating real seconds for signal it wasn't
+    providing.
 
 Two notes on the merged history (informational, no action needed):
 - PR #64 (popup window) left one harmless empty extra commit on `main`
@@ -787,55 +821,60 @@ Paste this (or just "continue OpenTranslate") to pick the session back up:
 > five translation providers (DeepL/Yandex/Google/Bing #97/MyMemory #96),
 > per-tab native cloud voice (#112), font size/family (#116), popup
 > opacity (#17), cursor-flip positioning (#18), theme selection (#16),
-> configurable copy-to-clipboard action (#27), and the request-volume/
-> reliability fixes (#94) are all done and merged — **all of Appearance
-> (#15) is done except #19/#20**, and #27 is the only implementable
-> piece of Advanced settings (#25) — #26/#28/#29 were researched and
-> flagged (not implemented — see the comments on each issue) rather
-> than guessed past; see "Current state" above for why.
+> configurable copy-to-clipboard action (#27), proactive rate-limiting +
+> Google dual-endpoint fallback (#109, 2/3), and the request-volume/
+> reliability fixes (#94) are all done and merged.
 >
-> **2026-09-01: the project owner stepped away for an unknown period and
-> explicitly asked for autonomous work to continue in their absence**
-> ("Я сейчас уйду на какое-то время. Интерактива не будет. Работай
-> автономно над всеми задачами... Обновляй документацию по мере
-> выполнения каждой задачи."). This session's own mandatory
-> interactive-verification workflow (see the Notes below) **cannot run
-> hands-on checks during this stretch** — there's no one to click Test or
-> confirm audio output. Substitute, proven out on #116 already: build +
-> typecheck + unit tests + (for renderer-only changes) a stubbed-
-> `electronAPI` browser preview of the *real built* JS/CSS served over a
-> local static HTTP server (not `file://` — static snapshots there don't
-> execute JS — and not hand-copied markup), checking *computed* styles/
-> values end to end rather than just that a variable got set. Merge once
-> CI is green per the usual autonomous PR workflow, and note plainly in
-> both the PR and here whenever something genuinely needs a real
-> hands-on check (audio, hotkey capture, OS-level focus/input) that
-> hasn't happened yet — don't claim it's confirmed when it isn't.
+> **2026-09-01 autonomous stretch — the project owner stepped away for an
+> unknown period and asked for autonomous work to continue** ("Я сейчас
+> уйду на какое-то время. Интерактива не будет. Работай автономно над
+> всеми задачами... Обновляй документацию по мере выполнения каждой
+> задачи."). Result: **every actionable v0.2/v0.3-milestone backlog item
+> has now been either shipped or thoroughly investigated and flagged**
+> — this session worked through the *entire* remaining backlog it had
+> visibility into, not just one or two items:
 >
-> **Immediate next step:** work through the rest of the backlog
-> autonomously, in this rough order:
+> - **Shipped**: #16, #17, #18, #27, #109 (2/3) — all listed above.
+> - **Flagged, not implemented, full analysis on each issue** — real
+>   conflicts or missing prerequisites found via QTranslate comparison,
+>   not guessed past: **#19/#20** (both conflict with #69's deliberate
+>   native-frame/no-auto-hide redesign), **#26/#28** (nothing real to
+>   configure yet — one external link total, no OCR feature at all),
+>   **#29** (a substantial new OS-level global-mouse-hook mechanism,
+>   comparable in scope to the original hotkey/capture system, and not
+>   something to build with no one available to verify a new input
+>   mechanism), **#109's 3rd piece** (official-key-first is a real
+>   product/UX feature — settings UI + separate official-API
+>   integration per provider — not drop-in hardening).
+> - **Investigated, not resolved — genuinely needs the project owner's
+>   decision**: **#75** (Yandex's free Mozhi route was tried thoroughly
+>   live and doesn't currently work; needs paid-key-vs-self-hosted-Mozhi
+>   call), **#108** (Reverso, explicitly deprioritized this session,
+>   moved to v0.4 milestone).
+> - **Explicitly out of scope for this stretch**: #30–34 are all
+>   **milestone 1.0** ("full QTranslate feature-parity pass, auto-update,
+>   and documentation for the 1.0 release") — correctly sequenced to
+>   come *after* v0.2/v0.3, not something to jump ahead to just because
+>   nothing else was left; left untouched.
 >
-> 1. **#109 (resilience patterns)** — proactive rate-limiting,
->    dual-endpoint fallback, official-key-first-with-free-fallback —
->    hardening, not urgent, no current complaint driving it. (#19/#20/
->    #26/#28/#29 are all intentionally skipped — flagged, not started;
->    see each issue's comments and "Current state" above before picking
->    any of them up. **#75's free-Mozhi route is done being investigated
->    — thoroughly tried live, genuinely doesn't work right now (see its
->    comment) — don't re-attempt it; it needs the project owner's actual
->    decision, paid key vs. self-hosted Mozhi, not more code.**)
-> 2. **#108 (Reverso)** — explicitly deprioritized by the project owner
->    this session and moved to the **v0.4** milestone; leave it there
->    unless re-prioritized.
->
-> Same process as every prior session: issue already exists (or file one) →
-> branch → PR → CI → merge, one sub-issue at a time. Handle the routine
-> engineering workflow (branch/PR/merge, implementation choices, splitting
-> mixed changes into separate PRs, project-board status) autonomously
-> without checking in — only surface things that need hands-on interaction
-> with the running app, or a genuine product/cost decision the spec
-> doesn't answer (e.g. #75's eventual choice, if a real tradeoff comes up)
-> — and while the project owner is away, note those rather than blocking.
+> **There is currently no further v0.2/v0.3 work this session can pick
+> up autonomously without the project owner's input.** Whoever resumes
+> next: read the "Current state" section above in full before doing
+> anything — it has the specific reasoning behind every flagged item,
+> and re-attempting one of them without reading why it was skipped would
+> repeat wasted work. If the project owner is back, the natural first
+> step is confirming the flagged items' analysis and making the calls
+> they need (#75, #109's 3rd piece, #19/#20/#26/#28/#29) — plus the
+> **real hands-on verification this whole stretch couldn't do**: every
+> PR shipped this session used build+typecheck+tests+stubbed-browser-
+> preview as a substitute (see the Notes below for exactly how, and its
+> real limits), but nothing here confirms real window opacity/theme
+> colors/audio/clipboard/rate-limiting *actually looks and works right
+> in the live app*. That's the one thing genuinely worth doing first
+> when someone's available, before further backlog picks. If still
+> nobody's available and there's truly nothing else queued, #30's group
+> (1.0 parity/auto-update/docs) is the next milestone in sequence — but
+> confirm that's actually wanted before starting a 1.0-scoped effort.
 
 ### Notes for whoever picks this up
 

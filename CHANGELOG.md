@@ -101,6 +101,16 @@ root-cause writeups.
   independent of the existing hotkey-capture clipboard-restore behavior
   (#27).
 
+### Performance / Resilience
+- Proactive request pacing (not just reactive backoff): Yandex requests
+  are now spaced at least 750ms apart, Google 300ms — before ever
+  hitting a rate limit, complementing the existing retry-after-429
+  behavior (#109).
+- Google gained a second, independent unofficial endpoint
+  (`clients5.google.com`) it falls back to if the primary one fails —
+  a degraded (translation only, no dictionary/gender data) result
+  instead of a hard error during an outage (#109).
+
 ### Fixed
 - Capture reliability: the first several hotkey presses after launch
   could produce an empty capture (#67).

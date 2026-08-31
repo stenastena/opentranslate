@@ -32,10 +32,20 @@ root-cause writeups.
 - Text-to-speech: a `TTSProvider` abstraction with a first implementation
   using Windows' built-in SAPI voices (offline, no unofficial endpoint),
   plus a speaker-icon button next to the Original and Translation sections
-  in the popup (#12/#13/#14). Only one utterance plays at a time. Confirmed
-  working via live testing; the built-in SAPI voices are low quality and
-  fall back to an English accent for languages with no matching installed
-  voice — tracked as a follow-up (#88), not a blocker.
+  in the popup (#12/#13/#14). Only one utterance plays at a time.
+- Settings → Voice: pick a specific installed system voice per language,
+  with a Test button, a "Refresh voice list" button, an info box pointing
+  at the free/open-source NaturalVoiceSAPIAdapter project for
+  higher-quality voices, and a best-effort "★ Natural" label on voices
+  whose name/description suggests better quality (#89/#90).
+- Popup: an editable "Detected: X" language select next to Original lets
+  a wrong Auto-Detect pick be corrected without leaving Auto-Detect mode;
+  an equivalent select on Translation for the resolved target language;
+  Back-translation's own language select is independently editable too —
+  all three now share identical styling (#98/#102).
+- Google's dictionary/gender-article data is now fetched only when the
+  user clicks a new "Show Dictionary" button, not automatically with
+  every lookup (#99).
 
 ### Fixed
 - Capture reliability: the first several hotkey presses after launch
@@ -57,6 +67,15 @@ root-cause writeups.
   whitespace-only segment omitted an expected field entirely (#81).
 - The popup was invisible to Alt+Tab after switching away from it —
   `skipTaskbar` also hides a window from Alt+Tab on Windows (#81).
+- Voice listing under-reported installed system voices (e.g. 5 instead
+  of 17 on the real dev machine) — Windows PowerShell 5.1's
+  `System.Speech` can't see voices registered under the newer "OneCore"
+  location. Now prefers `pwsh.exe` (PowerShell 7) when installed, which
+  can see and actually speak through them (#103).
+- The tray only offered Settings/History (already reachable from the
+  popup's own File menu); simplified to just opening the main window,
+  and the hotkey now opens it even when nothing was selected, instead of
+  silently doing nothing (#101).
 
 ### Changed
 - Popup window: closes only on Esc instead of on losing focus, is a real
@@ -73,6 +92,14 @@ root-cause writeups.
   redundantly repeats the dictionary/gender-article lookup the forward
   translation already did, which could add up to 6 requests per
   single-word lookup for no UI benefit (#78).
+- Google was hitting 429 under light real usage — a single-word lookup
+  into an article-using language could cost up to 3 requests via the
+  gender-pivot fallback, with no caching so repeat views paid that cost
+  again every time. `curlGet` now retries a 429/503 with jittered
+  backoff; every Google request is cached by URL (5-minute TTL); 4 unused
+  `dt=` request params were trimmed (#94). Making the dictionary/gender
+  lookup opt-in (#99, above) cut the default per-lookup cost further,
+  from up to 3 requests to at most 1.
 
 See the [v0.2 milestone](../../milestone/2) for what's next (TTS).
 

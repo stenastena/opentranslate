@@ -69,11 +69,42 @@ preferring `pwsh.exe` when installed). **#97 — Microsoft Translator
 (Azure)** is filed but explicitly *not started*: needs a project-owner
 decision on whether the onboarding friction (a real Azure account,
 confirmed to need a non-prepaid card) is worth it before any adapter code
-gets written. Remaining v0.2 backlog: Appearance settings (#15–20),
-Advanced settings (#25–29), Yandex (#75, needs a product decision), #93
-(voice quality — re-verify against #103's fix before assuming it's still
-unresolved), #96 (MyMemory as a simple 4th provider, backlog), #97
-(Microsoft Translator, needs a decision first).
+gets written.
+
+**Comparison against ahatem/QTranslate** (an actively-maintained modern
+Kotlin rewrite, not the original abandoned Questsoft app) was requested by
+the project owner this session and produced four new/updated backlog
+items, none started yet:
+- **#107 — cloud-based neural TTS** via the same *category* of unofficial
+  endpoint this app already trusts for translation (Google's
+  `translate_tts`, Bing's `tfettts` with real Azure neural voices) —
+  explicitly requested as the priority follow-up to #93/#88's voice-
+  quality complaints, since it removes the whole local-SAPI quality
+  ceiling rather than working around it. **Not started.**
+- **#108 — Reverso** as a niche 4th provider — confirmed via their actual
+  plugin source: only 6 languages (en/fr/de/es/it/ru), and does **not**
+  support Auto-Detect at all, so it can't be a drop-in general-purpose
+  tab the way DeepL/Google/Yandex are.
+- **#109 — resilience patterns** (proactive rate-limiting via a
+  request-pacing mutex, a second fallback endpoint per provider,
+  official-API-key-first-with-free-fallback on the *same* provider) —
+  hardening ideas, not urgent, opportunistic.
+- **#75 and #97 got new comments**, not new issues: #75 — Yandex's CAPTCHA
+  wall might be avoidable for free via a Mozhi fallback (their Yandex
+  Web plugin does this), worth trying before paying for a Yandex Cloud
+  key; #97 — "Microsoft Translator" doesn't need to mean official paid
+  Azure at all, since QTranslate reaches Microsoft's engine through an
+  unofficial Bing endpoint instead, sidestepping the card-requirement
+  blocker entirely — could ship as its own simpler adapter without
+  waiting on any Azure decision.
+
+Remaining v0.2 backlog: Appearance settings (#15–20), Advanced settings
+(#25–29), Yandex (#75, needs a product decision, or try the free Mozhi-
+fallback route first), #93 (voice quality — re-verify against #103's fix
+before assuming it's still unresolved; #107 is the stronger fix if #103
+alone isn't enough), #96 (MyMemory, backlog), #97 (Microsoft Translator —
+the unofficial-Bing route doesn't need a decision the way official Azure
+does), #107/#108/#109 (all backlog, not started).
 
 The old "dictionary provider subsystem" issues (#21/#22/#23/#24) were closed
 this session as superseded: they asked for a generic multi-provider
@@ -443,53 +474,78 @@ Paste this (or just "continue OpenTranslate") to pick the session back up:
 > npm run check-providers
 > ```
 >
-> v0.1 is fully shipped, and v0.2's translation history, Google dictionary
-> output, and text-to-speech (#8–#11, #76, #12–#14) are all done and merged.
-> Everything in this paragraph is backlog, not blocking anything — pick
-> whichever makes sense, autonomously:
+> v0.1 is fully shipped. v0.2's translation history, Google dictionary
+> output, text-to-speech (#8–#11, #76, #12–#14, #89/#90/#98/#99/#101/#102/
+> #103), and the Google request-volume fix (#94) are all done and merged.
 >
-> 1. **#88 — higher-quality free TTS voices.** The current
->    `systemTtsProvider` (Windows SAPI) works but is low-fidelity and falls
->    back to an English accent for languages with no matching installed
->    voice (confirmed live for German on this machine). Worth exploring
->    before building more TTS-adjacent UI on top of a voice engine that
->    might get replaced. See the issue body for candidate directions (Edge's
->    unofficial neural-TTS endpoint, etc.) — no committed answer yet, this
->    needs research first.
-> 2. **Appearance settings (#15–20)** — theme, opacity, auto-position/size,
->    border customization, pin-when-dragged. Next in backlog order after
->    TTS.
-> 3. **Advanced settings (#25–29)** — default browser, copy action, OCR API
->    key, mouse interaction modes.
-> 4. **#75 (Yandex paid API key)** — needs a product/cost decision, not a
->    coding task; raise it rather than picking a default.
+> **Immediate next step, already explicitly requested but not yet started:**
+> **#107 — cloud-based neural TTS**, via the same unofficial-endpoint
+> pattern already trusted for translation (Google's `translate_tts`,
+> Bing's `tfettts` with real Azure neural voices — see the issue body,
+> written after reading ahatem/QTranslate's actual plugin source for both).
+> This is the priority follow-up to #93 (SAPI voice quality still "a bit
+> better, not dramatically better" even after #103's enumeration fix) —
+> the project owner asked to start on this specifically ("голос как у них
+> надо точно включить в наши задачи" / "приступай к задачам связанным с
+> голосом как в QTranslate") and it hasn't been picked up yet this session.
+> Start here before anything else in the list below.
+>
+> Everything else here is backlog, not blocking anything — pick whichever
+> makes sense next, autonomously, once #107 is underway or done:
+>
+> 1. **#108 (Reverso)** — niche 4th provider, 6 languages, no Auto-Detect
+>    support (confirmed from their source) — a genuine but narrow addition.
+> 2. **#96 (MyMemory)** — simplest free 4th provider, no API key.
+> 3. **#97 (Microsoft Translator)** — the *official* Azure route is stuck
+>    on a real blocker (card required, no way around it); the *unofficial
+>    Bing* route (per the newest comment on the issue) sidesteps that
+>    entirely and could ship independently, as its own simpler adapter.
+> 4. **#109 (resilience patterns)** — proactive rate-limiting, dual-endpoint
+>    fallback per provider, official-key-first-with-free-fallback on the
+>    same provider (not a separate one) — hardening, not urgent.
+> 5. **#75 (Yandex)** — try the free Mozhi-fallback route (see the issue's
+>    newest comment) before defaulting to "needs a paid API key".
+> 6. **Appearance settings (#15–20)** and **Advanced settings (#25–29)** —
+>    next in backlog order after the above.
 >
 > Same process as every prior session: issue already exists (or file one) →
 > branch → PR → CI → merge, one sub-issue at a time. Handle the routine
 > engineering workflow (branch/PR/merge, implementation choices, splitting
 > mixed changes into separate PRs, project-board status) autonomously
 > without checking in — only surface things that need hands-on interaction
-> with the running app (reproducing input/focus/audio bugs, confirming
-> real-world UI or audio behavior) or a genuine product/cost decision the
-> spec doesn't answer (e.g. #75, or #88's eventual choice of voice engine
-> if it has a cost/quality/complexity tradeoff worth flagging).
+> with the running app, or a genuine product/cost decision the spec
+> doesn't answer (e.g. #75's or #97's eventual choice, if a real tradeoff
+> comes up).
 
 ### Notes for whoever picks this up
 
+- **Mandatory interactive-verification workflow (standing instruction,
+  not optional)**: after any UI/OS-facing change, don't just describe what
+  was done in text — either (a) build a fresh installer and send it, or
+  (b) launch the app for the user to test themselves. And do (b) *first*:
+  launch in a separate, visible terminal window (e.g. via PowerShell's
+  `Start-Process cmd.exe -ArgumentList '/k','cd /d <path> && npm run
+  dev'` — not a hidden Bash background job) for a quick interactive check,
+  wait for approval, *then* run the (slower) `npm run package` build. See
+  [[feedback-autonomous-workflow]] in memory for the exact wording and
+  reasoning — this is a durable preference, don't re-ask about it.
 - If `check-providers` shows Google 429ing, don't chase it — treat it the
   same way past sessions have: a real but temporary upstream limit from
   testing volume, not a bug. Move on and check back later.
 - The two long-standing non-blocking environment issues (Google's
   temporary rate limit already covered above, and `npm run package`'s NSIS
-  step needing Developer Mode on this machine) are unrelated to CI and
-  don't need attention unless a local installer build is actually needed.
-- For UI/OS-integration work (popup UI, audio, hotkey/capture), prefer the
-  verification approach used throughout this project over trusting
-  typecheck+tests alone: build, run the app for real, and drive/observe it
-  live — IPC bugs, path-resolution bugs, and OS-level input/audio/focus
-  quirks don't show up in typecheck or mocked unit tests. For anything
-  needing real audio output or the actual hotkey-driven capture flow
-  (not just button click-through logic), that means asking the project
-  owner to test interactively rather than trusting a stubbed browser
-  preview alone — as happened with #14, where live testing surfaced the
-  SAPI voice-quality issue (#88) that a mocked test never would have.
+  step needing Developer Mode on this machine, worked around via the
+  winCodeSign cache trick documented above) are unrelated to CI and don't
+  need attention unless a local installer build is actually needed.
+- For UI/OS-integration work (popup UI, audio, hotkey/capture), prefer
+  building+running the app for real over trusting typecheck+tests alone —
+  IPC bugs, path-resolution bugs, and OS-level input/audio/focus quirks
+  don't show up in typecheck or mocked unit tests. A stubbed-`electronAPI`
+  browser preview of the real bundled JS/CSS (used successfully throughout
+  this session, e.g. for #98/#102) is good for verifying UI logic and
+  layout, but real audio output and the actual hotkey-driven capture flow
+  need the real app, per the mandatory-verification note above.
+- When comparing against or citing another project (e.g. this session's
+  ahatem/QTranslate research behind #107/#108/#109), read its actual
+  source before asserting what it does — READMEs oversell; the real
+  answer was in `plugins/*/src/main/kotlin/**/*.kt` each time.

@@ -1,6 +1,7 @@
 import { bingProvider } from './bingTranslate';
 import { deeplProvider } from './deepl';
 import { googleProvider } from './google';
+import { myMemoryProvider } from './mymemory';
 import { ProviderRegistry } from './registry';
 import { yandexProvider } from './yandex';
 
@@ -10,6 +11,7 @@ export function createDefaultRegistry(): ProviderRegistry {
   registry.register(yandexProvider);
   registry.register(googleProvider);
   registry.register(bingProvider);
+  registry.register(myMemoryProvider);
   return registry;
 }
 

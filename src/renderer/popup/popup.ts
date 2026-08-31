@@ -5,8 +5,9 @@ const PROVIDER_LABELS: Record<string, string> = {
   yandex: 'Yandex',
   google: 'Google',
   bing: 'Bing',
+  mymemory: 'MyMemory',
 };
-const PROVIDER_ORDER = ['deepl', 'yandex', 'google', 'bing'];
+const PROVIDER_ORDER = ['deepl', 'yandex', 'google', 'bing', 'mymemory'];
 
 interface TabResult {
   status: 'idle' | 'loading' | 'ok' | 'error';

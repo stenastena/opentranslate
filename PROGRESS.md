@@ -99,16 +99,17 @@ items, none started yet:
   blocker entirely — could ship as its own simpler adapter without
   waiting on any Azure decision.
 
-**#116 — font size/family, #17 — popup opacity, and #18 — cursor-flip
-positioning are now shipped too** (see below). **#19 and #20 are flagged,
-not implemented** — both conflict with #69's deliberate native-frame/
-no-auto-hide redesign (QTranslate's own versions only make sense against
-its undecorated, auto-fading popups), and #20 specifically overlaps with
-already-shipped `lastBounds` behavior; full analysis posted as a comment
-on each issue, left open pending the project owner's call. Remaining
-backlog: theme selection (#16, the one still-untouched Appearance
-sub-issue), Advanced settings (#25–29), Yandex (#75, needs a product
-decision, or try the free Mozhi-fallback route first), **#109**
+**#116 — font size/family, #17 — popup opacity, #18 — cursor-flip
+positioning, and #16 — theme selection (light/dark/custom) are now shipped
+too** (see below) — **all of Appearance (#15) is now done except #19/#20**.
+**#19 and #20 are flagged, not implemented** — both conflict with #69's
+deliberate native-frame/no-auto-hide redesign (QTranslate's own versions
+only make sense against its undecorated, auto-fading popups), and #20
+specifically overlaps with already-shipped `lastBounds` behavior; full
+analysis posted as a comment on each issue, left open pending the project
+owner's call. Remaining backlog: Advanced settings (#25–29), Yandex (#75,
+needs a product decision, or try the free Mozhi-fallback route first),
+**#109**
 (resilience patterns — rate-limiting, dual-endpoint fallback,
 official-key-first, backlog), and **#108 — Reverso**, explicitly
 deprioritized by the project owner (2026-09-01: "выносим из текущего
@@ -648,6 +649,37 @@ three bugs, all now fixed:
   toggle. Full writeups are in each issue's own comments — left open
   pending the project owner's read, moved on to other backlog items in
   the meantime rather than blocking on them.
+- **#16 — theme selection (light/dark/custom)**, fully shipped (PR
+  #124) — the last remaining Appearance sub-issue besides the two
+  flagged ones above.
+  - `popup.css` is now driven entirely by `--om-*` CSS custom
+    properties instead of hardcoded colors. Light and Dark are two
+    hand-tuned, fixed palettes (`[data-theme="..."]` blocks) — dark
+    specifically isn't a mechanical inversion of light; the accent
+    color needed to actually get *lighter* (not darker) to stay legible
+    against a dark background, a real design call, not a formula.
+  - **Custom is the more interesting piece**: the user picks exactly
+    three colors (background, text, accent), and every other token
+    (borders, muted text, control backgrounds, hover states, even the
+    error color) is derived from those three via CSS `color-mix()` —
+    confirmed live in the Browser tool's own Chromium engine that these
+    derivation chains actually resolve to real colors, not just get
+    passed through as inert strings. Means a full, coherent palette
+    from a 3-color pick, no per-token picker needed.
+  - `renderer/shared/theme.ts` (`applyTheme`) is shared between
+    `popup.ts` and a live preview mockup in Settings — the mockup
+    duplicates popup.css's exact hex values into settings.css (they're
+    separate stylesheets for separate windows) rather than trying to
+    share the stylesheet itself.
+  - **Verified unusually thoroughly for a renderer-only change**, given
+    no hands-on testing is available this stretch and this is the most
+    visually significant change of the session: reloaded the popup
+    preview three separate times (light/dark/custom stubbed settings)
+    and confirmed via `getComputedStyle` — not just screenshots — that
+    the real Original/Translation text areas and the tab border color
+    end up with the exact right colors each time, including the custom
+    accent correctly propagating through the derived `color-mix()`
+    chain all the way to `.tab.active`'s border.
 
 Two notes on the merged history (informational, no action needed):
 - PR #64 (popup window) left one harmless empty extra commit on `main`
@@ -678,10 +710,12 @@ Paste this (or just "continue OpenTranslate") to pick the session back up:
 > offline SAPI *and* cloud-neural (#12–#14, #89/#90/#93/#103/#107),
 > five translation providers (DeepL/Yandex/Google/Bing #97/MyMemory #96),
 > per-tab native cloud voice (#112), font size/family (#116), popup
-> opacity (#17), cursor-flip positioning (#18), and the request-volume/
-> reliability fixes (#94) are all done and merged. #19/#20 were
-> researched and flagged (not implemented — see the comments on each
-> issue) rather than guessed past; see "Current state" above for why.
+> opacity (#17), cursor-flip positioning (#18), theme selection (#16),
+> and the request-volume/reliability fixes (#94) are all done and
+> merged — **all of Appearance (#15) is done except #19/#20**, which
+> were researched and flagged (not implemented — see the comments on
+> each issue) rather than guessed past; see "Current state" above for
+> why.
 >
 > **2026-09-01: the project owner stepped away for an unknown period and
 > explicitly asked for autonomous work to continue in their absence**
@@ -704,18 +738,16 @@ Paste this (or just "continue OpenTranslate") to pick the session back up:
 > **Immediate next step:** work through the rest of the backlog
 > autonomously, in this rough order:
 >
-> 1. **#16 (theme selection)** — the one remaining untouched Appearance
->    sub-issue; #19/#20 are intentionally skipped (flagged, not started —
->    see their issue comments and "Current state" above before picking
->    either up).
-> 2. **Advanced settings (#25–29)** — mouse interaction modes, OCR API
->    key, configurable copy action, default browser.
-> 3. **#109 (resilience patterns)** — proactive rate-limiting,
+> 1. **Advanced settings (#25–29)** — mouse interaction modes, OCR API
+>    key, configurable copy action, default browser. (#19/#20 are
+>    intentionally skipped — flagged, not started; see their issue
+>    comments and "Current state" above before picking either up.)
+> 2. **#109 (resilience patterns)** — proactive rate-limiting,
 >    dual-endpoint fallback, official-key-first-with-free-fallback —
 >    hardening, not urgent, no current complaint driving it.
-> 4. **#75 (Yandex)** — try the free Mozhi-fallback route (see the
+> 3. **#75 (Yandex)** — try the free Mozhi-fallback route (see the
 >    issue's newest comment) before defaulting to "needs a paid API key".
-> 5. **#108 (Reverso)** — explicitly deprioritized by the project owner
+> 4. **#108 (Reverso)** — explicitly deprioritized by the project owner
 >    this session and moved to the **v0.4** milestone; leave it there
 >    unless re-prioritized.
 >

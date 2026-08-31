@@ -92,6 +92,10 @@ root-cause writeups.
 - Settings → Appearance: a popup window opacity slider (30-100%), a real
   window-transparency effect applied via Electron's native `opacity`
   option (#17).
+- Settings → Appearance: theme selection — Light, Dark (two hand-tuned
+  palettes), and Custom (pick 3 colors — background, text, accent — and
+  every other shade is derived automatically via CSS `color-mix()`),
+  with a live preview (#16).
 
 ### Fixed
 - Capture reliability: the first several hotkey presses after launch

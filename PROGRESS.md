@@ -8,6 +8,28 @@ GitHub is the source of truth if the two ever disagree.
 
 ## Current state (as of this update)
 
+**2026-09-01, live hands-on testing round (project owner back, tested the
+whole autonomous stretch's output for real): 9 new issues filed from live
+feedback, none implemented yet** — #127 (Settings window not resizable),
+#128 (per-field copy icon, distinct from #27's auto-copy setting), #129
+(History: click an entry to reload it into the popup and re-translate),
+#130 (need a UI way to force a non-cached re-translation — a bad cached
+result currently just repeats), #131 (**revert** #17 — remove the popup
+opacity setting entirely, project owner doesn't want it), #132 (**remove**
+Yandex from the live app — Services checkbox + popup tab — since it's
+been permanently CAPTCHA-blocked since #70 with no working free route
+per #75's investigation; keep `yandex.ts` itself for easy revival), #133
+(resizing the popup window should grow all three text fields
+symmetrically instead of leaving dead space), #134 (Show Dictionary
+should auto-grow the window's height to fit, companion to #133), #135
+(investigate why translation sometimes feels slow — no fix yet, needs
+profiling first; starting points noted on the issue itself, including
+whether #109's new Google 300ms proactive throttle is a contributor).
+All milestone v0.2. Next: work through these with the project owner
+available for real hands-on testing this time, starting with the
+quick/unambiguous ones (#127, #131, #132) before the layout work
+(#133/#134).
+
 **v0.1 (MVP) is functionally done.** All real-machine bugs found in testing
 are fixed and merged (#67/#68/#69/#70, plus #81/#84 found during this
 session's own DoD pass). The only two loose ends, both non-blocking and

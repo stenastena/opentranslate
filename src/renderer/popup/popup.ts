@@ -106,6 +106,37 @@ const speakTranslationButton = document.getElementById('speak-translation-btn') 
 // be reset back once playback ends (naturally or via stop()).
 let activeSpeakButton: HTMLButtonElement | null = null;
 
+// Set only while a cloud-provider (issue #107) audio clip is actually
+// playing — calling it is how a Stop click (a *second*, concurrent
+// handleSpeakClick call for the same button) unblocks the *first* call's
+// still-pending `await playAudioAndWait(...)`, mirroring how the pre-#107
+// system-voice path unblocks its pending speak() by killing the PowerShell
+// process that call is awaiting. Pausing the <audio> element alone
+// wouldn't do this: pause() doesn't fire 'ended', so the awaited promise
+// would otherwise just hang.
+let activeAudioStop: (() => void) | null = null;
+
+// Plays one cloud-provider audio clip and resolves once it's done —
+// naturally (ended), on error, or via activeAudioStop(). data: URIs need
+// popup/index.html's CSP to allow media-src data: (added for this).
+function playAudioAndWait(base64: string, mimeType: string): Promise<void> {
+  return new Promise((resolve) => {
+    const audio = new Audio(`data:${mimeType};base64,${base64}`);
+    const finish = () => {
+      if (activeAudioStop === stopThis) activeAudioStop = null;
+      resolve();
+    };
+    const stopThis = () => {
+      audio.pause();
+      finish();
+    };
+    activeAudioStop = stopThis;
+    audio.addEventListener('ended', finish);
+    audio.addEventListener('error', finish);
+    audio.play().catch(finish);
+  });
+}
+
 const BASE_LANG_CODES = new Set(LANGUAGES.map((lang) => lang.code));
 
 function populateLanguageSelects(): void {
@@ -329,9 +360,14 @@ function setSpeakButtonActive(button: HTMLButtonElement, active: boolean): void 
   button.textContent = active ? '⏹' : '\u{1F50A}';
 }
 
+async function stopActivePlayback(): Promise<void> {
+  activeAudioStop?.(); // unblocks a pending cloud-audio playAudioAndWait(), if any
+  await window.electronAPI.tts.stop(); // kills a pending system-voice PowerShell process, if any
+}
+
 async function handleSpeakClick(button: HTMLButtonElement, getData: () => SpeakData | null): Promise<void> {
   if (activeSpeakButton === button) {
-    await window.electronAPI.tts.stop();
+    await stopActivePlayback();
     return;
   }
 
@@ -339,13 +375,20 @@ async function handleSpeakClick(button: HTMLButtonElement, getData: () => SpeakD
   if (!data) return;
 
   if (activeSpeakButton) {
-    await window.electronAPI.tts.stop();
+    await stopActivePlayback();
   }
 
   activeSpeakButton = button;
   setSpeakButtonActive(button, true);
   try {
-    await window.electronAPI.tts.speak(data.text, data.lang, data.voiceName);
+    // A populated result means the selected provider only fetched audio
+    // bytes (issue #107's cloud providers) rather than playing them
+    // itself — null means the provider already produced sound server-side
+    // (systemProvider.ts via PowerShell), same as before this issue.
+    const result = await window.electronAPI.tts.speak(data.text, data.lang, data.voiceName);
+    if (result) {
+      await playAudioAndWait(result.audioBase64, result.mimeType);
+    }
   } catch (error) {
     console.error('[popup] failed to speak text', error);
   } finally {

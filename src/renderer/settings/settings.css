@@ -167,6 +167,24 @@ body {
   font-weight: 600;
 }
 
+.tts-provider-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.tts-provider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tts-provider-row select {
+  flex: 1;
+  min-width: 0;
+}
+
 .voice-info-box {
   display: flex;
   flex-direction: column;

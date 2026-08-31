@@ -92,7 +92,7 @@ describe('systemTtsProvider', () => {
     expect(child.kill).toHaveBeenCalled();
     capturedCb?.(new Error('killed'));
 
-    await expect(speakPromise).resolves.toBeUndefined();
+    await expect(speakPromise).resolves.toEqual({ kind: 'played' });
   });
 
   it('a real failure (not from stop()) rejects speak()', async () => {

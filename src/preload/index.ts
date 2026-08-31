@@ -48,7 +48,8 @@ const electronAPI = {
     clear: () => ipcRenderer.invoke(CHANNELS.historyClear),
   },
   tts: {
-    speak: (text: string, lang?: string, voiceName?: string) => ipcRenderer.invoke(CHANNELS.ttsSpeak, text, lang, voiceName),
+    speak: (text: string, lang?: string, voiceName?: string, providerOverride?: string) =>
+      ipcRenderer.invoke(CHANNELS.ttsSpeak, text, lang, voiceName, providerOverride),
     stop: () => ipcRenderer.invoke(CHANNELS.ttsStop),
     listVoices: () => ipcRenderer.invoke(CHANNELS.ttsListVoices),
     openNaturalVoiceAdapterPage: () => ipcRenderer.invoke(CHANNELS.ttsOpenNaturalVoiceAdapterPage),

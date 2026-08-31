@@ -139,13 +139,14 @@ export const systemTtsProvider: TTSProvider = {
   id: 'system',
 
   async speak(text, lang, voiceName) {
-    if (!text.trim()) return;
+    if (!text.trim()) return { kind: 'played' };
     await runPowerShell(SPEAK_SCRIPT, {
       ...process.env,
       [ENV_TEXT]: text,
       [ENV_LANG]: lang ?? '',
       [ENV_VOICE]: voiceName ?? '',
     });
+    return { kind: 'played' };
   },
 
   async stop() {

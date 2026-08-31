@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; media-src data:" />
     <title>OpenTranslate Settings</title>
     <link rel="stylesheet" href="settings.css" />
   </head>
@@ -36,9 +36,27 @@
       </section>
 
       <section id="panel-voice" class="panel voice-panel">
+        <div class="tts-provider-box">
+          <label for="tts-provider-select">Voice source</label>
+          <div class="tts-provider-row">
+            <select id="tts-provider-select">
+              <option value="bing-cloud">Cloud — Bing Neural (recommended)</option>
+              <option value="google-cloud">Cloud — Google</option>
+              <option value="system">System (offline, installed voices)</option>
+            </select>
+            <button type="button" id="tts-provider-test-button" class="secondary-button">Test</button>
+          </div>
+          <p class="hint">
+            Cloud voices need an internet connection and use the same kind of unofficial, no-signup endpoint
+            OpenTranslate already uses for translation — no account, no API key. If a cloud request ever fails,
+            OpenTranslate automatically speaks that one request with a system voice instead, so Speak never just
+            goes silent.
+          </p>
+        </div>
+
         <p class="hint">
-          Pick a specific system voice per language for the popup's Speak buttons. Leave a language on "Automatic" to
-          keep matching a voice to it by locale, same as before.
+          The per-language voices below configure the "System" source above, and are also what an automatic
+          cloud-request fallback uses. Leave a language on "Automatic" to keep matching a voice to it by locale.
         </p>
 
         <div class="voice-info-box">

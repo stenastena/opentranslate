@@ -1,0 +1,486 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "OpenTranslate Architecture",
+    "output": "opentranslate.architecture.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1380,
+      660
+    ],
+    "views": [
+      {
+        "id": "translate-flow",
+        "label": "Translate request",
+        "focus": [
+          "popup",
+          "preload",
+          "ipc",
+          "registry",
+          "deeplAdapter",
+          "yandexAdapter",
+          "googleAdapter"
+        ],
+        "note": "Popup calls one of three provider adapters through the registry, each hitting an unofficial web endpoint."
+      },
+      {
+        "id": "persistence-tts",
+        "label": "Persistence & voice",
+        "focus": [
+          "ipc",
+          "localStores",
+          "tts",
+          "sapiExternal"
+        ],
+        "note": "Settings and history persist as local JSON; speech goes through Windows SAPI via PowerShell."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "popup",
+      "type": "frontend",
+      "label": "Popup Window",
+      "sublabel": "renderer/popup.ts",
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        150,
+        80
+      ]
+    },
+    {
+      "id": "mergedCaptureFlow",
+      "type": "backend",
+      "label": "Hotkey, Capture & Windows",
+      "sublabel": "hotkeys, textCapture, windows/",
+      "pos": [
+        420,
+        40
+      ],
+      "size": [
+        170,
+        80
+      ]
+    },
+    {
+      "id": "deeplAdapter",
+      "type": "backend",
+      "label": "DeepL Adapter",
+      "sublabel": "deepl.ts",
+      "pos": [
+        800,
+        40
+      ],
+      "size": [
+        130,
+        80
+      ]
+    },
+    {
+      "id": "deeplExternal",
+      "type": "external",
+      "label": "DeepL Translate",
+      "sublabel": "unofficial endpoint",
+      "pos": [
+        970,
+        40
+      ],
+      "size": [
+        150,
+        80
+      ]
+    },
+    {
+      "id": "settingsUi",
+      "type": "frontend",
+      "label": "Settings Window",
+      "sublabel": "renderer/settings.ts",
+      "pos": [
+        40,
+        180
+      ],
+      "size": [
+        150,
+        100
+      ]
+    },
+    {
+      "id": "preload",
+      "type": "security",
+      "label": "Preload Bridge",
+      "sublabel": "window.electronAPI",
+      "tag": "contextIsolation",
+      "pos": [
+        230,
+        180
+      ],
+      "size": [
+        140,
+        100
+      ]
+    },
+    {
+      "id": "ipc",
+      "type": "backend",
+      "label": "IPC Handlers",
+      "sublabel": "ipc/handlers.ts",
+      "pos": [
+        420,
+        180
+      ],
+      "size": [
+        170,
+        100
+      ]
+    },
+    {
+      "id": "registry",
+      "type": "backend",
+      "label": "Provider Registry",
+      "sublabel": "error isolation",
+      "pos": [
+        630,
+        180
+      ],
+      "size": [
+        130,
+        100
+      ]
+    },
+    {
+      "id": "yandexAdapter",
+      "type": "backend",
+      "label": "Yandex Adapter",
+      "sublabel": "yandex.ts",
+      "pos": [
+        800,
+        180
+      ],
+      "size": [
+        130,
+        70
+      ]
+    },
+    {
+      "id": "yandexExternal",
+      "type": "external",
+      "label": "Yandex Translate",
+      "sublabel": "unofficial endpoint",
+      "pos": [
+        970,
+        180
+      ],
+      "size": [
+        150,
+        70
+      ]
+    },
+    {
+      "id": "historyUi",
+      "type": "frontend",
+      "label": "History Window",
+      "sublabel": "renderer/history.ts",
+      "pos": [
+        40,
+        340
+      ],
+      "size": [
+        150,
+        90
+      ]
+    },
+    {
+      "id": "localStores",
+      "type": "database",
+      "label": "Local Stores",
+      "sublabel": "userData/*.json",
+      "pos": [
+        420,
+        340
+      ],
+      "size": [
+        170,
+        90
+      ]
+    },
+    {
+      "id": "googleAdapter",
+      "type": "backend",
+      "label": "Google Adapter",
+      "sublabel": "google.ts",
+      "pos": [
+        800,
+        340
+      ],
+      "size": [
+        130,
+        90
+      ]
+    },
+    {
+      "id": "googleExternal",
+      "type": "external",
+      "label": "Google Translate",
+      "sublabel": "translate_a/single",
+      "pos": [
+        970,
+        340
+      ],
+      "size": [
+        150,
+        90
+      ]
+    },
+    {
+      "id": "tts",
+      "type": "backend",
+      "label": "TTS Provider",
+      "sublabel": "powershell.exe",
+      "pos": [
+        630,
+        500
+      ],
+      "size": [
+        130,
+        80
+      ]
+    },
+    {
+      "id": "sapiExternal",
+      "type": "external",
+      "label": "Windows SAPI",
+      "sublabel": "System.Speech",
+      "pos": [
+        1160,
+        500
+      ],
+      "size": [
+        150,
+        80
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Renderer processes",
+      "wraps": [
+        "popup",
+        "settingsUi",
+        "historyUi"
+      ],
+      "pad": 24
+    },
+    {
+      "kind": "security-group",
+      "label": "Preload (contextBridge)",
+      "wraps": [
+        "preload"
+      ],
+      "pad": 24
+    },
+    {
+      "kind": "region",
+      "label": "Main process",
+      "wraps": [
+        "mergedCaptureFlow",
+        "ipc",
+        "localStores",
+        "registry",
+        "tts",
+        "deeplAdapter",
+        "yandexAdapter",
+        "googleAdapter"
+      ],
+      "pad": 24
+    },
+    {
+      "kind": "region",
+      "label": "External services",
+      "wraps": [
+        "deeplExternal",
+        "yandexExternal",
+        "googleExternal",
+        "sapiExternal"
+      ],
+      "pad": 24
+    }
+  ],
+  "connections": [
+    {
+      "id": "popup-preload",
+      "from": "popup",
+      "to": "preload",
+      "label": "invoke / on (electronAPI)",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "settings-preload",
+      "from": "settingsUi",
+      "to": "preload",
+      "label": "electronAPI.settings",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        150,
+        150
+      ]
+    },
+    {
+      "id": "history-preload",
+      "from": "historyUi",
+      "to": "preload",
+      "label": "electronAPI.history",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "preload-ipc",
+      "from": "preload",
+      "to": "ipc",
+      "label": "ipcRenderer.invoke",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        300,
+        310
+      ]
+    },
+    {
+      "id": "captureflow-preload",
+      "from": "mergedCaptureFlow",
+      "to": "preload",
+      "label": "webContents.send(popup:captured-text)",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "ipc-registry",
+      "from": "ipc",
+      "to": "registry",
+      "label": "provider:translate()",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        700,
+        310
+      ]
+    },
+    {
+      "id": "ipc-localstores",
+      "from": "ipc",
+      "to": "localStores",
+      "label": "settings + history CRUD",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        505,
+        294
+      ]
+    },
+    {
+      "id": "ipc-tts",
+      "from": "ipc",
+      "to": "tts",
+      "label": "tts:speak/stop/list-voices",
+      "fromSide": "right",
+      "toSide": "top",
+      "via": [
+        [
+          610,
+          230
+        ],
+        [
+          610,
+          470
+        ],
+        [
+          695,
+          470
+        ]
+      ],
+      "labelAt": [
+        652,
+        470
+      ]
+    },
+    {
+      "id": "registry-deepl",
+      "from": "registry",
+      "to": "deeplAdapter",
+      "route": "orthogonal-h"
+    },
+    {
+      "id": "registry-yandex",
+      "from": "registry",
+      "to": "yandexAdapter"
+    },
+    {
+      "id": "registry-google",
+      "from": "registry",
+      "to": "googleAdapter",
+      "route": "orthogonal-h"
+    },
+    {
+      "id": "deepl-external",
+      "from": "deeplAdapter",
+      "to": "deeplExternal",
+      "label": "HTTPS"
+    },
+    {
+      "id": "yandex-external",
+      "from": "yandexAdapter",
+      "to": "yandexExternal",
+      "label": "HTTPS"
+    },
+    {
+      "id": "google-external",
+      "from": "googleAdapter",
+      "to": "googleExternal",
+      "label": "HTTPS via curl",
+      "labelAt": [
+        950,
+        444
+      ]
+    },
+    {
+      "id": "tts-sapi",
+      "from": "tts",
+      "to": "sapiExternal",
+      "label": "powershell.exe -Command"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Capture",
+      "items": [
+        "keyEmulator.ts sends raw Win32 SendInput scan codes via koffi, not nut-js",
+        "Clipboard is saved, cleared, polled, then restored"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Translate",
+      "items": [
+        "ProviderRegistry isolates each adapter so one failing never crashes the app",
+        "Google alone returns dictionary data and shells to curl to dodge TLS fingerprinting"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "IPC & persistence",
+      "items": [
+        "Renderers run with contextIsolation:true, nodeIntegration:false; preload exposes a fixed electronAPI surface",
+        "Settings/history are local JSON; TTS shells to powershell.exe using Windows SAPI"
+      ]
+    }
+  ]
+}

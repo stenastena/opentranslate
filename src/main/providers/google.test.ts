@@ -5,7 +5,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const curlGetMock = vi.fn();
 vi.mock('./curlFetch', () => ({ curlGet: (...args: unknown[]) => curlGetMock(...args) }));
 
-const { googleProvider, __clearGoogleRequestCacheForTests } = await import('./google');
+const { googleProvider, __clearGoogleRequestCacheForTests, __resetGoogleRateLimiterForTests, __setGoogleRateLimitForTests } = await import('./google');
+
+// This suite mocks the network entirely and isn't testing the throttle's
+// timing (rateLimiter.test.ts does that) — without this, every
+// multi-request test (retries, fallbacks, gender pivots) would pay the
+// real 300ms between each mocked call, adding real seconds to the run.
+__setGoogleRateLimitForTests(0);
 
 function mockCurlOnce(body: string, status = 200) {
   curlGetMock.mockResolvedValue({ status, body });
@@ -22,6 +28,11 @@ describe('googleProvider', () => {
     // different mocked response) would get back an earlier test's cached
     // response instead of ever calling the freshly mocked curlGet.
     __clearGoogleRequestCacheForTests();
+    // Without this, issue #109's proactive rate limiter would make each
+    // test's first network call wait out whatever's left of the cooldown
+    // from the previous test's calls — real, accumulating delay for no
+    // reason in a suite that mocks the network entirely.
+    __resetGoogleRateLimiterForTests();
   });
 
   it('translates text using the dj=1 object response shape', async () => {
@@ -76,6 +87,54 @@ describe('googleProvider', () => {
     mockCurlOnce('', 503);
 
     await expect(googleProvider.translate('hello', 'en', 'de')).rejects.toThrow(/status 503/);
+  });
+
+  describe('dual-endpoint fallback (issue #109)', () => {
+    it('falls back to clients5.google.com when the primary endpoint fails, with an explicit source language', async () => {
+      curlGetMock.mockResolvedValueOnce({ status: 429, body: '' }).mockResolvedValueOnce({ status: 200, body: JSON.stringify(['Hallo Welt']) });
+
+      const result = await googleProvider.translate('hello world', 'en', 'de');
+
+      expect(result).toEqual({ translatedText: 'Hallo Welt' });
+      expect(curlGetMock).toHaveBeenCalledTimes(2);
+      const [fallbackUrl] = curlGetMock.mock.calls[1];
+      expect(fallbackUrl).toContain('clients5.google.com/translate_a/t');
+      expect(fallbackUrl).toContain('client=dict-chrome-ex');
+    });
+
+    it('parses the fallback\'s nested [text, detectedLang] shape when the source language is auto', async () => {
+      curlGetMock.mockResolvedValueOnce({ status: 429, body: '' }).mockResolvedValueOnce({ status: 200, body: JSON.stringify([['Hello world', 'fr']]) });
+
+      const result = await googleProvider.translate('bonjour le monde', 'auto', 'en');
+
+      expect(result).toEqual({ translatedText: 'Hello world', detectedSourceLang: 'fr' });
+    });
+
+    it('never has dictionary/gender data — the fallback endpoint has none to give', async () => {
+      curlGetMock.mockResolvedValueOnce({ status: 429, body: '' }).mockResolvedValueOnce({ status: 200, body: JSON.stringify(['Haus']) });
+
+      const result = await googleProvider.translate('house', 'en', 'de');
+
+      expect(result.dictionary).toBeUndefined();
+      expect(result.genderArticle).toBeUndefined();
+    });
+
+    it('does not touch the fallback endpoint at all when the primary succeeds', async () => {
+      // Multi-word text deliberately, so this isn't also exercising the
+      // unrelated gender-pivot lookup (#76) — this test is only about the
+      // fallback endpoint staying untouched on a primary success.
+      mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'Hallo Welt' }], src: 'en' }));
+
+      await googleProvider.translate('hello world', 'en', 'de');
+
+      expect(curlGetMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('throws the primary error (not the fallback error) when both endpoints fail', async () => {
+      curlGetMock.mockResolvedValueOnce({ status: 503, body: '' }).mockResolvedValueOnce({ status: 429, body: '' });
+
+      await expect(googleProvider.translate('hello', 'en', 'de')).rejects.toThrow(/status 503/);
+    });
   });
 
   it('reports healthy when a translation comes back', async () => {
@@ -234,7 +293,11 @@ describe('googleProvider', () => {
     await expect(googleProvider.translate('hello', 'en', 'de')).rejects.toThrow(/status 429/);
     await expect(googleProvider.translate('hello', 'en', 'de')).rejects.toThrow(/status 429/);
 
-    expect(curlGetMock).toHaveBeenCalledTimes(2);
+    // 2 calls per translate() attempt since #109: the primary endpoint,
+    // then the dual-endpoint fallback (also mocked to 429 here, since
+    // mockCurlOnce uses mockResolvedValue — every curlGet call gets the
+    // same failing response, primary and fallback alike).
+    expect(curlGetMock).toHaveBeenCalledTimes(4);
   });
 
   it('caches a differently-parameterized request (different lightweight flag) separately from the full one (#94)', async () => {

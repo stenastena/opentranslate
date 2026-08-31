@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { yandexProvider } from './yandex';
+import { __resetYandexRateLimiterForTests, yandexProvider } from './yandex';
 
 function mockFetchOnce(body: string, ok = true, status = 200) {
   vi.stubGlobal(
@@ -15,6 +15,10 @@ function mockFetchOnce(body: string, ok = true, status = 200) {
 describe('yandexProvider', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    // Without this, one test's call leaves the shared rate-limiter
+    // singleton's cooldown running into the next test, which would then
+    // wait out real time for no reason (see rateLimiter.ts, issue #109).
+    __resetYandexRateLimiterForTests();
   });
 
   it('translates text using the tr-text response shape', async () => {
@@ -63,5 +67,31 @@ describe('yandexProvider', () => {
     mockFetchOnce('{"code":200,"lang":"en-de","text":["Hallo"]}');
 
     await expect(yandexProvider.isHealthy()).resolves.toBe(true);
+  });
+
+  it('proactively spaces consecutive requests at least 750ms apart (issue #109)', async () => {
+    vi.useFakeTimers();
+    try {
+      mockFetchOnce('{"code":200,"lang":"en-de","text":["Hallo"]}');
+
+      const first = yandexProvider.translate('one', 'en', 'de');
+      await vi.advanceTimersByTimeAsync(0);
+      await first;
+
+      let secondResolved = false;
+      const second = yandexProvider.translate('two', 'en', 'de').then((r) => {
+        secondResolved = true;
+        return r;
+      });
+
+      await vi.advanceTimersByTimeAsync(500);
+      expect(secondResolved).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(300);
+      await second;
+      expect(secondResolved).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

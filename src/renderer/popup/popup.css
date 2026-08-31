@@ -36,6 +36,16 @@ body {
   font-size: 12px;
 }
 
+.detected-lang-badge {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #eaf1fb;
+  color: #2b6cb0;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
 #swap-langs {
   border: 1px solid #c9c9c9;
   background: #f3f3f3;

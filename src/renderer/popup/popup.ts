@@ -1,4 +1,4 @@
-import { LANGUAGES } from '../shared/languages.js';
+import { LANGUAGES, languageLabel } from '../shared/languages.js';
 
 const PROVIDER_LABELS: Record<string, string> = {
   deepl: 'DeepL',
@@ -61,6 +61,7 @@ const backTranslationTextEl = document.getElementById('back-translation-text')!;
 const tabsEl = document.getElementById('provider-tabs')!;
 const sourceLangSelect = document.getElementById('source-lang') as HTMLSelectElement;
 const targetLangSelect = document.getElementById('target-lang') as HTMLSelectElement;
+const detectedLangBadge = document.getElementById('detected-lang-badge')!;
 const swapButton = document.getElementById('swap-langs') as HTMLButtonElement;
 const translateButton = document.getElementById('translate-btn') as HTMLButtonElement;
 const dictionarySection = document.getElementById('dictionary-section') as HTMLDetailsElement;
@@ -124,6 +125,7 @@ function renderActiveResult(): void {
     backTranslationTextEl.textContent = '';
     renderDictionary(undefined);
     renderGenderBadge(undefined);
+    renderDetectedLangBadge(undefined);
   } else if (result.status === 'error') {
     translationTextEl.value = result.error ?? 'Translation failed.';
     translationTextEl.readOnly = true;
@@ -131,6 +133,7 @@ function renderActiveResult(): void {
     backTranslationTextEl.textContent = '';
     renderDictionary(undefined);
     renderGenderBadge(undefined);
+    renderDetectedLangBadge(undefined);
   } else {
     translationTextEl.readOnly = false;
     if (document.activeElement !== translationTextEl) {
@@ -139,6 +142,7 @@ function renderActiveResult(): void {
     backTranslationTextEl.textContent = result.backTranslatedText ?? '(back-translation unavailable)';
     renderDictionary(result.dictionary);
     renderGenderBadge(result.genderArticle);
+    renderDetectedLangBadge(result.detectedLang);
   }
 
   speakTranslationButton.disabled = !result || result.status !== 'ok' || !translationTextEl.value.trim();
@@ -153,6 +157,21 @@ function renderActiveResult(): void {
 function renderGenderBadge(genderArticle: string | undefined): void {
   translationGenderEl.hidden = !genderArticle;
   translationGenderEl.textContent = genderArticle ?? '';
+}
+
+// Auto-Detect's source language is a fully open call to the provider's own
+// language identifier (any language it recognizes), completely independent
+// of the Languages-settings first/second pair — that pair only picks the
+// *target* once a source is known (see resolveAutoTargetLang). Without
+// this, a detection landing outside the configured pair (e.g. a real word
+// in a third language) was invisible, and looked like the app was
+// ignoring the configured languages entirely. Only shown when the source
+// selector is actually on Auto-Detect — a manually-picked source isn't
+// "detected", so labelling it as such would be misleading.
+function renderDetectedLangBadge(detectedLang: string | undefined): void {
+  const show = state.sourceLang === 'auto' && Boolean(detectedLang);
+  detectedLangBadge.hidden = !show;
+  detectedLangBadge.textContent = show ? `Detected: ${languageLabel(detectedLang!)}` : '';
 }
 
 interface SpeakData {

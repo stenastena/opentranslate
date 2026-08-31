@@ -1,14 +1,15 @@
 import { EventEmitter } from 'node:events';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const execFileMock = vi.fn();
 vi.mock('node:child_process', () => ({
   execFile: (...args: unknown[]) => execFileMock(...args),
 }));
 
-const { systemTtsProvider } = await import('./systemProvider');
+const { __resetShellResolutionForTests, systemTtsProvider } = await import('./systemProvider');
 
 type ExecFileCallback = (error: Error | null, stdout?: string) => void;
+type ProbeCallback = (error: Error | null) => void;
 
 function fakeChild() {
   const child = new EventEmitter() as EventEmitter & { kill: () => void };
@@ -16,7 +17,23 @@ function fakeChild() {
   return child;
 }
 
+// The pwsh.exe availability probe (issue #103) — always the first execFile
+// call any test triggers. Defaulted to "available" in beforeEach so most
+// tests can just focus on the actual script call; the fallback path gets
+// its own dedicated tests below.
+function mockShellProbe(available: boolean) {
+  execFileMock.mockImplementationOnce((_cmd: string, _args: string[], cb: ProbeCallback) => {
+    cb(available ? null : new Error('pwsh.exe not found'));
+    return fakeChild();
+  });
+}
+
 describe('systemTtsProvider', () => {
+  beforeEach(() => {
+    __resetShellResolutionForTests();
+    mockShellProbe(true);
+  });
+
   afterEach(() => {
     execFileMock.mockReset();
   });
@@ -33,9 +50,9 @@ describe('systemTtsProvider', () => {
 
     await systemTtsProvider.speak(maliciousText, 'de', "Evil'; Remove-Item C:\\ #");
 
-    expect(execFileMock).toHaveBeenCalledTimes(1);
-    const [cmd, args] = execFileMock.mock.calls[0];
-    expect(cmd).toBe('powershell.exe');
+    expect(execFileMock).toHaveBeenCalledTimes(2); // probe + the actual script
+    const [cmd, args] = execFileMock.mock.calls[1];
+    expect(cmd).toBe('pwsh.exe');
     expect(args).toContain('-Command');
     expect(args[args.length - 1]).not.toContain('Remove-Item');
   });
@@ -65,6 +82,12 @@ describe('systemTtsProvider', () => {
     });
 
     const speakPromise = systemTtsProvider.speak('hello', 'en');
+    // Real Speak-then-Stop clicks always have a meaningful time gap; this
+    // just lets the pwsh.exe-availability probe's own microtask settle so
+    // `current` is actually assigned before stop() checks it — the probe
+    // being awaited before the real script call is exactly what issue
+    // #103 added.
+    await Promise.resolve();
     await systemTtsProvider.stop();
     expect(child.kill).toHaveBeenCalled();
     capturedCb?.(new Error('killed'));
@@ -132,5 +155,54 @@ describe('systemTtsProvider', () => {
     });
 
     await expect(systemTtsProvider.listVoices()).resolves.toEqual([]);
+  });
+
+  describe('shell resolution (#103)', () => {
+    it('uses pwsh.exe for the actual script when the probe succeeds', async () => {
+      // beforeEach already mocked a successful probe; just need the
+      // follow-up script call handled.
+      execFileMock.mockImplementationOnce((_cmd: string, _args: string[], _opts: unknown, cb: ExecFileCallback) => {
+        cb(null, '[]');
+        return fakeChild();
+      });
+
+      await systemTtsProvider.listVoices();
+
+      const [probeCmd] = execFileMock.mock.calls[0];
+      const [scriptCmd] = execFileMock.mock.calls[1];
+      expect(probeCmd).toBe('pwsh.exe');
+      expect(scriptCmd).toBe('pwsh.exe');
+    });
+
+    it('falls back to powershell.exe when pwsh.exe is not installed', async () => {
+      execFileMock.mockReset();
+      mockShellProbe(false);
+      execFileMock.mockImplementationOnce((_cmd: string, _args: string[], _opts: unknown, cb: ExecFileCallback) => {
+        cb(null, '[]');
+        return fakeChild();
+      });
+
+      await systemTtsProvider.listVoices();
+
+      const [scriptCmd] = execFileMock.mock.calls[1];
+      expect(scriptCmd).toBe('powershell.exe');
+    });
+
+    it('only probes for pwsh.exe once, reusing the resolved shell for subsequent calls', async () => {
+      execFileMock.mockImplementation((_cmd: string, _args: string[], _opts: unknown, cb: ExecFileCallback) => {
+        cb(null, '[]');
+        return fakeChild();
+      });
+
+      await systemTtsProvider.listVoices();
+      await systemTtsProvider.listVoices();
+
+      // 1 probe + 2 script calls — the probe (mockImplementationOnce from
+      // beforeEach) never fires again on the second listVoices() call.
+      expect(execFileMock).toHaveBeenCalledTimes(3);
+      expect(execFileMock.mock.calls[0][0]).toBe('pwsh.exe');
+      expect(execFileMock.mock.calls[1][0]).toBe('pwsh.exe');
+      expect(execFileMock.mock.calls[2][0]).toBe('pwsh.exe');
+    });
   });
 });

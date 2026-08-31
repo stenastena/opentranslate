@@ -16,4 +16,5 @@ export const CHANNELS = {
   ttsStop: 'tts:stop',
   ttsListVoices: 'tts:list-voices',
   ttsOpenNaturalVoiceAdapterPage: 'tts:open-natural-voice-adapter-page',
+  clipboardWriteText: 'clipboard:write-text',
 } as const;

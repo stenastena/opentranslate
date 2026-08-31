@@ -9,7 +9,7 @@ import { SettingsStore } from '../settings/store';
 import { TTSProviderId } from '../settings/schema';
 import { TTSProvider, TTSSpeakResult } from '../tts';
 import { CHANNELS } from './channels';
-import { IpcMainLike, NATURAL_VOICE_ADAPTER_URL, ShellLike, registerIpcHandlers } from './handlers';
+import { ClipboardLike, IpcMainLike, NATURAL_VOICE_ADAPTER_URL, ShellLike, registerIpcHandlers } from './handlers';
 
 function fakeProvider(id: string): TranslationProvider {
   return {
@@ -52,6 +52,7 @@ describe('registerIpcHandlers', () => {
   let ipcMain: FakeIpcMain;
   let ttsProviders: Record<TTSProviderId, TTSProvider>;
   let shell: ShellLike;
+  let clipboard: ClipboardLike;
 
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'opentranslate-ipc-'));
@@ -68,8 +69,9 @@ describe('registerIpcHandlers', () => {
       'bing-cloud': fakeTtsProvider('bing-cloud', { kind: 'audio', data: Buffer.from('bing-audio'), mimeType: 'audio/mpeg' }),
     };
     shell = { openExternal: vi.fn().mockResolvedValue(undefined) };
+    clipboard = { writeText: vi.fn() };
     ipcMain = new FakeIpcMain();
-    registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, ttsProviders, shell);
+    registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, ttsProviders, shell, clipboard);
   });
 
   afterEach(() => {
@@ -152,7 +154,7 @@ describe('registerIpcHandlers', () => {
   it('settings:update invokes the onSettingsUpdated callback with the merged settings', async () => {
     const onSettingsUpdated = vi.fn();
     const anotherIpcMain = new FakeIpcMain();
-    registerIpcHandlers(anotherIpcMain, registry, settingsStore, historyStore, ttsProviders, shell, onSettingsUpdated);
+    registerIpcHandlers(anotherIpcMain, registry, settingsStore, historyStore, ttsProviders, shell, clipboard, onSettingsUpdated);
 
     await anotherIpcMain.invoke(CHANNELS.settingsUpdate, { hotkeys: { captureAndTranslate: 'Alt+G' } });
 
@@ -212,5 +214,10 @@ describe('registerIpcHandlers', () => {
     await ipcMain.invoke(CHANNELS.ttsOpenNaturalVoiceAdapterPage, 'https://evil.example.com');
     expect(shell.openExternal).toHaveBeenCalledWith(NATURAL_VOICE_ADAPTER_URL);
     expect(shell.openExternal).not.toHaveBeenCalledWith('https://evil.example.com');
+  });
+
+  it('clipboard:write-text writes whatever text the renderer sends (issue #27)', async () => {
+    await ipcMain.invoke(CHANNELS.clipboardWriteText, 'Привет, мир!');
+    expect(clipboard.writeText).toHaveBeenCalledWith('Привет, мир!');
   });
 });

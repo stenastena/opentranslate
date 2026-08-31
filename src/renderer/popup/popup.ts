@@ -50,6 +50,10 @@ interface State {
   // A language with no entry here falls back to systemTtsProvider's
   // automatic locale matching — same as before this setting existed.
   voiceByLang: Record<string, string>;
+  // Issue #27: what to put on the clipboard once a translation completes
+  // for the active tab. 'none' (default) is a no-op — see textCapture.ts,
+  // which already restores the clipboard's pre-capture contents on its own.
+  copyAction: CopyAction;
   // A manual correction of Auto-Detect's source-language pick for the
   // *current* captured text — set via the detected-language select.
   // Deliberately scoped to this capture, not a persistent setting: cleared
@@ -77,6 +81,7 @@ const state: State = {
   autoDetectFirst: 'en',
   autoDetectSecond: 'de',
   voiceByLang: {},
+  copyAction: 'none',
   backLangOverrideByProvider: new Map(),
   providerIds: [],
   activeProviderId: null,
@@ -496,6 +501,20 @@ function dictRow(label: string, values: string[]): HTMLParagraphElement {
   return row;
 }
 
+// Issue #27: fires once a translation actually completes for the active
+// tab — not on every re-render — so it doesn't fight the user by silently
+// overwriting their clipboard more often than a translation genuinely
+// changed. 'none' (the default) never calls the IPC at all.
+async function copyAfterTranslateIfEnabled(originalText: string, translatedText: string): Promise<void> {
+  if (state.copyAction === 'none') return;
+  const text = state.copyAction === 'translation' ? translatedText : originalText;
+  try {
+    await window.electronAPI.clipboard.writeText(text);
+  } catch (error) {
+    console.error('[popup] failed to copy to clipboard', error);
+  }
+}
+
 // forceFresh bypasses Google's request cache (google.ts, #94) for this
 // specific run — set true when the caller is acting on an explicit user
 // correction (a manual language-selector change, or overriding a wrong
@@ -576,6 +595,10 @@ async function ensureActiveResultLoaded(forceFresh = false): Promise<void> {
       backLang,
       dictionaryStatus: 'idle',
     });
+
+    if (providerId === state.activeProviderId) {
+      void copyAfterTranslateIfEnabled(state.originalText, translateResult.value.translatedText);
+    }
   } catch (error) {
     state.resultsByProvider.set(providerId, {
       status: 'error',
@@ -808,6 +831,7 @@ async function init(): Promise<void> {
   state.autoDetectFirst = settings.languages.autoDetectFirst;
   state.autoDetectSecond = settings.languages.autoDetectSecond;
   state.voiceByLang = settings.tts.voiceByLang;
+  state.copyAction = settings.advanced.copyAction;
   applyAppearance(settings.appearance);
 
   state.providerIds = PROVIDER_ORDER.filter((id) => providerIds.includes(id) && settings.services[id as keyof typeof settings.services]);

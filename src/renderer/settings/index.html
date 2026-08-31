@@ -14,6 +14,7 @@
         <button type="button" class="tab" data-panel="services">Services</button>
         <button type="button" class="tab" data-panel="voice">Voice</button>
         <button type="button" class="tab" data-panel="appearance">Appearance</button>
+        <button type="button" class="tab" data-panel="advanced">Advanced</button>
       </div>
 
       <section id="panel-hotkeys" class="panel active">
@@ -128,6 +129,20 @@
         <p class="hint">
           Applies to the whole popup window (its actual transparency, not just the text) — not previewed here since
           it affects a different window; open the popup after saving to see it.
+        </p>
+      </section>
+
+      <section id="panel-advanced" class="panel">
+        <label for="copy-action-select">After translating, also copy to clipboard</label>
+        <select id="copy-action-select">
+          <option value="none">Nothing (default)</option>
+          <option value="original">Original text</option>
+          <option value="translation">Translated text</option>
+        </select>
+        <p class="hint">
+          Applies once per completed translation on the tab you're viewing — not on every tab switch or re-render.
+          OpenTranslate's own hotkey capture always restores whatever was on your clipboard before capturing,
+          regardless of this setting; this only adds a copy <em>after</em> the translation is ready.
         </p>
       </section>
 

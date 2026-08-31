@@ -12,7 +12,6 @@
         <select id="source-lang" aria-label="Source language">
           <option value="auto">Auto-Detect</option>
         </select>
-        <select id="detected-lang-select" class="detected-lang-select" aria-label="Detected language (override)" hidden></select>
         <button id="swap-langs" type="button" title="Swap languages">&#8646;</button>
         <select id="target-lang" aria-label="Target language"></select>
         <button id="translate-btn" type="button">Translate</button>
@@ -22,7 +21,8 @@
 
       <section class="section">
         <h2>
-          Original
+          <span class="h2-title">Original</span>
+          <select id="detected-lang-select" class="section-lang-select" aria-label="Detected language (override)" hidden></select>
           <button id="speak-original-btn" type="button" class="speak-btn" title="Speak" aria-label="Speak original text">&#128266;</button>
         </h2>
         <textarea id="original-text" class="text-block" spellcheck="false"></textarea>
@@ -30,7 +30,8 @@
 
       <section class="section">
         <h2>
-          Translation<span id="translation-gender" class="gender-badge" hidden></span>
+          <span class="h2-title">Translation<span id="translation-gender" class="gender-badge" hidden></span></span>
+          <select id="target-lang-select" class="section-lang-select" aria-label="Translation language (override)" hidden></select>
           <button id="speak-translation-btn" type="button" class="speak-btn" title="Speak" aria-label="Speak translation" disabled>&#128266;</button>
         </h2>
         <textarea id="translation-text" class="text-block" spellcheck="false" readonly></textarea>
@@ -38,8 +39,8 @@
 
       <section class="section">
         <h2>
-          Back-translation
-          <select id="back-lang-select" class="back-lang-select" aria-label="Back-translation language" hidden></select>
+          <span class="h2-title">Back-translation</span>
+          <select id="back-lang-select" class="section-lang-select" aria-label="Back-translation language" hidden></select>
         </h2>
         <div id="back-translation-text" class="text-block"></div>
       </section>

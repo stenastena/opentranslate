@@ -57,14 +57,23 @@ session, at the project owner's request after hitting 429 under light real
 usage) is fully shipped. **#98/#99 — editable detected/back-translation
 language + on-demand dictionary** (this session, from live back-translation
 testing that turned out not to be a bug — see below) are also fully
-shipped. **#97 — Microsoft Translator (Azure)** is filed but explicitly
-*not started*: needs a project-owner decision on whether the onboarding
-friction (a real Azure account, confirmed to need a non-prepaid card) is
-worth it before any adapter code gets written. Remaining v0.2 backlog:
-Appearance settings (#15–20), Advanced settings (#25–29), Yandex (#75,
-needs a product decision), #93 (voice quality, backlog), #96 (MyMemory as
-a simple 4th provider, backlog), #97 (Microsoft Translator, needs a
-decision first).
+shipped, and so are three more same-session fixes from further live
+feedback: **#101** (tray simplified to just opening the main window;
+hotkey opens it even with nothing selected), **#102** (all three per-
+section language selects — Original/Translation/Back-translation — now
+share identical styling, and Translation got its own resolved-target
+override), and **#103** (the real root cause of "new voices don't show
+up": `systemProvider.ts` was always shelling out to Windows PowerShell
+5.1, which can't see modern "OneCore"-registered voices at all — fixed by
+preferring `pwsh.exe` when installed). **#97 — Microsoft Translator
+(Azure)** is filed but explicitly *not started*: needs a project-owner
+decision on whether the onboarding friction (a real Azure account,
+confirmed to need a non-prepaid card) is worth it before any adapter code
+gets written. Remaining v0.2 backlog: Appearance settings (#15–20),
+Advanced settings (#25–29), Yandex (#75, needs a product decision), #93
+(voice quality — re-verify against #103's fix before assuming it's still
+unresolved), #96 (MyMemory as a simple 4th provider, backlog), #97
+(Microsoft Translator, needs a decision first).
 
 The old "dictionary provider subsystem" issues (#21/#22/#23/#24) were closed
 this session as superseded: they asked for a generic multi-provider
@@ -329,6 +338,86 @@ three bugs, all now fixed:
   and #96 (add MyMemory Translation as a simple 4th provider — genuinely
   free, no API key, no reverse-engineering needed) remain backlog** — no
   code work done on either this session.
+- **#101 — tray/hotkey simplification**, fully shipped (PR #104), from
+  live feedback: "the tray should only offer opening the main window" and
+  "the hotkey should open it even with nothing selected".
+  - `tray.ts`: context menu is now just "Open OpenTranslate" + Exit —
+    Settings/History are already reachable from the popup's own File menu
+    (added when the popup got a real application menu), so the tray's own
+    copies were redundant. Left-click on the tray icon opens the main
+    window directly too, not just the context menu.
+  - `showPopupWindow(capturedText?)`: omitting the argument (the tray's
+    "just open" case) brings an already-open popup to front without
+    discarding its state; an explicit string (including `''`, the
+    hotkey-with-nothing-selected case) keeps the replace-with-fresh-
+    capture behavior. `index.ts`'s hotkey handler now always calls it.
+  - Small accompanying fix: the popup no longer shows a misleading
+    "Translating…" placeholder when there's no text and nothing will ever
+    load.
+  - **Real hands-on check still open**: while testing this, `Ctrl+\``
+    failed to register on this machine ("likely already bound by another
+    application") even after fully killing and relaunching the app
+    several times — a pre-existing conflict with something else on this
+    system, unrelated to this change (`hotkeys.ts` wasn't touched).
+    Couldn't finish confirming the tray-click/hotkey-with-nothing-selected
+    behavior live because of it; worth the project owner checking both,
+    and what else has that binding, when convenient.
+- **#102 — unified language-selector styling + Translation's own
+  override**, fully shipped (PR #105), from a screenshot showing the
+  detected-language select (added in #98) looking visually inconsistent
+  and confusing.
+  - Original's language-correction select moved out of the top lang-bar
+    into its own section's heading (matching Back-translation's existing
+    pattern); all three selects (Original/Translation/Back-translation)
+    now share one CSS class with identical plain styling.
+  - Translation section gained its own select for the *resolved* target
+    language — editable as a per-capture override
+    (`state.targetLangOverride`, parallel to `sourceLangOverride`: Auto-
+    target-mode only, invalidates/re-runs all tabs, forces a live
+    re-check via `skipCache`, cleared on a new capture or a manual
+    language-selector change).
+  - Layout fix that made this reliable regardless of a select's
+    hidden/shown state: each heading's title text is wrapped in a
+    `flex:1` span, rather than relying on `margin-left:auto` on multiple
+    trailing siblings (which splits the free space *between* them instead
+    of keeping them adjacent at the edge — a real pitfall, not just a
+    style preference).
+- **#103 — system voice listing misses modern/OneCore voices**, fully
+  shipped (PR #106) — the actual root cause behind "new voices I install
+  don't show up, even after Refresh/reinstalling the app" (also raised
+  alongside #101/#102 in the same live-feedback round).
+  - Confirmed live: `systemProvider.ts` always shelled out to Windows
+    PowerShell 5.1 (`powershell.exe`), whose `System.Speech` only sees
+    voices in the classic SAPI5 registry location — it silently misses
+    anything registered under the newer "OneCore" location
+    (`HKLM\SOFTWARE\Microsoft\Speech_OneCore\Voices\Tokens`), which is
+    where modern Windows voices (and NaturalVoiceSAPIAdapter-bridged ones)
+    can end up. The exact same script via `pwsh.exe` (PowerShell 7,
+    already installed on this machine) went from 5 voices to 17, and
+    could actually select/speak through a previously-invisible one, not
+    just list it.
+  - Fix: detect `pwsh.exe` availability once (cached for the process's
+    lifetime), prefer it for every PowerShell call this file makes
+    (`speak`/`isHealthy`/`listVoices`, not just listing — a user-picked
+    OneCore voice needs `SelectVoice()` to find it too), falling back to
+    `powershell.exe` unchanged when `pwsh.exe` isn't installed.
+  - Verified live end-to-end through the app's own compiled code (not
+    just manual PowerShell probing): `listVoices()` went 5 → 17, and
+    `speak()` produced real audio through "Microsoft Katja", a voice that
+    was completely invisible before this fix.
+  - Caught and fixed a genuine (if narrow) timing regression this
+    introduced along the way: `current` (used by `stop()`) is no longer
+    assigned perfectly synchronously with `speak()` on the very first-ever
+    call, since resolving the shell is now an extra `await` before it.
+    Only matters for a Stop click with zero time gap after the first-ever
+    Speak click — real UI clicks always have some gap — but it did break
+    an existing unit test, which is how it was caught.
+  - **Still open**: whether NaturalVoiceSAPIAdapter specifically was ever
+    installed on this machine wasn't confirmed either way (the voices
+    found via the OS's own bundled OneCore voices were enough to
+    reproduce and fix the general gap) — re-verify with the project owner
+    actually installing it, now that the underlying enumeration bug is
+    fixed, to close the loop on #93 too.
 
 Two notes on the merged history (informational, no action needed):
 - PR #64 (popup window) left one harmless empty extra commit on `main`

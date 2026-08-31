@@ -255,17 +255,19 @@ function renderActiveResult(): void {
   speakTranslationButton.disabled = !result || result.status !== 'ok' || !translationTextEl.value.trim();
 }
 
-// Google's dictionary/gender data (issue #76) is only ever fetched when the
-// user explicitly clicks "Show Dictionary" (issue #99) rather than with
-// every lookup, to cut Google's automatic per-lookup request cost — this
-// renders whichever of {button, loading, content} matches dictionaryStatus.
-// Only Google ever returns this data, so the button is hidden for every
-// other provider tab regardless of status.
+// Dictionary/gender data (Google: issue #76, Bing: issue #119) is only
+// ever fetched when the user explicitly clicks "Show Dictionary" (issue
+// #99) rather than with every lookup, to cut the extra per-lookup request
+// cost — this renders whichever of {button, loading, content} matches
+// dictionaryStatus. Only Google and Bing ever return this data, so the
+// button stays hidden for every other provider tab regardless of status.
+const DICTIONARY_CAPABLE_PROVIDERS = new Set(['google', 'bing']);
+
 function renderDictionaryArea(result: TabResult | undefined): void {
-  const isGoogle = state.activeProviderId === 'google';
+  const supportsDictionary = state.activeProviderId !== null && DICTIONARY_CAPABLE_PROVIDERS.has(state.activeProviderId);
   const status = result?.dictionaryStatus ?? 'idle';
 
-  loadDictionaryButton.hidden = !(isGoogle && result && status !== 'loaded');
+  loadDictionaryButton.hidden = !(supportsDictionary && result && status !== 'loaded');
   loadDictionaryButton.disabled = status === 'loading';
   loadDictionaryButton.textContent = status === 'loading' ? 'Loading…' : 'Show Dictionary';
 

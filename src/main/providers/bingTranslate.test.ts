@@ -84,7 +84,11 @@ describe('bingProvider', () => {
   it('retries once with a freshly-fetched auth token when the request fails, then succeeds', async () => {
     curlPostFormMock.mockResolvedValueOnce({ status: 401, body: '{"ShowCaptcha":false}' }).mockResolvedValueOnce(bingResponse('Hallo', 'de', 'en'));
 
-    const result = await bingProvider.translate('hello', 'en', 'de');
+    // lightweight: true — this test is about the translate-call retry
+    // behavior specifically; without it, a third (dictionary-lookup) call
+    // would also fire for this single-word text (see the "dictionary
+    // lookup" describe block below) and throw off the call-count assertions.
+    const result = await bingProvider.translate('hello', 'en', 'de', { lightweight: true });
 
     expect(result).toEqual({ translatedText: 'Hallo', detectedSourceLang: 'en' });
     expect(getBingAuthMock).toHaveBeenCalledTimes(2);
@@ -118,5 +122,85 @@ describe('bingProvider', () => {
 
     const [, , , , cookieHeader] = curlPostFormMock.mock.calls[0];
     expect(cookieHeader).toBe('');
+  });
+
+  describe('dictionary lookup (issue #119)', () => {
+    function lookupResponse(entries: unknown[]) {
+      return { status: 200, body: JSON.stringify(entries) };
+    }
+
+    it('fetches tlookupv3 after a single-word translation and attaches the parsed dictionary', async () => {
+      curlPostFormMock
+        .mockResolvedValueOnce(bingResponse('Haus', 'de', 'en'))
+        .mockResolvedValueOnce(lookupResponse([{ normalizedSource: 'house', displaySource: 'house', translations: [{ normalizedTarget: 'haus', displayTarget: 'haus', posTag: 'NOUN', confidence: 1, prefixWord: '', backTranslations: [] }] }]));
+
+      const result = await bingProvider.translate('house', 'en', 'de');
+
+      expect(result.translatedText).toBe('Haus');
+      expect(result.dictionary?.entries[0].partOfSpeech).toBe('noun');
+      expect(curlPostFormMock).toHaveBeenCalledTimes(2);
+      const [url, queryParams, formData] = curlPostFormMock.mock.calls[1];
+      expect(url).toBe('https://www.bing.com/tlookupv3');
+      expect(queryParams).toEqual({ isVertical: '1', IG: 'IG1', IID: 'IID1' });
+      expect(formData).toMatchObject({ from: 'en', to: 'de', text: 'house', translatedtext: 'Haus', token: 'TOKEN1', key: 'KEY1' });
+    });
+
+    it('sets genderArticle when the lookup response carries a prefixWord', async () => {
+      curlPostFormMock
+        .mockResolvedValueOnce(bingResponse('Einschränkung', 'de', 'en'))
+        .mockResolvedValueOnce(lookupResponse([{ normalizedSource: 'restriction', displaySource: 'restriction', translations: [{ normalizedTarget: 'einschränkung', displayTarget: 'Einschränkung', posTag: 'NOUN', confidence: 1, prefixWord: 'die', backTranslations: [] }] }]));
+
+      const result = await bingProvider.translate('restriction', 'en', 'de');
+
+      expect(result.genderArticle).toBe('die');
+    });
+
+    it('does not fetch the dictionary for multi-word text', async () => {
+      curlPostFormMock.mockResolvedValueOnce(bingResponse('Hallo Welt', 'de', 'en'));
+
+      const result = await bingProvider.translate('hello world', 'en', 'de');
+
+      expect(result.dictionary).toBeUndefined();
+      expect(curlPostFormMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not fetch the dictionary for a lightweight call', async () => {
+      curlPostFormMock.mockResolvedValueOnce(bingResponse('Haus', 'de', 'en'));
+
+      const result = await bingProvider.translate('house', 'en', 'de', { lightweight: true });
+
+      expect(result.dictionary).toBeUndefined();
+      expect(curlPostFormMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not fetch the dictionary for detectLanguage or isHealthy calls', async () => {
+      curlPostFormMock.mockResolvedValueOnce(bingResponse('Hallo', 'de', 'en'));
+      await bingProvider.isHealthy();
+      expect(curlPostFormMock).toHaveBeenCalledTimes(1);
+
+      curlPostFormMock.mockReset();
+      curlPostFormMock.mockResolvedValueOnce(bingResponse('hello', 'en', 'ru'));
+      await bingProvider.detectLanguage('привет');
+      expect(curlPostFormMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves dictionary/genderArticle unset (not a thrown error) when the lookup request itself fails', async () => {
+      curlPostFormMock.mockResolvedValueOnce(bingResponse('Haus', 'de', 'en')).mockResolvedValueOnce({ status: 500, body: '' });
+
+      const result = await bingProvider.translate('house', 'en', 'de');
+
+      expect(result.translatedText).toBe('Haus');
+      expect(result.dictionary).toBeUndefined();
+      expect(result.genderArticle).toBeUndefined();
+    });
+
+    it('leaves dictionary/genderArticle unset when the lookup response is not valid JSON', async () => {
+      curlPostFormMock.mockResolvedValueOnce(bingResponse('Haus', 'de', 'en')).mockResolvedValueOnce({ status: 200, body: 'not json' });
+
+      const result = await bingProvider.translate('house', 'en', 'de');
+
+      expect(result.translatedText).toBe('Haus');
+      expect(result.dictionary).toBeUndefined();
+    });
   });
 });

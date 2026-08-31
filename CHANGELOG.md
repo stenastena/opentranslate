@@ -96,6 +96,10 @@ root-cause writeups.
   palettes), and Custom (pick 3 colors — background, text, accent — and
   every other shade is derived automatically via CSS `color-mix()`),
   with a live preview (#16).
+- Settings → Advanced (new tab): an opt-in "after translating, also copy
+  to clipboard" action (Nothing / Original text / Translated text),
+  independent of the existing hotkey-capture clipboard-restore behavior
+  (#27).
 
 ### Fixed
 - Capture reliability: the first several hotkey presses after launch

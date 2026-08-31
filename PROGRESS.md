@@ -107,7 +107,11 @@ deliberate native-frame/no-auto-hide redesign (QTranslate's own versions
 only make sense against its undecorated, auto-fading popups), and #20
 specifically overlaps with already-shipped `lastBounds` behavior; full
 analysis posted as a comment on each issue, left open pending the project
-owner's call. Remaining backlog: Advanced settings (#25–29), Yandex (#75,
+owner's call. **#27 — configurable copy-to-clipboard action is also
+shipped** (see below); **#26/#28/#29 are flagged, not implemented** — same
+reasoning pattern as #19/#20 (nothing real to configure yet for #26/#28,
+a substantial unverifiable-without-hands-on-testing OS-integration feature
+for #29); full analysis on each issue. Remaining backlog: Yandex (#75,
 needs a product decision, or try the free Mozhi-fallback route first),
 **#109**
 (resilience patterns — rate-limiting, dual-endpoint fallback,
@@ -680,6 +684,51 @@ three bugs, all now fixed:
     end up with the exact right colors each time, including the custom
     accent correctly propagating through the derived `color-mix()`
     chain all the way to `.tab.active`'s border.
+- **#27 — configurable copy-to-clipboard action**, fully shipped (PR
+  #125), the one implementable piece of #25's Advanced settings group.
+  - New Settings → Advanced tab: "After translating, also copy to
+    clipboard" (Nothing / Original / Translated), firing once per
+    completed translation on the *active* tab specifically — not on
+    every tab switch or re-render, so an opted-in user doesn't get
+    their clipboard silently overwritten more often than a translation
+    actually changed.
+  - Independent of `textCapture.ts`'s existing (unconditional) restore-
+    the-clipboard-after-capture behavior — this is a separate, later
+    write, gated entirely on the new setting.
+  - New `clipboard:write-text` IPC channel + `ClipboardLike` injection
+    interface, mirroring the existing `ShellLike`/`shell.openExternal`
+    pattern exactly, for the same reason (renderer can't touch
+    Electron's `clipboard` module directly under contextIsolation, and
+    injection keeps it unit-testable).
+  - **#26 (default browser), #28 (OCR API key), and #29 (mouse
+    interaction modes) were researched via QTranslate comparison and
+    flagged, not implemented** — same "don't guess-implement a
+    conflict or an orphaned feature" pattern as #19/#20:
+    - #26: this app opens exactly one external link, ever (the fixed
+      NaturalVoiceSAPIAdapter URL) — a browser-choice setting for one
+      link is inert. Revisit alongside whatever feature actually needs
+      a browser choice.
+    - #28: no OCR feature exists in this app at all yet to consume an
+      API key — implementing bare settings storage now would be an
+      orphaned field nothing reads. Implement alongside real OCR
+      support, not before it.
+    - #29: QTranslate's actual analog (`SelectionTranslateButton.kt`) is
+      a floating icon on text selection, needing a global mouse hook —
+      no infrastructure for that exists in this app at all (capture is
+      entirely hotkey-driven today), and it's comparable in complexity
+      to the original hotkey/capture system's own multi-issue history.
+      Also exactly the kind of change a stubbed browser preview can't
+      verify — needs a real OS-level check with someone present.
+  - Full research writeups posted as comments on #26/#28/#29.
+  - **Process note for next time**: verifying this one via a stubbed
+    browser preview hit a real gotcha — an inline `<script>` stub
+    silently failed under the app's own CSP (`default-src 'self'`
+    blocks inline scripts with no `'unsafe-inline'` for script-src).
+    Fixed by writing the stub to an external same-origin `stub.js` file
+    referenced via `<script src="stub.js">` instead, injected into the
+    *real* built `index.html` right before `</head>` (rather than a
+    hand-copied markup harness) so there's no risk of the preview
+    drifting from the real page structure.
 
 Two notes on the merged history (informational, no action needed):
 - PR #64 (popup window) left one harmless empty extra commit on `main`
@@ -711,11 +760,12 @@ Paste this (or just "continue OpenTranslate") to pick the session back up:
 > five translation providers (DeepL/Yandex/Google/Bing #97/MyMemory #96),
 > per-tab native cloud voice (#112), font size/family (#116), popup
 > opacity (#17), cursor-flip positioning (#18), theme selection (#16),
-> and the request-volume/reliability fixes (#94) are all done and
-> merged — **all of Appearance (#15) is done except #19/#20**, which
-> were researched and flagged (not implemented — see the comments on
-> each issue) rather than guessed past; see "Current state" above for
-> why.
+> configurable copy-to-clipboard action (#27), and the request-volume/
+> reliability fixes (#94) are all done and merged — **all of Appearance
+> (#15) is done except #19/#20**, and #27 is the only implementable
+> piece of Advanced settings (#25) — #26/#28/#29 were researched and
+> flagged (not implemented — see the comments on each issue) rather
+> than guessed past; see "Current state" above for why.
 >
 > **2026-09-01: the project owner stepped away for an unknown period and
 > explicitly asked for autonomous work to continue in their absence**
@@ -738,16 +788,15 @@ Paste this (or just "continue OpenTranslate") to pick the session back up:
 > **Immediate next step:** work through the rest of the backlog
 > autonomously, in this rough order:
 >
-> 1. **Advanced settings (#25–29)** — mouse interaction modes, OCR API
->    key, configurable copy action, default browser. (#19/#20 are
->    intentionally skipped — flagged, not started; see their issue
->    comments and "Current state" above before picking either up.)
-> 2. **#109 (resilience patterns)** — proactive rate-limiting,
+> 1. **#109 (resilience patterns)** — proactive rate-limiting,
 >    dual-endpoint fallback, official-key-first-with-free-fallback —
->    hardening, not urgent, no current complaint driving it.
-> 3. **#75 (Yandex)** — try the free Mozhi-fallback route (see the
+>    hardening, not urgent, no current complaint driving it. (#19/#20/
+>    #26/#28/#29 are all intentionally skipped — flagged, not started;
+>    see each issue's comments and "Current state" above before picking
+>    any of them up.)
+> 2. **#75 (Yandex)** — try the free Mozhi-fallback route (see the
 >    issue's newest comment) before defaulting to "needs a paid API key".
-> 4. **#108 (Reverso)** — explicitly deprioritized by the project owner
+> 3. **#108 (Reverso)** — explicitly deprioritized by the project owner
 >    this session and moved to the **v0.4** milestone; leave it there
 >    unless re-prioritized.
 >
@@ -793,22 +842,35 @@ Paste this (or just "continue OpenTranslate") to pick the session back up:
   capture flow need the real app, per the mandatory-verification note
   above (or the project owner's own testing, if they're away).
   - **How to actually do the stubbed preview** (used successfully for
-    #116): write a throwaway `preview.html` into `dist/renderer/<window>/`
-    (gitignored, safe to leave) with an inline `<script>` that sets
-    `window.electronAPI` to a stub object *before* the real
-    `<script type="module" src="....js">` tag, copying the target
-    window's real `index.html` body verbatim underneath. Then serve
-    `dist/renderer/` (not the window's own subfolder — sibling imports
-    like `../shared/fonts.js` need the parent directory as web root) over
-    a plain local HTTP server and navigate the Browser tool there.
-    **`file://` doesn't work** — a file outside the project root renders
-    as a static snapshot with no JS execution, so nothing (tabs, live
-    previews, event listeners) will actually respond; the error only
-    shows up as "nothing happens when I click", not an explicit warning.
-    Verify with `getComputedStyle(...)`/DOM state via `javascript_tool`,
-    not just a screenshot — a screenshot can look right by coincidence
-    (or miss something off-screen) where reading the actual computed
-    value can't.
+    #116/#17/#18/#16/#27): best version (used from #16 onward) injects a
+    `<script src="stub.js"></script>` tag right before `</head>` in a
+    *copy* of the target window's real, already-built `index.html`
+    (written to a `preview.html` sibling in the same
+    `dist/renderer/<window>/` folder — gitignored, safe to leave), with
+    `stub.js` a separate file setting `window.electronAPI` to a stub
+    object. Then serve `dist/renderer/` (not the window's own subfolder
+    — sibling imports like `../shared/fonts.js` need the parent
+    directory as web root) over a plain local HTTP server and navigate
+    the Browser tool there.
+    - **`file://` doesn't work** — a file outside the project root
+      renders as a static snapshot with no JS execution, so nothing
+      (tabs, live previews, event listeners) will actually respond; the
+      error only shows up as "nothing happens when I click", not an
+      explicit warning.
+    - **An *inline* `<script>` stub doesn't work either** (found on
+      #27) — every real window's `index.html` ships its own strict CSP
+      (`default-src 'self'`), which blocks inline scripts silently
+      (`window.electronAPI` stays `undefined`, no console error shown
+      by default). The external-`stub.js` approach above is what
+      actually works against the *real* CSP-carrying markup; an earlier
+      hand-copied-markup harness without the CSP meta tag happened to
+      dodge this, which is part of why copying the real `index.html`
+      now (rather than hand-maintaining a second copy of it) is the
+      better approach — it exercises the real page, CSP included.
+    - Verify with `getComputedStyle(...)`/DOM state via
+      `javascript_tool`, not just a screenshot — a screenshot can look
+      right by coincidence (or miss something off-screen) where reading
+      the actual computed value can't.
 - When comparing against or citing another project (e.g. the ahatem/
   QTranslate research behind #107/#97/#119), read its actual source
   before asserting what it does — READMEs oversell; the real answer was

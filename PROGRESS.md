@@ -111,9 +111,10 @@ owner's call. **#27 — configurable copy-to-clipboard action is also
 shipped** (see below); **#26/#28/#29 are flagged, not implemented** — same
 reasoning pattern as #19/#20 (nothing real to configure yet for #26/#28,
 a substantial unverifiable-without-hands-on-testing OS-integration feature
-for #29); full analysis on each issue. Remaining backlog: Yandex (#75,
-needs a product decision, or try the free Mozhi-fallback route first),
-**#109**
+for #29); full analysis on each issue. **#75 (Yandex)'s free Mozhi route
+was investigated live and thoroughly, and genuinely doesn't pan out right
+now** — see below; still needs a product decision (paid key vs.
+self-hosted Mozhi). Remaining backlog: **#109**
 (resilience patterns — rate-limiting, dual-endpoint fallback,
 official-key-first, backlog), and **#108 — Reverso**, explicitly
 deprioritized by the project owner (2026-09-01: "выносим из текущего
@@ -729,6 +730,32 @@ three bugs, all now fixed:
     *real* built `index.html` right before `</head>` (rather than a
     hand-copied markup harness) so there's no risk of the preview
     drifting from the real page structure.
+- **#75 — Yandex's free Mozhi-fallback route, investigated live and
+  thoroughly, genuinely doesn't work right now** (no code shipped —
+  nothing came out verified-working). Full writeup as an issue comment;
+  summary:
+  - The earlier session's premise was slightly off on re-reading the
+    actual source: Mozhi isn't a fallback wired *into* QTranslate's
+    Yandex plugin — it's its own separate provider that proxies to a
+    *chosen* upstream engine.
+  - Traced Mozhi's `engine=yandex` path to what it actually calls:
+    `translate.yandex.net/api/v1/tr.json/translate` — **the exact same
+    endpoint `yandex.ts` already hits**, just `srv=android` instead of
+    our `srv=tr-text`. Tested both live: `tr-text` is still hard
+    CAPTCHA-blocked (unchanged); `android` gets a *different* failure —
+    a clean `{"code":405,"message":"Session is invalid"}`, meaning that
+    path validates session credentials a synthetic id can't satisfy,
+    not an IP-level wall, but still a dead end without reverse-
+    engineering a real handshake.
+  - Tested 10 of QTranslate's own curated public Mozhi instances
+    directly — zero produced a working translation (6 unreachable, 1
+    behind an unscriptable JS proof-of-work bot wall, 2 whose own
+    server can't even resolve `translate.yandex.net`'s DNS, 1 stuck in
+    a redirect loop).
+  - Two paths remain, both real product/cost decisions: a self-hosted
+    Mozhi instance (might dodge the shared-IP/DNS problems the public
+    ones hit, unverifiable without an actual server to test against),
+    or the original paid Yandex Cloud API key plan.
 
 Two notes on the merged history (informational, no action needed):
 - PR #64 (popup window) left one harmless empty extra commit on `main`
@@ -793,10 +820,11 @@ Paste this (or just "continue OpenTranslate") to pick the session back up:
 >    hardening, not urgent, no current complaint driving it. (#19/#20/
 >    #26/#28/#29 are all intentionally skipped — flagged, not started;
 >    see each issue's comments and "Current state" above before picking
->    any of them up.)
-> 2. **#75 (Yandex)** — try the free Mozhi-fallback route (see the
->    issue's newest comment) before defaulting to "needs a paid API key".
-> 3. **#108 (Reverso)** — explicitly deprioritized by the project owner
+>    any of them up. **#75's free-Mozhi route is done being investigated
+>    — thoroughly tried live, genuinely doesn't work right now (see its
+>    comment) — don't re-attempt it; it needs the project owner's actual
+>    decision, paid key vs. self-hosted Mozhi, not more code.**)
+> 2. **#108 (Reverso)** — explicitly deprioritized by the project owner
 >    this session and moved to the **v0.4** milestone; leave it there
 >    unless re-prioritized.
 >

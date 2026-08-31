@@ -70,13 +70,45 @@ interface RawVoiceEntry {
   Description: string;
 }
 
+// Issue #103: Windows PowerShell 5.1 (powershell.exe)'s System.Speech only
+// sees voices registered in the classic SAPI5 registry location — it
+// silently misses anything registered under the newer "OneCore" location
+// (HKLM\SOFTWARE\Microsoft\Speech_OneCore\Voices\Tokens), which is where
+// modern Windows voices *and* NaturalVoiceSAPIAdapter-bridged voices can
+// end up. Confirmed live: the exact same script run via pwsh.exe
+// (PowerShell 7, an optional install) sees all of them, and can actually
+// select/speak through a voice powershell.exe couldn't even list. Prefer
+// pwsh.exe when it's installed; fall back to powershell.exe (today's
+// behavior, unchanged) when it isn't — checked once and cached for the
+// process's lifetime rather than on every call.
+let resolvedShellPromise: Promise<string> | null = null;
+
+function resolveShell(): Promise<string> {
+  if (!resolvedShellPromise) {
+    resolvedShellPromise = new Promise((resolve) => {
+      execFile('pwsh.exe', ['-NoProfile', '-NonInteractive', '-Command', 'exit 0'], (error) => {
+        resolve(error ? 'powershell.exe' : 'pwsh.exe');
+      });
+    });
+  }
+  return resolvedShellPromise;
+}
+
+// Test-only escape hatch — without this, a test overriding the pwsh.exe
+// availability mock after an earlier test already resolved it would
+// silently keep using the earlier (now-stale) cached shell choice.
+export function __resetShellResolutionForTests(): void {
+  resolvedShellPromise = null;
+}
+
 let current: ChildProcess | null = null;
 let stoppedIntentionally = false;
 
-function runPowerShell(script: string, env: NodeJS.ProcessEnv): Promise<string> {
+async function runPowerShell(script: string, env: NodeJS.ProcessEnv): Promise<string> {
+  const shell = await resolveShell();
   return new Promise((resolve, reject) => {
     current = execFile(
-      'powershell.exe',
+      shell,
       ['-NoProfile', '-NonInteractive', '-Command', script],
       { env, maxBuffer: 10 * 1024 * 1024 },
       (error, stdout) => {

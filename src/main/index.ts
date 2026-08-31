@@ -61,7 +61,7 @@ app.whenReady().then(() => {
     'bing-cloud': bingCloudTtsProvider,
   };
 
-  registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, ttsProviders, shell, (updated) => {
+  registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, ttsProviders, shell, clipboard, (updated) => {
     applyHotkey(updated.hotkeys.captureAndTranslate);
   });
 

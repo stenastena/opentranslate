@@ -21,6 +21,7 @@ const CHANNELS = {
   ttsStop: 'tts:stop',
   ttsListVoices: 'tts:list-voices',
   ttsOpenNaturalVoiceAdapterPage: 'tts:open-natural-voice-adapter-page',
+  clipboardWriteText: 'clipboard:write-text',
 } as const;
 
 const electronAPI = {
@@ -53,6 +54,9 @@ const electronAPI = {
     stop: () => ipcRenderer.invoke(CHANNELS.ttsStop),
     listVoices: () => ipcRenderer.invoke(CHANNELS.ttsListVoices),
     openNaturalVoiceAdapterPage: () => ipcRenderer.invoke(CHANNELS.ttsOpenNaturalVoiceAdapterPage),
+  },
+  clipboard: {
+    writeText: (text: string) => ipcRenderer.invoke(CHANNELS.clipboardWriteText, text),
   },
 };
 

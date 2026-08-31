@@ -28,6 +28,12 @@ export interface ShellLike {
   openExternal(url: string): Promise<void>;
 }
 
+// Matches the subset of Electron's clipboard module used here (issue
+// #27) — same injection reasoning as ShellLike.
+export interface ClipboardLike {
+  writeText(text: string): void;
+}
+
 // Fixed, not an arbitrary URL accepted from the renderer: this is the only
 // external link this app ever opens, so there's no reason to expose a
 // generic "open any URL" IPC surface for a renderer bug (or future
@@ -41,6 +47,7 @@ export function registerIpcHandlers(
   historyStore: HistoryStore,
   ttsProviders: Record<TTSProviderId, TTSProvider>,
   shell: ShellLike,
+  clipboard: ClipboardLike,
   onSettingsUpdated?: (settings: AppSettings) => void,
 ): void {
   ipcMain.handle(CHANNELS.settingsGet, () => settingsStore.load());
@@ -97,4 +104,12 @@ export function registerIpcHandlers(
   ipcMain.handle(CHANNELS.ttsListVoices, () => ttsProviders.system.listVoices());
 
   ipcMain.handle(CHANNELS.ttsOpenNaturalVoiceAdapterPage, () => shell.openExternal(NATURAL_VOICE_ADAPTER_URL));
+
+  // Issue #27: the renderer (popup.ts) decides *what* to copy (original
+  // vs. translated text, per Settings → Advanced) — this handler is just
+  // the actual clipboard write, since the renderer can't touch Electron's
+  // clipboard module directly under contextIsolation.
+  ipcMain.handle(CHANNELS.clipboardWriteText, (_event, text: string) => {
+    clipboard.writeText(text);
+  });
 }

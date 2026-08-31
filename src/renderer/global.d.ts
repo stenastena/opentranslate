@@ -20,6 +20,7 @@ interface AppSettings {
   services: { deepl: boolean; yandex: boolean; google: boolean; bing: boolean; mymemory: boolean };
   tts: { provider: TTSProviderId; voiceByLang: Record<string, string> };
   appearance: { fontSize: number; fontFamily: string; opacity: number; theme: ThemeMode; customColors: CustomThemeColors };
+  advanced: { copyAction: CopyAction };
 }
 
 // null means the selected provider already played the audio itself
@@ -82,6 +83,9 @@ interface ElectronAPI {
     listVoices(): Promise<TTSVoice[]>;
     openNaturalVoiceAdapterPage(): Promise<void>;
   };
+  clipboard: {
+    writeText(text: string): Promise<void>;
+  };
 }
 
 declare global {
@@ -135,4 +139,6 @@ declare global {
     text: string;
     accent: string;
   }
+
+  type CopyAction = 'none' | 'original' | 'translation';
 }

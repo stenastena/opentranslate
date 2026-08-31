@@ -76,12 +76,24 @@ export interface CustomThemeColors {
   accent: string;
 }
 
+// Issue #27: what happens to the clipboard after a translation completes
+// for the active tab. 'none' (default) leaves it exactly as
+// textCapture.ts already does — restored to whatever it held before the
+// capture — so this is purely opt-in, never a surprise for anyone who
+// hasn't opened Advanced settings.
+export type CopyAction = 'none' | 'original' | 'translation';
+
+export interface AdvancedSettings {
+  copyAction: CopyAction;
+}
+
 export interface AppSettings {
   hotkeys: HotkeySettings;
   languages: LanguageSettings;
   services: ServiceSettings;
   tts: TTSSettings;
   appearance: AppearanceSettings;
+  advanced: AdvancedSettings;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -110,6 +122,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     theme: 'light',
     customColors: { background: '#ffffff', text: '#1a1a1a', accent: '#2b6cb0' },
   },
+  advanced: { copyAction: 'none' },
 };
 
 export const MIN_OPACITY = 0.3;

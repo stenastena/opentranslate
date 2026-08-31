@@ -24,7 +24,18 @@ function clampToWorkArea(x: number, y: number, width: number, height: number): {
   };
 }
 
-export function showPopupWindow(capturedText: string): BrowserWindow {
+// capturedText omitted (undefined) means "just make sure the main window is
+// visible" — the tray's/hotkey-with-no-selection's case — which brings an
+// already-open popup to front without discarding whatever's in progress
+// there, rather than always destroying and recreating it. Passing an
+// explicit string (including '') means a fresh capture that should replace
+// whatever the popup was showing.
+export function showPopupWindow(capturedText?: string): BrowserWindow {
+  if (popupWindow && capturedText === undefined) {
+    popupWindow.show();
+    popupWindow.focus();
+    return popupWindow;
+  }
   popupWindow?.close();
 
   const width = lastBounds?.width ?? DEFAULT_WIDTH;
@@ -66,7 +77,7 @@ export function showPopupWindow(capturedText: string): BrowserWindow {
 
   win.once('ready-to-show', () => {
     win.show();
-    win.webContents.send(CHANNELS.popupCapturedText, capturedText);
+    win.webContents.send(CHANNELS.popupCapturedText, capturedText ?? '');
   });
 
   win.webContents.on('before-input-event', (_event, input) => {

@@ -13,6 +13,14 @@ import { showHistoryWindow } from './windows/historyWindow';
 import { showPopupWindow } from './windows/popupWindow';
 import { showSettingsWindow } from './windows/settingsWindow';
 
+// The popup is this app's "main window" — the tray and hotkey both funnel
+// through this same function, just with a different argument (see
+// showPopupWindow's own comment for what capturedText's presence/absence
+// means).
+function showMainWindow(): void {
+  showPopupWindow();
+}
+
 app.on('window-all-closed', () => {
   // Intentionally not quitting: the app is only reachable via the tray icon.
 });
@@ -29,7 +37,10 @@ app.whenReady().then(() => {
     try {
       const text = await captureSelectedText(clipboard, nutJsKeyEmulator);
       console.log('[hotkey] captured text:', JSON.stringify(text));
-      if (text.trim()) showPopupWindow(text);
+      // Always show the popup, even with nothing selected (text === '') —
+      // it's the app's main window, and the user should still be able to
+      // reach it via the hotkey to type something in manually.
+      showPopupWindow(text);
     } catch (error) {
       console.error('[hotkey] capture failed:', error);
     }
@@ -51,10 +62,7 @@ app.whenReady().then(() => {
   const settings = settingsStore.load();
   applyHotkey(settings.hotkeys.captureAndTranslate);
 
-  createTray(
-    () => showSettingsWindow(),
-    () => showHistoryWindow(),
-  );
+  createTray(showMainWindow);
   installApplicationMenu(
     () => showSettingsWindow(),
     () => showHistoryWindow(),

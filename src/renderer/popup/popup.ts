@@ -340,21 +340,25 @@ function voiceOverrideFor(lang: string | undefined): string | undefined {
   return lang ? state.voiceByLang[lang] : undefined;
 }
 
-// Issue #112: Google and Bing translations are spoken with that same
-// provider's own cloud TTS voice, regardless of what's picked in Settings
-// — DeepL/Yandex have no TTS of their own, so those (and Original, which
-// isn't tied to any translation provider at all) keep using the
-// Settings-selected provider, same as before this issue.
+// Issue #112: whichever tab is active, Google and Bing get spoken with
+// that same provider's own cloud TTS voice, everywhere — both Original and
+// Translation — regardless of what's picked in Settings. DeepL/Yandex have
+// no TTS of their own, so those tabs (and no active tab at all) leave both
+// buttons on the Settings-selected provider, same as before this issue.
 const NATIVE_TTS_PROVIDER_BY_TRANSLATION_PROVIDER: Partial<Record<string, TTSProviderId>> = {
   google: 'google-cloud',
   bing: 'bing-cloud',
 };
 
+function activeTabNativeTtsProvider(): TTSProviderId | undefined {
+  return state.activeProviderId ? NATIVE_TTS_PROVIDER_BY_TRANSLATION_PROVIDER[state.activeProviderId] : undefined;
+}
+
 function getOriginalSpeakData(): SpeakData | null {
   const text = originalTextEl.value.trim();
   if (!text) return null;
   const lang = state.sourceLang !== 'auto' ? state.sourceLang : state.lastDetectedLang;
-  return { text, lang, voiceName: voiceOverrideFor(lang) };
+  return { text, lang, voiceName: voiceOverrideFor(lang), providerOverride: activeTabNativeTtsProvider() };
 }
 
 function getTranslationSpeakData(): SpeakData | null {
@@ -364,7 +368,7 @@ function getTranslationSpeakData(): SpeakData | null {
   const text = translationTextEl.value.trim();
   if (!text) return null;
   const lang = result.targetLang ?? (state.targetLang !== 'auto' ? state.targetLang : state.lastResolvedTargetLang);
-  const providerOverride = providerId ? NATIVE_TTS_PROVIDER_BY_TRANSLATION_PROVIDER[providerId] : undefined;
+  const providerOverride = activeTabNativeTtsProvider();
   return { text, lang, voiceName: voiceOverrideFor(lang), providerOverride };
 }
 

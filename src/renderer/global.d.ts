@@ -10,7 +10,7 @@ type TTSProviderId = 'system' | 'google-cloud' | 'bing-cloud';
 interface AppSettings {
   hotkeys: { captureAndTranslate: string };
   languages: { autoDetectFirst: string; autoDetectSecond: string };
-  services: { deepl: boolean; yandex: boolean; google: boolean; bing: boolean };
+  services: { deepl: boolean; yandex: boolean; google: boolean; bing: boolean; mymemory: boolean };
   tts: { provider: TTSProviderId; voiceByLang: Record<string, string> };
 }
 

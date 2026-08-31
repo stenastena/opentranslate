@@ -54,9 +54,17 @@ is "a bit better, not dramatically better" even with the settings in place
 questions about whether NaturalVoiceSAPIAdapter was actually installed yet,
 logged in the issue). **#94 — Google request-volume/reliability fix** (this
 session, at the project owner's request after hitting 429 under light real
-usage) is also fully shipped — see below. Remaining v0.2 backlog: Appearance
-settings (#15–20), Advanced settings (#25–29), Yandex (#75, needs a product
-decision), #93 (voice quality, backlog).
+usage) is fully shipped. **#98/#99 — editable detected/back-translation
+language + on-demand dictionary** (this session, from live back-translation
+testing that turned out not to be a bug — see below) are also fully
+shipped. **#97 — Microsoft Translator (Azure)** is filed but explicitly
+*not started*: needs a project-owner decision on whether the onboarding
+friction (a real Azure account, confirmed to need a non-prepaid card) is
+worth it before any adapter code gets written. Remaining v0.2 backlog:
+Appearance settings (#15–20), Advanced settings (#25–29), Yandex (#75,
+needs a product decision), #93 (voice quality, backlog), #96 (MyMemory as
+a simple 4th provider, backlog), #97 (Microsoft Translator, needs a
+decision first).
 
 The old "dictionary provider subsystem" issues (#21/#22/#23/#24) were closed
 this session as superseded: they asked for a generic multi-provider
@@ -107,7 +115,9 @@ three bugs, all now fixed:
   extra `dt=` values + `dj=1` (`src/main/providers/googleDictionary.ts`,
   reverse-engineered from captured responses — fixtures in
   `__fixtures__/google/`). Shown in a collapsible Dictionary section in
-  the popup. German/French noun translations carry their definite article
+  the popup — **as of #99 (see below), only when the user clicks "Show
+  Dictionary"**, not automatically with every lookup. German/French noun
+  translations carry their definite article
   (der/die/das, le/la) inline and on a gender badge next to "Translation"
   — best-effort (a pivot lookup recovers it when the sentence translator
   and dictionary subsystem disagree on the top word; sometimes Google's
@@ -268,6 +278,57 @@ three bugs, all now fixed:
     *future* light usage burns through the limit; it does not and cannot
     clear an already-established block faster. Re-run
     `npm run check-providers` to check current status.
+- **#98/#99 — editable detected/back-translation language + on-demand
+  dictionary**, fully shipped (PR #100, same session). Started as a bug
+  report ("back-translation looks broken") that turned out not to be a
+  bug at all: typing "dinamic" gets Auto-Detect'd as Romanian (a real
+  word in that language, not a typo'd English word), and the whole
+  detect→translate→back-translate pipeline was working correctly — the
+  real gap was that **nothing in the UI showed which language got
+  detected**, so a correct-but-unexpected detection looked identical to a
+  broken round-trip. Investigated live against both DeepL and Google
+  directly (`detectLanguage`/`translate` calls from a throwaway script) to
+  confirm before touching any code.
+  - A "Detected: X" `<select>` next to the source dropdown (previously a
+    read-only badge) lets the user correct a wrong Auto-Detect pick for
+    the *current* captured text — re-translates every provider tab using
+    the corrected language, without touching the Source dropdown itself
+    (stays on "Auto-Detect" so the next capture still detects fresh).
+  - A second, independent `<select>` next to "Back-translation" lets the
+    user pick which language back-translation targets, decoupled from the
+    source correction.
+  - Both forced corrections pass a new `skipCache` option through
+    `google.ts`'s request cache (#94) so a correction is guaranteed live,
+    never a stale cached answer — explicitly requested by the project
+    owner mid-implementation. Normal (non-forced) flows keep the caching
+    benefit.
+  - Folded in **#99** once it became clear it touched the same function:
+    the initial translate call is now always `lightweight` — Google's
+    dictionary/gender data (previously fetched automatically, with the
+    gender-pivot fallback alone costing up to 2 *extra* requests) is now
+    opt-in via a new "Show Dictionary" button (Google tab only). Plain
+    translation dropped from up to 3 Google requests to at most 1.
+  - Verified via a stubbed-`electronAPI` browser preview of the real
+    bundled `popup.js`/`css`, not just unit tests — confirmed the
+    `skipCache` flag actually gets set on forced corrections and not on
+    routine loads, and that "Show Dictionary" issues exactly one
+    additional (non-lightweight, non-`skipCache`) request.
+- **#97 — Microsoft Translator (Azure), filed but explicitly not
+  started.** Of QTranslate's provider list (Papago/Microsoft/Baidu/
+  Babylon/Youdao/PROMT — screenshot from the project owner), Microsoft's
+  is the only one with a genuinely strong permanent free tier (2M
+  characters/month via the official API). The blocker: it needs a real
+  Azure account. Researched directly (2026-08-31): **confirmed there is
+  no card-free path** for a standard adult signup — a non-prepaid card
+  plus phone verification is required regardless of intent to stay on
+  the free tier; only Azure-for-Students (academic email) or an
+  event/sponsorship promo code avoid it, neither generally applicable.
+  Logged on the issue. Waiting on a project-owner decision on whether
+  that onboarding friction is worth it before writing any adapter code.
+- **#93 (voice quality still not "dramatically" better after #88/#89/#90)
+  and #96 (add MyMemory Translation as a simple 4th provider — genuinely
+  free, no API key, no reverse-engineering needed) remain backlog** — no
+  code work done on either this session.
 
 Two notes on the merged history (informational, no action needed):
 - PR #64 (popup window) left one harmless empty extra commit on `main`

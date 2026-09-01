@@ -8,6 +8,15 @@ GitHub is the source of truth if the two ever disagree.
 
 ## Current state (as of this update)
 
+**2026-09-01, #151 shipped (PR #153)**: the popup's position/size now
+persists across app restarts (`AppSettings.popup.lastBounds`, primed at
+startup and written on the Windows-only `resized`/`moved` events so a
+drag doesn't spam settings.json with writes) — previously
+`popupWindow.ts`'s `lastBounds` was in-memory only, so a fresh launch
+always reset to the 480x360 default even if the user had resized it
+before. Filed from the project owner's own observation right after a
+reboot ("not sure if the window size is the same as before").
+
 **2026-09-01, one-time security audit** (project owner's explicit request
 — a single pass, not a recurring process; no CI/CD security pipeline
 added), tracked in and closed as #150:

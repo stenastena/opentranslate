@@ -6,6 +6,10 @@ follows [Keep a Changelog](https://keepachangelog.com/), versioning follows
 
 ## [Unreleased]
 
+### Added
+- The popup's position/size now survives app restarts, not just captures
+  within one running session (#151).
+
 ### Security
 - Stopped logging the actual captured/translated text (potentially
   sensitive clipboard content) to the console in two spots — the hotkey

@@ -36,6 +36,12 @@ interface TabResult {
   // for providers other than Google, which never populate dictionary/
   // gender regardless.
   dictionaryStatus?: 'idle' | 'loading' | 'loaded';
+  // True while the initial load's back-translation round trip (issue
+  // #135) is still in flight, after the primary translation has already
+  // committed as 'ok' — keeps forceRefreshButton disabled for that window
+  // so a force-refresh click can't race the still-in-flight back-
+  // translation write. Absent/false once it's settled either way.
+  backTranslationLoading?: boolean;
   // Mirrors TranslationResult.usedFallback (providers/types.ts) — true
   // when this result came from a degraded fallback source instead of the
   // provider's primary one (currently only Google's #109 dual-endpoint
@@ -244,7 +250,7 @@ function renderActiveResult(): void {
   const result = providerId ? state.resultsByProvider.get(providerId) : undefined;
   // Issue #130: only meaningful once there's something to actually
   // re-fetch, and disabled mid-flight so a slow click can't fire twice.
-  forceRefreshButton.disabled = !providerId || !state.originalText || result?.status === 'loading';
+  forceRefreshButton.disabled = !providerId || !state.originalText || result?.status === 'loading' || result?.backTranslationLoading === true;
 
   translationTextEl.classList.remove('loading', 'error');
   backTranslationTextEl.classList.remove('loading', 'error');
@@ -659,25 +665,61 @@ async function ensureActiveResultLoaded(forceFresh = false): Promise<void> {
       })
       .catch((error) => console.error('[popup] failed to record history entry', error));
 
+    // Issue #135: the back-translation is a second full network round trip
+    // — waiting for it before showing anything roughly doubled perceived
+    // latency for every lookup, on every provider (confirmed by direct
+    // per-provider timing: a lookup that's ~1-3s one-way was taking ~2-6s
+    // end to end). Commit and render the primary translation the instant
+    // it's ready instead, then patch backTranslatedText in when the second
+    // call resolves — the same "commit now, patch the field in later"
+    // shape already used by retranslateBackWithLang/
+    // retranslateFromEditedTranslation just below, applied to the initial
+    // load too.
     const backLang = state.backLangOverrideByProvider.get(providerId) ?? effectiveSourceLang;
-    const backResult = await window.electronAPI.providers.translate(providerId, translateResult.value.translatedText, effectiveTargetLang, backLang, {
-      lightweight: true,
-      skipCache: forceFresh,
-    });
-
     state.resultsByProvider.set(providerId, {
       status: 'ok',
       translatedText: translateResult.value.translatedText,
-      backTranslatedText: backResult.ok ? backResult.value.translatedText : undefined,
+      backTranslatedText: undefined,
       detectedLang: effectiveSourceLang,
       targetLang: effectiveTargetLang,
       backLang,
       dictionaryStatus: 'idle',
-      usedFallback: translateResult.value.usedFallback || (backResult.ok && backResult.value.usedFallback),
+      usedFallback: translateResult.value.usedFallback,
+      backTranslationLoading: true,
     });
 
     if (providerId === state.activeProviderId) {
+      renderTabs();
+      renderActiveResult();
+      backTranslationTextEl.textContent = 'Translating…';
+      backTranslationTextEl.classList.add('loading');
       void copyAfterTranslateIfEnabled(state.originalText, translateResult.value.translatedText);
+    }
+
+    // A failure here (including the IPC call itself rejecting, which
+    // registry.ts's own error handling makes unlikely but not impossible)
+    // must not downgrade the already-shown 'ok' result to 'error' — it
+    // just leaves backTranslatedText unset, same as an ok:false response.
+    try {
+      const backResult = await window.electronAPI.providers.translate(providerId, translateResult.value.translatedText, effectiveTargetLang, backLang, {
+        lightweight: true,
+        skipCache: forceFresh,
+      });
+      const current = state.resultsByProvider.get(providerId);
+      if (current && current.status === 'ok' && current.backTranslationLoading) {
+        state.resultsByProvider.set(providerId, {
+          ...current,
+          backTranslatedText: backResult.ok ? backResult.value.translatedText : undefined,
+          usedFallback: current.usedFallback || (backResult.ok && backResult.value.usedFallback),
+          backTranslationLoading: false,
+        });
+      }
+    } catch (error) {
+      console.error('[popup] back-translation failed', error);
+      const current = state.resultsByProvider.get(providerId);
+      if (current && current.status === 'ok' && current.backTranslationLoading) {
+        state.resultsByProvider.set(providerId, { ...current, backTranslationLoading: false });
+      }
     }
   } catch (error) {
     state.resultsByProvider.set(providerId, {

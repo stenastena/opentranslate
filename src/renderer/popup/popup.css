@@ -168,6 +168,14 @@ body {
   color: var(--om-error);
 }
 
+/* A degraded-fallback-source indicator (see popup.ts's renderTabs) — kept
+   small and low-key since a fallback result is a real, working
+   translation, not an error; the badge is informational, not a warning. */
+.fallback-badge {
+  margin-left: 4px;
+  font-size: 10px;
+}
+
 /* Issue #133: the three sections used to be laid out at their content's
    natural height, so dragging the window's bottom border only added blank
    space below them instead of growing the fields themselves. flex:1 on

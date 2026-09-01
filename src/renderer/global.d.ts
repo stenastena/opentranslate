@@ -51,6 +51,7 @@ interface TranslationResult {
   dictionary?: GoogleDictionary;
   genderArticle?: string;
   sourceGenderArticle?: string;
+  usedFallback?: boolean;
 }
 
 interface ElectronAPI {

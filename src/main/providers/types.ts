@@ -22,6 +22,15 @@ export interface TranslationResult {
   // Independent of genderArticle: either, both, or neither can be set
   // depending on which of source/target actually use articles.
   sourceGenderArticle?: string;
+  // True when this result came from a provider's degraded fallback path
+  // instead of its primary source — currently only Google's dual-endpoint
+  // fallback (#109 part 2: clients5.google.com, tried when the primary
+  // translate.googleapis.com endpoint fails) sets this. A fallback result
+  // is a real, working translation, just from a source with no
+  // dictionary/gender data — the popup surfaces this so an empty
+  // dictionary reads as "temporarily using a backup source" rather than
+  // "no data exists for this word", which is what prompted this field.
+  usedFallback?: boolean;
 }
 
 /**

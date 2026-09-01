@@ -95,7 +95,7 @@ describe('googleProvider', () => {
 
       const result = await googleProvider.translate('hello world', 'en', 'de');
 
-      expect(result).toEqual({ translatedText: 'Hallo Welt' });
+      expect(result).toEqual({ translatedText: 'Hallo Welt', usedFallback: true });
       expect(curlGetMock).toHaveBeenCalledTimes(2);
       const [fallbackUrl] = curlGetMock.mock.calls[1];
       expect(fallbackUrl).toContain('clients5.google.com/translate_a/t');
@@ -107,7 +107,7 @@ describe('googleProvider', () => {
 
       const result = await googleProvider.translate('bonjour le monde', 'auto', 'en');
 
-      expect(result).toEqual({ translatedText: 'Hello world', detectedSourceLang: 'fr' });
+      expect(result).toEqual({ translatedText: 'Hello world', detectedSourceLang: 'fr', usedFallback: true });
     });
 
     it('never has dictionary/gender data — the fallback endpoint has none to give', async () => {
@@ -119,15 +119,16 @@ describe('googleProvider', () => {
       expect(result.genderArticle).toBeUndefined();
     });
 
-    it('does not touch the fallback endpoint at all when the primary succeeds', async () => {
+    it('does not touch the fallback endpoint at all when the primary succeeds, and does not flag usedFallback', async () => {
       // Multi-word text deliberately, so this isn't also exercising the
       // unrelated gender-pivot lookup (#76) — this test is only about the
       // fallback endpoint staying untouched on a primary success.
       mockCurlOnce(JSON.stringify({ sentences: [{ trans: 'Hallo Welt' }], src: 'en' }));
 
-      await googleProvider.translate('hello world', 'en', 'de');
+      const result = await googleProvider.translate('hello world', 'en', 'de');
 
       expect(curlGetMock).toHaveBeenCalledTimes(1);
+      expect(result.usedFallback).toBeUndefined();
     });
 
     it('throws the primary error (not the fallback error) when both endpoints fail', async () => {

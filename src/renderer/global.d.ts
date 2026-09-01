@@ -17,9 +17,9 @@ interface CustomThemeColors {
 interface AppSettings {
   hotkeys: { captureAndTranslate: string };
   languages: { autoDetectFirst: string; autoDetectSecond: string };
-  services: { deepl: boolean; yandex: boolean; google: boolean; bing: boolean; mymemory: boolean };
+  services: { deepl: boolean; google: boolean; bing: boolean; mymemory: boolean };
   tts: { provider: TTSProviderId; voiceByLang: Record<string, string> };
-  appearance: { fontSize: number; fontFamily: string; opacity: number; theme: ThemeMode; customColors: CustomThemeColors };
+  appearance: { fontSize: number; fontFamily: string; theme: ThemeMode; customColors: CustomThemeColors };
   advanced: { copyAction: CopyAction };
 }
 

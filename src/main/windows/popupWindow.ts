@@ -1,7 +1,6 @@
 import { BrowserWindow, screen } from 'electron';
 import { join } from 'node:path';
 import { CHANNELS } from '../ipc/channels';
-import { clampOpacity, createSettingsStore } from '../settings';
 
 let popupWindow: BrowserWindow | null = null;
 
@@ -83,20 +82,11 @@ export function showPopupWindow(capturedText?: string): BrowserWindow {
   // popup (no lastBounds yet) gets the cursor-flip treatment.
   const { x, y } = resolvePopupPosition(lastBounds, width, height);
 
-  // Issue #17: read fresh on every fresh popup (not cached at app startup),
-  // so an opacity change in Settings takes effect the next time a capture
-  // opens a new popup — same "applies on next open" pattern as every other
-  // appearance setting (#116's font size/family). A second SettingsStore
-  // instance is fine here: it's a thin, stateless wrapper around reading
-  // the same settings.json file, not something that needs to be shared.
-  const opacity = clampOpacity(createSettingsStore().load().appearance.opacity);
-
   const win = new BrowserWindow({
     x,
     y,
     width,
     height,
-    opacity,
     frame: true,
     resizable: true,
     // Per issue #69: the popup must behave like a normal window — it

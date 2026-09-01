@@ -5,7 +5,7 @@ import { Menu, MenuItemConstructorOptions } from 'electron';
 // Electron's unconfigured default (File/Edit/View/Window/Help) — replaced
 // here with something that actually reflects the app, including a way to
 // reach History/Settings without going through the tray icon.
-export function installApplicationMenu(onOpenSettings: () => void, onOpenHistory: () => void): void {
+export function installApplicationMenu(onOpenSettings: () => void, onOpenHistory: () => void, onShowAbout: () => void): void {
   const template: MenuItemConstructorOptions[] = [
     {
       label: 'File',
@@ -27,6 +27,10 @@ export function installApplicationMenu(onOpenSettings: () => void, onOpenHistory
         { role: 'paste' },
         { role: 'selectAll' },
       ],
+    },
+    {
+      label: 'Help',
+      submenu: [{ label: 'About OpenTranslate', click: onShowAbout }],
     },
   ];
 

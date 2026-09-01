@@ -1,4 +1,4 @@
-import { app, BrowserWindow, clipboard, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, clipboard, dialog, ipcMain, shell } from 'electron';
 import { createHistoryStore } from './history';
 import { registerCaptureHotkey, unregisterAllHotkeys } from './hotkeys';
 import { registerIpcHandlers } from './ipc/handlers';
@@ -19,6 +19,28 @@ import { showSettingsWindow } from './windows/settingsWindow';
 // means).
 function showMainWindow(): void {
   showPopupWindow();
+}
+
+const GITHUB_URL = 'https://github.com/stenastena/opentranslate';
+
+// Electron's native app.showAboutPanel()/setAboutPanelOptions() only work
+// on macOS and Linux — there's no equivalent native "About" panel on
+// Windows, this app's only target platform — so a plain message box is
+// the actual cross-Windows-version way to show this. app.getVersion()
+// reads package.json's "version" the same way electron-builder's
+// packaged build does, so this never needs updating by hand alongside a
+// version bump.
+function showAboutDialog(): void {
+  const result = dialog.showMessageBoxSync({
+    type: 'info',
+    title: 'About OpenTranslate',
+    message: `OpenTranslate ${app.getVersion()}`,
+    detail: `A tray-based Windows desktop translator.\n\nAuthor: Sergey Osherov\nLicense: Apache License 2.0\n© ${new Date().getFullYear()} Sergey Osherov\n\n${GITHUB_URL}`,
+    buttons: ['OK', 'Open GitHub'],
+    defaultId: 0,
+    noLink: true,
+  });
+  if (result === 1) void shell.openExternal(GITHUB_URL);
 }
 
 app.on('window-all-closed', () => {
@@ -108,5 +130,6 @@ app.whenReady().then(() => {
   installApplicationMenu(
     () => showSettingsWindow(),
     () => showHistoryWindow(),
+    showAboutDialog,
   );
 });

@@ -36,6 +36,19 @@
         <label><input id="service-google" type="checkbox" /> Google Translate</label>
         <label><input id="service-bing" type="checkbox" /> Microsoft Translator (Bing)</label>
         <label><input id="service-mymemory" type="checkbox" /> MyMemory Translation</label>
+
+        <label for="default-provider-select">Default provider</label>
+        <select id="default-provider-select">
+          <option value="">Auto (first enabled above)</option>
+          <option value="deepl">DeepL</option>
+          <option value="google">Google Translate</option>
+          <option value="bing">Microsoft Translator (Bing)</option>
+          <option value="mymemory">MyMemory Translation</option>
+        </select>
+        <p class="hint">
+          Which provider's tab is selected when the popup opens. If the chosen provider is disabled above, OpenTranslate
+          falls back to the first enabled one instead.
+        </p>
       </section>
 
       <section id="panel-voice" class="panel voice-panel">

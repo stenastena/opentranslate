@@ -26,6 +26,13 @@ export interface ServiceSettings {
   // phrase can hit a low-quality stored match), so it's opt-in rather than
   // assumed-good like the MT-only providers.
   mymemory: boolean;
+  // Which provider's tab is selected by default when the popup opens,
+  // instead of always the first enabled provider in popup.ts's fixed
+  // PROVIDER_ORDER (DeepL > Google > Bing > MyMemory). '' means no
+  // preference — keeps that same first-enabled-wins behavior. Also falls
+  // back to first-enabled if the chosen provider has since been disabled
+  // above (see popup.ts's init()).
+  defaultProvider: '' | 'deepl' | 'google' | 'bing' | 'mymemory';
 }
 
 // Issue #107: which TTS backend actually produces the audio. 'system' is
@@ -101,7 +108,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   hotkeys: { captureAndTranslate: "Control+`" },
   languages: { autoDetectFirst: 'en', autoDetectSecond: 'de' },
-  services: { deepl: true, google: true, bing: true, mymemory: false },
+  services: { deepl: true, google: true, bing: true, mymemory: false, defaultProvider: '' },
   // 'bing-cloud' by default: real Azure neural voices, the actual fix for
   // the recurring voice-quality complaint (#93) this issue exists to
   // address — 'google-cloud' and 'system' remain one Settings dropdown

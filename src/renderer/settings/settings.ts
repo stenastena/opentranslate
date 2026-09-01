@@ -64,6 +64,11 @@ interface VoiceRow {
 let voiceRows: VoiceRow[] = [];
 let installedVoices: TTSVoice[] = [];
 let loadedVoiceByLang: Record<string, string> = {};
+// The popup's own remembered source/target language pair (not editable
+// here — set from the popup itself) — round-tripped unchanged on save so
+// saving anything else in this window doesn't reset it back to Auto/Auto.
+let loadedLastSourceLang = 'auto';
+let loadedLastTargetLang = 'auto';
 
 function populateLanguageSelects(): void {
   for (const lang of LANGUAGES) {
@@ -302,6 +307,8 @@ async function loadSettings(): Promise<void> {
   updateThemePreview();
   copyActionSelect.value = settings.advanced.copyAction;
   startWithWindowsCheckbox.checked = settings.advanced.startWithWindows;
+  loadedLastSourceLang = settings.languages.lastSourceLang;
+  loadedLastTargetLang = settings.languages.lastTargetLang;
 }
 
 async function handleSave(): Promise<void> {
@@ -313,7 +320,12 @@ async function handleSave(): Promise<void> {
     }
     await window.electronAPI.settings.update({
       hotkeys: { captureAndTranslate: hotkeyInput.value.trim() },
-      languages: { autoDetectFirst: langFirstSelect.value, autoDetectSecond: langSecondSelect.value },
+      languages: {
+        autoDetectFirst: langFirstSelect.value,
+        autoDetectSecond: langSecondSelect.value,
+        lastSourceLang: loadedLastSourceLang,
+        lastTargetLang: loadedLastTargetLang,
+      },
       services: {
         deepl: serviceCheckboxes.deepl.checked,
         google: serviceCheckboxes.google.checked,

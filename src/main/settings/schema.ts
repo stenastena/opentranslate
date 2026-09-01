@@ -5,6 +5,13 @@ export interface HotkeySettings {
 export interface LanguageSettings {
   autoDetectFirst: string;
   autoDetectSecond: string;
+  // The popup's own source/target language dropdowns (not the pair above,
+  // which only feeds Auto target-language resolution — #84). Remembered
+  // across captures and app restarts instead of always resetting to
+  // Auto/Auto; the Settings window has no UI for these two and just
+  // round-trips them unchanged on save (see settings.ts's loadedLanguages).
+  lastSourceLang: string;
+  lastTargetLang: string;
 }
 
 export interface ServiceSettings {
@@ -107,7 +114,7 @@ export interface AppSettings {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   hotkeys: { captureAndTranslate: "Control+`" },
-  languages: { autoDetectFirst: 'en', autoDetectSecond: 'de' },
+  languages: { autoDetectFirst: 'en', autoDetectSecond: 'de', lastSourceLang: 'auto', lastTargetLang: 'auto' },
   services: { deepl: true, google: true, bing: true, mymemory: false, defaultProvider: '' },
   // 'bing-cloud' by default: real Azure neural voices, the actual fix for
   // the recurring voice-quality complaint (#93) this issue exists to

@@ -932,9 +932,26 @@ function invalidateAllResults(): void {
   }
 }
 
+// Issue: the popup previously always reset to Auto/Auto on every fresh
+// capture/app restart — persists the user's last manually-chosen
+// source/target pair to Settings so it's remembered instead. SettingsStore
+// only shallow-merges (see store.ts's update()), so autoDetectFirst/Second
+// must be included here too or they'd get wiped out by this write.
+function persistLastLanguages(): void {
+  void window.electronAPI.settings.update({
+    languages: {
+      autoDetectFirst: state.autoDetectFirst,
+      autoDetectSecond: state.autoDetectSecond,
+      lastSourceLang: state.sourceLang,
+      lastTargetLang: state.targetLang,
+    },
+  });
+}
+
 async function handleLanguageChange(): Promise<void> {
   state.sourceLang = sourceLangSelect.value;
   state.targetLang = targetLangSelect.value;
+  persistLastLanguages();
   // An explicit manual language pick supersedes any per-capture correction
   // that was scoped to the *previous* language mode — stale overrides here
   // would otherwise resurface unexpectedly if the user later switches back
@@ -981,6 +998,16 @@ async function init(): Promise<void> {
 
   state.autoDetectFirst = settings.languages.autoDetectFirst;
   state.autoDetectSecond = settings.languages.autoDetectSecond;
+  // The popup's own source/target dropdowns, remembered across captures
+  // and app restarts (see handleLanguageChange's persistLastLanguages)
+  // instead of always resetting to Auto/Auto — populateLanguageSelects()
+  // already ran with the module-level 'auto'/'auto' defaults above, since
+  // it can't wait on this async settings load; re-sync the actual <select>
+  // DOM values now that the real remembered ones are in hand.
+  state.sourceLang = settings.languages.lastSourceLang;
+  state.targetLang = settings.languages.lastTargetLang;
+  sourceLangSelect.value = state.sourceLang;
+  targetLangSelect.value = state.targetLang;
   state.voiceByLang = settings.tts.voiceByLang;
   state.copyAction = settings.advanced.copyAction;
   applyAppearance(settings.appearance);

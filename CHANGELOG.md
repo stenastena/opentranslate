@@ -6,6 +6,8 @@ follows [Keep a Changelog](https://keepachangelog.com/), versioning follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-01
+
 Real-machine testing after the 0.1.0 tag found the app didn't fully work
 in practice; these fix it. See [PROGRESS.md](PROGRESS.md) for the full
 root-cause writeups.
@@ -230,11 +232,10 @@ root-cause writeups.
   lookup opt-in (#99, above) cut the default per-lookup cost further,
   from up to 3 requests to at most 1.
 
-See the [v0.2 milestone](../../milestone/2) and
-[v0.3 milestone](../../milestone/3) for what's next — the rest of
-Appearance settings (opacity, auto-position/size, borders, pin-when-
-dragged), Advanced settings, and the remaining backlog (Reverso in v0.4,
-resilience/rate-limiting patterns, Yandex's CAPTCHA wall).
+See the [Backlog milestone](../../milestone/7) for what's next — all
+not-yet-scheduled work (Reverso as a 4th provider, remaining Appearance
+polish, Advanced settings, 1.0 stabilization/parity/docs) now lives there
+in one place instead of spread across several version milestones.
 
 ## [0.1.0] - 2026-08-28
 

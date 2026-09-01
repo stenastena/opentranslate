@@ -8,6 +8,36 @@ GitHub is the source of truth if the two ever disagree.
 
 ## Current state (as of this update)
 
+**2026-09-01, v0.2.0 build + repo housekeeping, per the project owner's
+direction after declaring the current state satisfactory** ("current
+state suits me, I'll surface further issues during actual use"):
+- **Version bumped 0.1.0 -> 0.2.0** in `package.json` (also fixed its
+  `description` field, which still said "DeepL, Yandex and Google" —
+  stale since #132 removed Yandex; now lists all four live providers).
+- **CHANGELOG.md**: the `[Unreleased]` section became `## [0.2.0] -
+  2026-09-01`, with a fresh empty `[Unreleased]` above it for future
+  work — same convention 0.1.0 used. Its closing "what's next" pointer
+  now links to the new consolidated Backlog milestone (below) instead of
+  several individually-named ones.
+- **`npm run package` produced `release\OpenTranslate Setup 0.2.0.exe`**
+  (~82MB) successfully, reusing the pre-existing local
+  `winCodeSign` cache workaround documented below (still intact, no
+  re-fix needed). No git tag created — 0.1.0 wasn't tagged either, this
+  just follows that same precedent.
+- **Milestone consolidation**: created a new "Backlog" milestone
+  (#7) and moved all 17 open issues into it — previously scattered
+  across v0.2 (#109/#129/#135), v0.3 (#15/#19/#20), v0.4 (#108), v0.5
+  (#25/#26/#28/#29), 1.0 (#30/#31/#32/#33/#34), and one with no
+  milestone at all (#75). The version-numbered milestones (v0.1-v0.5,
+  1.0) are now all fully closed-out/empty but left in place as
+  historical record, not deleted.
+- **#136 (start-with-Windows) still needs the project owner's own
+  reboot** to verify — not something automatable from here (a full
+  system reboot is out of scope for autonomous action). Guidance given:
+  enable the Settings → Advanced checkbox, then reboot and confirm the
+  app auto-launches; the registry Run-key state can be checked
+  afterward without needing to click through the app again.
+
 **2026-09-01, implementing the 9-issue live-feedback batch (see below),
 project owner said "start implementation, #135 separately after
 interactive verification of everything else":**

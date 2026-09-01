@@ -36,7 +36,12 @@ app.whenReady().then(() => {
     console.log('[hotkey] capture triggered');
     try {
       const text = await captureSelectedText(clipboard, nutJsKeyEmulator);
-      console.log('[hotkey] captured text:', JSON.stringify(text));
+      // Security audit (2026-09-01): never log the actual captured text —
+      // it's arbitrary clipboard/selection content the user may not want
+      // to see echoed anywhere, even to an ephemeral dev-mode console
+      // (a password manager entry, personal message, etc.). Length alone
+      // is enough to confirm the capture worked / came back empty.
+      console.log('[hotkey] captured text length:', text.length);
       // Always show the popup, even with nothing selected (text === '') —
       // it's the app's main window, and the user should still be able to
       // reach it via the hotkey to type something in manually.

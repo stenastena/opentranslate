@@ -117,6 +117,29 @@ body {
   background: var(--om-accent-hover);
 }
 
+/* Issue #130: forces a fresh, non-cached re-translation of the active
+   tab — same visual family as #swap-langs (a plain icon-only chrome
+   button), not the primary-action #translate-btn. */
+#force-refresh-btn {
+  border: 1px solid var(--om-border);
+  background: var(--om-bg-control);
+  color: var(--om-text);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+#force-refresh-btn:hover:not(:disabled) {
+  background: var(--om-bg-control-hover);
+}
+
+#force-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .tabs {
   display: flex;
   gap: 4px;
@@ -180,7 +203,10 @@ body {
   max-width: 120px;
 }
 
-.speak-btn {
+/* Shared by every small icon-only button in a section heading (speak,
+   copy) — issue #128 split this out of what used to be .speak-btn-only
+   styling, since copy needed the exact same look. */
+.icon-btn {
   border: none;
   background: transparent;
   cursor: pointer;
@@ -190,16 +216,24 @@ body {
   color: var(--om-text-secondary);
 }
 
-.speak-btn:hover:not(:disabled) {
+.icon-btn:hover:not(:disabled) {
   background: var(--om-bg-control-hover);
 }
 
-.speak-btn:disabled {
+.icon-btn:disabled {
   opacity: 0.3;
   cursor: default;
 }
 
 .speak-btn.speaking {
+  color: var(--om-accent);
+}
+
+/* Issue #128: a brief accent-colored confirmation that the copy actually
+   happened, since a silent clipboard write otherwise looks like nothing
+   occurred. Toggled on/off in popup.ts, not CSS-timed, so the icon swap
+   and the color stay in sync. */
+.copy-btn.copied {
   color: var(--om-accent);
 }
 

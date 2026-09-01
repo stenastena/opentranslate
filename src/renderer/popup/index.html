@@ -15,6 +15,7 @@
         <button id="swap-langs" type="button" title="Swap languages">&#8646;</button>
         <select id="target-lang" aria-label="Target language"></select>
         <button id="translate-btn" type="button">Translate</button>
+        <button id="force-refresh-btn" type="button" title="Force a fresh translation, ignoring any cached result" aria-label="Force fresh translation">&#8635;</button>
       </div>
 
       <div class="tabs" id="provider-tabs"></div>
@@ -23,7 +24,8 @@
         <h2>
           <span class="h2-title">Original<span id="original-gender" class="gender-badge" hidden></span></span>
           <select id="detected-lang-select" class="section-lang-select" aria-label="Detected language (override)" hidden></select>
-          <button id="speak-original-btn" type="button" class="speak-btn" title="Speak" aria-label="Speak original text">&#128266;</button>
+          <button id="copy-original-btn" type="button" class="icon-btn copy-btn" title="Copy" aria-label="Copy original text" disabled>&#128203;</button>
+          <button id="speak-original-btn" type="button" class="icon-btn speak-btn" title="Speak" aria-label="Speak original text">&#128266;</button>
         </h2>
         <textarea id="original-text" class="text-block" spellcheck="false"></textarea>
       </section>
@@ -32,7 +34,8 @@
         <h2>
           <span class="h2-title">Translation<span id="translation-gender" class="gender-badge" hidden></span></span>
           <select id="target-lang-select" class="section-lang-select" aria-label="Translation language (override)" hidden></select>
-          <button id="speak-translation-btn" type="button" class="speak-btn" title="Speak" aria-label="Speak translation" disabled>&#128266;</button>
+          <button id="copy-translation-btn" type="button" class="icon-btn copy-btn" title="Copy" aria-label="Copy translation" disabled>&#128203;</button>
+          <button id="speak-translation-btn" type="button" class="icon-btn speak-btn" title="Speak" aria-label="Speak translation" disabled>&#128266;</button>
         </h2>
         <textarea id="translation-text" class="text-block" spellcheck="false" readonly></textarea>
       </section>
@@ -41,6 +44,7 @@
         <h2>
           <span class="h2-title">Back-translation</span>
           <select id="back-lang-select" class="section-lang-select" aria-label="Back-translation language" hidden></select>
+          <button id="copy-back-btn" type="button" class="icon-btn copy-btn" title="Copy" aria-label="Copy back-translation" disabled>&#128203;</button>
         </h2>
         <div id="back-translation-text" class="text-block"></div>
       </section>

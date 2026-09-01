@@ -52,6 +52,7 @@ const customColorInputs = {
 };
 const themePreview = document.getElementById('theme-preview') as HTMLElement;
 const copyActionSelect = document.getElementById('copy-action-select') as HTMLSelectElement;
+const startWithWindowsCheckbox = document.getElementById('start-with-windows-checkbox') as HTMLInputElement;
 
 interface VoiceRow {
   lang: string;
@@ -298,6 +299,7 @@ async function loadSettings(): Promise<void> {
   customColorInputs.accent.value = settings.appearance.customColors.accent;
   updateThemePreview();
   copyActionSelect.value = settings.advanced.copyAction;
+  startWithWindowsCheckbox.checked = settings.advanced.startWithWindows;
 }
 
 async function handleSave(): Promise<void> {
@@ -323,7 +325,7 @@ async function handleSave(): Promise<void> {
         theme: themeSelect.value as ThemeMode,
         customColors: currentCustomColors(),
       },
-      advanced: { copyAction: copyActionSelect.value as CopyAction },
+      advanced: { copyAction: copyActionSelect.value as CopyAction, startWithWindows: startWithWindowsCheckbox.checked },
     });
     statusText.textContent = 'Saved.';
   } catch (error) {

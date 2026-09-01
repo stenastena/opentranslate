@@ -83,6 +83,10 @@ export type CopyAction = 'none' | 'original' | 'translation';
 
 export interface AdvancedSettings {
   copyAction: CopyAction;
+  // Issue #136: mirrors Electron's app.setLoginItemSettings({ openAtLogin
+  // }) — applied in main/index.ts on startup and again whenever settings
+  // are saved, so toggling it takes effect without restarting the app.
+  startWithWindows: boolean;
 }
 
 export interface AppSettings {
@@ -117,5 +121,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
     theme: 'light',
     customColors: { background: '#ffffff', text: '#1a1a1a', accent: '#2b6cb0' },
   },
-  advanced: { copyAction: 'none' },
+  advanced: { copyAction: 'none', startWithWindows: false },
 };

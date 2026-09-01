@@ -107,10 +107,18 @@ interactive verification of everything else":**
      top-level key, both write sites (popup.ts and settings.ts's Save)
      now explicitly round-trip these two fields so an unrelated settings
      save doesn't silently reset them.
-  **#147 confirmed working by the project owner's own hands-on testing**
-  in the running app (2026-09-01).
-  **Next:** continue interactive verification of the rest of the batch
-  (#141/#143/#135's fixes still unconfirmed).
+  **Interactive verification, project owner's own hands-on testing in the
+  running app (2026-09-01):** #147 confirmed working; #141 and #143
+  confirmed working too. #135's three shipped fixes (PRs #145/#146) are
+  **tentatively/conditionally confirmed** — the project owner's own words:
+  "needs longer observation during real usage" before calling it fully
+  resolved. #135 stays open to track that, plus the still-open DeepL
+  big-text latency question and #109 part 3 if ever picked up.
+  **Every issue from the original 2026-09-01 live-feedback batch except
+  #129 (explicitly backlog-only) is now implemented, merged, and
+  hands-on-verified** — #135 itself remains open only as an ongoing
+  latency-observation tracking issue, not because anything shipped for it
+  is known-broken.
 
 **2026-09-01, live hands-on testing round (project owner back, tested the
 whole autonomous stretch's output for real): 9 new issues filed from live

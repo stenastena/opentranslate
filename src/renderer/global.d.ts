@@ -16,7 +16,7 @@ interface CustomThemeColors {
 
 interface AppSettings {
   hotkeys: { captureAndTranslate: string };
-  languages: { autoDetectFirst: string; autoDetectSecond: string };
+  languages: { autoDetectFirst: string; autoDetectSecond: string; lastSourceLang: string; lastTargetLang: string };
   services: { deepl: boolean; google: boolean; bing: boolean; mymemory: boolean; defaultProvider: '' | 'deepl' | 'google' | 'bing' | 'mymemory' };
   tts: { provider: TTSProviderId; voiceByLang: Record<string, string> };
   appearance: { fontSize: number; fontFamily: string; theme: ThemeMode; customColors: CustomThemeColors };

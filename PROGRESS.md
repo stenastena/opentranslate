@@ -8,6 +8,41 @@ GitHub is the source of truth if the two ever disagree.
 
 ## Current state (as of this update)
 
+**2026-09-01, one-time security audit** (project owner's explicit request
+— a single pass, not a recurring process; no CI/CD security pipeline
+added), tracked in and closed as #150:
+- **Electron config, XSS surface, secrets, clipboard handling — all
+  reviewed clean.** All 3 `BrowserWindow`s have
+  `contextIsolation: true`/`nodeIntegration: false`, no `remote` module,
+  `webSecurity` never disabled, strict CSP on every renderer page,
+  preload only uses `contextBridge`. No `innerHTML`/`eval`/
+  `new Function` sink ever receives translation-provider content —
+  everything renders via `.textContent`/`.value`. No secrets in current
+  code or anywhere in `git log --all -p`. `textCapture.ts`'s clipboard
+  restore runs in a `finally` block, safe on every error path.
+- **Fixed immediately** (PR #152): `[hotkey] captured text` and Google's
+  request-failure log both printed the actual captured/translated text
+  to console — potentially sensitive clipboard content, even though
+  never written to a persisted file. Both now log only the text length.
+- **`npm audit`/Dependabot: 2 critical, 14-17 high** — reviewed
+  individually, all in `electron-builder`'s or `vitest`'s dependency
+  trees (devDependencies only, never shipped) or in Electron itself
+  (33.4.11, latest 33.x patch; fix needs a jump to 44.1.0). Confirmed
+  this app has no auto-updater, no remote/untrusted content, no
+  `window.open`/`shell.openPath`/protocol-handler usage — the vast
+  majority of the Electron CVEs don't apply to its actual surface. One
+  does (low-severity "unquoted exe path in app.setLoginItemSettings on
+  Windows", used by #136) but has narrow real-world exploitability.
+  **Deliberately left unfixed** — both would need a major-version bump
+  risking real breakage, per the project owner's own "don't force a
+  fix that breaks compatibility, document the decision instead"
+  instruction. Dependabot has since opened its own PR #149 (Electron
+  33->39) independently — left open/unmerged for the same reason; a
+  future dedicated tooling-upgrade pass (with real compatibility
+  testing of `koffi`'s native FFI/SendInput code) should evaluate it,
+  not this one-time pass.
+- Full writeup with per-item reasoning in the #150 comment thread.
+
 **2026-09-01, v0.2.0 build + repo housekeeping, per the project owner's
 direction after declaring the current state satisfactory** ("current
 state suits me, I'll surface further issues during actual use"):

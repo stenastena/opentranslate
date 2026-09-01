@@ -6,6 +6,14 @@ follows [Keep a Changelog](https://keepachangelog.com/), versioning follows
 
 ## [Unreleased]
 
+### Security
+- Stopped logging the actual captured/translated text (potentially
+  sensitive clipboard content) to the console in two spots — the hotkey
+  capture handler and Google's request-failure log now record only the
+  text length. Found in a one-time security audit (#150); see
+  PROGRESS.md for the full pass (Electron config, XSS surface, secrets,
+  dependency audit, clipboard handling).
+
 ## [0.2.0] - 2026-09-01
 
 Real-machine testing after the 0.1.0 tag found the app didn't fully work

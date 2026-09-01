@@ -12,7 +12,12 @@ export function showSettingsWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: 480,
     height: 420,
-    resizable: false,
+    minWidth: 380,
+    minHeight: 320,
+    // Issue #127: more tabs (Appearance/Advanced/Voice) than fit
+    // comfortably in a fixed-size window — resizable now, on top of (not
+    // instead of) the existing scrollbar for whatever still doesn't fit.
+    resizable: true,
     title: 'OpenTranslate Settings',
     webPreferences: {
       preload: join(__dirname, '..', '..', 'preload', 'index.js'),

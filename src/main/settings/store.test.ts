@@ -33,7 +33,7 @@ describe('SettingsStore', () => {
     const reloaded = new SettingsStore(filePath).load();
     expect(reloaded.hotkeys.captureAndTranslate).toBe('Alt+T');
 
-    const afterSecondUpdate = store.update({ services: { deepl: false, yandex: true, google: true } });
+    const afterSecondUpdate = store.update({ services: { deepl: false, google: true, bing: true, mymemory: false } });
     expect(afterSecondUpdate.hotkeys.captureAndTranslate).toBe('Alt+T');
     expect(afterSecondUpdate.services.deepl).toBe(false);
   });

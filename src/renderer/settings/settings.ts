@@ -28,7 +28,6 @@ const langFirstSelect = document.getElementById('lang-first') as HTMLSelectEleme
 const langSecondSelect = document.getElementById('lang-second') as HTMLSelectElement;
 const serviceCheckboxes = {
   deepl: document.getElementById('service-deepl') as HTMLInputElement,
-  yandex: document.getElementById('service-yandex') as HTMLInputElement,
   google: document.getElementById('service-google') as HTMLInputElement,
   bing: document.getElementById('service-bing') as HTMLInputElement,
   mymemory: document.getElementById('service-mymemory') as HTMLInputElement,
@@ -44,8 +43,6 @@ const fontSizeRange = document.getElementById('font-size-range') as HTMLInputEle
 const fontSizeValue = document.getElementById('font-size-value')!;
 const fontFamilySelect = document.getElementById('font-family-select') as HTMLSelectElement;
 const fontPreview = document.getElementById('font-preview')!;
-const opacityRange = document.getElementById('opacity-range') as HTMLInputElement;
-const opacityValue = document.getElementById('opacity-value')!;
 const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
 const customColorsRow = document.getElementById('custom-colors-row') as HTMLElement;
 const customColorInputs = {
@@ -88,13 +85,6 @@ function updateFontPreview(): void {
   fontSizeValue.textContent = `${size}px`;
   fontPreview.style.fontSize = `${size}px`;
   fontPreview.style.fontFamily = fontStackFor(fontFamilySelect.value);
-}
-
-// No live preview here (unlike font size/family) — opacity is a property
-// of the *popup* window, a different window from this one, so there's
-// nothing in this document to visibly apply it to.
-function updateOpacityValue(): void {
-  opacityValue.textContent = `${opacityRange.value}%`;
 }
 
 function currentCustomColors(): CustomThemeColors {
@@ -293,7 +283,6 @@ async function loadSettings(): Promise<void> {
   langFirstSelect.value = settings.languages.autoDetectFirst;
   langSecondSelect.value = settings.languages.autoDetectSecond;
   serviceCheckboxes.deepl.checked = settings.services.deepl;
-  serviceCheckboxes.yandex.checked = settings.services.yandex;
   serviceCheckboxes.google.checked = settings.services.google;
   serviceCheckboxes.bing.checked = settings.services.bing;
   serviceCheckboxes.mymemory.checked = settings.services.mymemory;
@@ -303,8 +292,6 @@ async function loadSettings(): Promise<void> {
   fontSizeRange.value = String(settings.appearance.fontSize);
   fontFamilySelect.value = settings.appearance.fontFamily;
   updateFontPreview();
-  opacityRange.value = String(Math.round(settings.appearance.opacity * 100));
-  updateOpacityValue();
   themeSelect.value = settings.appearance.theme;
   customColorInputs.background.value = settings.appearance.customColors.background;
   customColorInputs.text.value = settings.appearance.customColors.text;
@@ -325,7 +312,6 @@ async function handleSave(): Promise<void> {
       languages: { autoDetectFirst: langFirstSelect.value, autoDetectSecond: langSecondSelect.value },
       services: {
         deepl: serviceCheckboxes.deepl.checked,
-        yandex: serviceCheckboxes.yandex.checked,
         google: serviceCheckboxes.google.checked,
         bing: serviceCheckboxes.bing.checked,
         mymemory: serviceCheckboxes.mymemory.checked,
@@ -334,7 +320,6 @@ async function handleSave(): Promise<void> {
       appearance: {
         fontSize: Number(fontSizeRange.value),
         fontFamily: fontFamilySelect.value,
-        opacity: Number(opacityRange.value) / 100,
         theme: themeSelect.value as ThemeMode,
         customColors: currentCustomColors(),
       },
@@ -366,7 +351,6 @@ async function init(): Promise<void> {
   ttsProviderTestButton.addEventListener('click', () => void handleTestTtsProvider());
   fontSizeRange.addEventListener('input', updateFontPreview);
   fontFamilySelect.addEventListener('change', updateFontPreview);
-  opacityRange.addEventListener('input', updateOpacityValue);
   themeSelect.addEventListener('change', updateThemePreview);
   customColorInputs.background.addEventListener('input', updateThemePreview);
   customColorInputs.text.addEventListener('input', updateThemePreview);

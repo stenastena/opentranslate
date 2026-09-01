@@ -4,12 +4,16 @@ import { applyTheme } from '../shared/theme.js';
 
 const PROVIDER_LABELS: Record<string, string> = {
   deepl: 'DeepL',
-  yandex: 'Yandex',
   google: 'Google',
   bing: 'Bing',
   mymemory: 'MyMemory',
 };
-const PROVIDER_ORDER = ['deepl', 'yandex', 'google', 'bing', 'mymemory'];
+// Issue #132: Yandex removed — its unofficial endpoint has been
+// permanently CAPTCHA-blocked since #70, confirmed still blocked with no
+// working free route as of #75. providers/yandex.ts is left in the
+// codebase (harmless, easy to revive) but no longer registered — see
+// providers/index.ts — so it's absent here too.
+const PROVIDER_ORDER = ['deepl', 'google', 'bing', 'mymemory'];
 
 interface TabResult {
   status: 'idle' | 'loading' | 'ok' | 'error';
@@ -357,9 +361,9 @@ function voiceOverrideFor(lang: string | undefined): string | undefined {
 
 // Issue #112: whichever tab is active, Google and Bing get spoken with
 // that same provider's own cloud TTS voice, everywhere — both Original and
-// Translation — regardless of what's picked in Settings. DeepL/Yandex have
-// no TTS of their own, so those tabs (and no active tab at all) leave both
-// buttons on the Settings-selected provider, same as before this issue.
+// Translation — regardless of what's picked in Settings. DeepL/MyMemory
+// have no TTS of their own, so those tabs (and no active tab at all) leave
+// both buttons on the Settings-selected provider, same as before this issue.
 const NATIVE_TTS_PROVIDER_BY_TRANSLATION_PROVIDER: Partial<Record<string, TTSProviderId>> = {
   google: 'google-cloud',
   bing: 'bing-cloud',
@@ -560,8 +564,8 @@ async function ensureActiveResultLoaded(forceFresh = false): Promise<void> {
 
     // Issue #99: the dictionary/gender-pivot cost is opt-in via "Show
     // Dictionary" now, not automatic — this initial call stays lightweight
-    // regardless of provider (a no-op option for DeepL/Yandex, which never
-    // had dictionary data anyway).
+    // regardless of provider (a no-op option for DeepL/MyMemory, which
+    // never had dictionary data anyway).
     const translateResult = await window.electronAPI.providers.translate(providerId, state.originalText, effectiveSourceLang, effectiveTargetLang, {
       lightweight: true,
       skipCache: forceFresh,

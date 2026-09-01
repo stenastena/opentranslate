@@ -5,9 +5,9 @@ export interface TranslationResult {
   detectedSourceLang?: string;
   // Populated by the Google (issue #76) and Bing (issue #119) providers —
   // both have an unofficial dictionary-breakdown endpoint (parts of speech,
-  // synonyms, definitions/back-translations) that DeepL/Yandex/MyMemory
-  // have no equivalent for. The type is still named after Google (its
-  // first source) but the shape fits both.
+  // synonyms, definitions/back-translations) that DeepL/MyMemory have no
+  // equivalent for. The type is still named after Google (its first
+  // source) but the shape fits both.
   dictionary?: GoogleDictionary;
   // The definite article for translatedText specifically (e.g. "das" for
   // "Geschäft") when the target language uses grammatical articles — see
@@ -46,12 +46,12 @@ export interface TranslateOptions {
   // overriding a wrong Auto-Detect pick) where a guaranteed-live answer
   // matters more than the dedup savings — see popup.ts's
   // ensureActiveResultLoaded(forceFresh) and retranslateBackWithLang().
-  // A no-op for providers with no cache (DeepL/Yandex).
+  // A no-op for providers with no cache (DeepL/Bing/MyMemory).
   skipCache?: boolean;
 }
 
 export interface TranslationProvider {
-  readonly id: string; // 'deepl' | 'yandex' | 'google'
+  readonly id: string; // 'deepl' | 'google' | 'bing' | 'mymemory'
   translate(text: string, sourceLang: string, targetLang: string, options?: TranslateOptions): Promise<TranslationResult>;
   detectLanguage(text: string): Promise<string>;
   isHealthy(): Promise<boolean>;

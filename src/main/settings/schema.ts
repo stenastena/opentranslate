@@ -9,7 +9,12 @@ export interface LanguageSettings {
 
 export interface ServiceSettings {
   deepl: boolean;
-  yandex: boolean;
+  // Issue #132: Yandex removed from the live app — its unofficial
+  // endpoint has been hard-blocked by SmartCaptcha since #70, confirmed
+  // still blocked with no working free route as of #75's 2026-09-01
+  // investigation. providers/yandex.ts itself is left in place (harmless,
+  // trivially revivable if a paid Yandex Cloud key or a working free
+  // route ever materializes) — just no longer registered/offered.
   google: boolean;
   // Issue #97: Microsoft Translator via the unofficial bing.com/translator
   // endpoint — see providers/bingTranslate.ts.
@@ -50,13 +55,6 @@ export interface TTSSettings {
 export interface AppearanceSettings {
   fontSize: number; // px
   fontFamily: string;
-  // Issue #17: the popup *window's* opacity (Electron's native
-  // BrowserWindow.opacity, applied at creation — not a CSS effect on
-  // content). 0.3-1.0; clamped defensively wherever it's read, since a
-  // hand-edited settings.json with an out-of-range or 0 value would
-  // otherwise make the popup invisible/unusable with no obvious way back
-  // in from the UI alone.
-  opacity: number;
   // Issue #16: 'light'/'dark' pick one of popup.css's two hand-tuned
   // palettes ([data-theme="..."] blocks); 'custom' has popup.ts set
   // customColors' three values directly as CSS variables, with every
@@ -99,7 +97,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   hotkeys: { captureAndTranslate: "Control+`" },
   languages: { autoDetectFirst: 'en', autoDetectSecond: 'de' },
-  services: { deepl: true, yandex: true, google: true, bing: true, mymemory: false },
+  services: { deepl: true, google: true, bing: true, mymemory: false },
   // 'bing-cloud' by default: real Azure neural voices, the actual fix for
   // the recurring voice-quality complaint (#93) this issue exists to
   // address — 'google-cloud' and 'system' remain one Settings dropdown
@@ -110,25 +108,14 @@ export const DEFAULT_SETTINGS: AppSettings = {
   tts: { provider: 'bing-cloud', voiceByLang: {} },
   // Matches popup.css's pre-#116 hardcoded values exactly, so anyone who
   // never opens Appearance settings sees the popup completely unchanged.
-  // opacity: 1 (fully opaque) is today's implicit behavior — Electron's
-  // own default when no `opacity` constructor option is given at all.
   // theme: 'light' + customColors matching popup.css's :root (light)
   // block exactly, so switching to 'custom' without touching the
   // pickers starts from today's actual colors, not arbitrary ones.
   appearance: {
     fontSize: 13,
     fontFamily: 'default',
-    opacity: 1,
     theme: 'light',
     customColors: { background: '#ffffff', text: '#1a1a1a', accent: '#2b6cb0' },
   },
   advanced: { copyAction: 'none' },
 };
-
-export const MIN_OPACITY = 0.3;
-export const MAX_OPACITY = 1;
-
-export function clampOpacity(value: number): number {
-  if (!Number.isFinite(value)) return MAX_OPACITY;
-  return Math.min(MAX_OPACITY, Math.max(MIN_OPACITY, value));
-}

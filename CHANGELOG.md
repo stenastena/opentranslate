@@ -112,6 +112,11 @@ root-cause writeups.
 - Settings → Advanced: "Start OpenTranslate when Windows starts",
   backed by Electron's `app.setLoginItemSettings` and applied
   immediately on save, no restart needed (#136).
+- Settings → Services: "Default provider" — picks which provider tab the
+  popup opens with, instead of always the first enabled provider in the
+  fixed DeepL > Google > Bing > MyMemory order; falls back to that same
+  behavior when left on Auto or when the chosen provider is disabled
+  (#141).
 
 ### Performance / Resilience
 - Proactive request pacing (not just reactive backoff): Yandex requests

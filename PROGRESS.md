@@ -42,10 +42,28 @@ interactive verification of everything else":**
   settings save so it takes effect without a restart). Issue closed.
 - **All 8 non-#135, non-#129 issues from the live-feedback batch are now
   implemented and merged to `main`.** #129 (history click-to-reload)
-  stays backlog-only per the project owner's own framing. **Next:** the
-  project owner interactively verifies this batch in the running app,
-  after which **#135** (translation-latency investigation) starts, per
-  their explicit instruction to keep it separate and last.
+  stays backlog-only per the project owner's own framing. The project
+  owner then began interactive verification and found two things:
+  1. **Not a bug** — Google's dictionary looked empty because Google's
+     primary endpoint was live-429-rate-limited during testing (confirmed
+     via `npm run check-providers` and a direct curl using the app's own
+     headers); #109's dual-endpoint fallback masks this as a normal
+     successful translation (no visible error), which is exactly why it
+     was confusing — the fallback endpoint has no dictionary data at all.
+     Self-clears with time, same as the pre-existing note below.
+  2. **Not a bug** — Bing's dictionary genuinely has no data for
+     German<->Russian specifically (confirmed live: DE->EN and RU->EN
+     both return real entries, DE->RU and RU->DE don't) — this is the
+     same gap already documented from #119's follow-up, not new.
+  3. **New feature requested live, implemented immediately (not staged
+     as backlog): #141**, merged PR #142 — Settings → Services gained a
+     "Default provider" dropdown (which tab the popup opens with,
+     instead of always the first enabled provider in the fixed
+     DeepL > Google > Bing > MyMemory order).
+  **Next:** continue interactive verification of the full batch
+  (including #141), after which **#135** (translation-latency
+  investigation) starts, per the project owner's explicit instruction to
+  keep it separate and last.
 
 **2026-09-01, live hands-on testing round (project owner back, tested the
 whole autonomous stretch's output for real): 9 new issues filed from live

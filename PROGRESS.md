@@ -60,8 +60,15 @@ interactive verification of everything else":**
      "Default provider" dropdown (which tab the popup opens with,
      instead of always the first enabled provider in the fixed
      DeepL > Google > Bing > MyMemory order).
+  4. **New feature requested live, implemented immediately: #143**,
+     merged PR #144 — a direct follow-up to point 1 above. `google.ts`'s
+     existing #109 dual-endpoint fallback now sets a new
+     `TranslationResult.usedFallback` flag; the popup shows a small 🔄
+     badge on that provider's tab when set, so a Google-rate-limited
+     empty dictionary reads as "temporarily on a backup source" instead
+     of looking broken.
   **Next:** continue interactive verification of the full batch
-  (including #141), after which **#135** (translation-latency
+  (including #141/#143), after which **#135** (translation-latency
   investigation) starts, per the project owner's explicit instruction to
   keep it separate and last.
 

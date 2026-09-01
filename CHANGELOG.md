@@ -117,6 +117,10 @@ root-cause writeups.
   fixed DeepL > Google > Bing > MyMemory order; falls back to that same
   behavior when left on Auto or when the chosen provider is disabled
   (#141).
+- A small 🔄 badge on a provider's tab when its result came from a
+  degraded fallback source instead of its primary one (currently only
+  Google's #109 dual-endpoint fallback) — makes an otherwise-unexplained
+  empty dictionary read as "temporarily on a backup source" (#143).
 
 ### Performance / Resilience
 - Proactive request pacing (not just reactive backoff): Yandex requests

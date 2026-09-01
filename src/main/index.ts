@@ -1,4 +1,4 @@
-import { app, clipboard, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, clipboard, ipcMain, shell } from 'electron';
 import { createHistoryStore } from './history';
 import { registerCaptureHotkey, unregisterAllHotkeys } from './hotkeys';
 import { registerIpcHandlers } from './ipc/handlers';
@@ -10,7 +10,7 @@ import { captureSelectedText } from './textCapture';
 import { bingCloudTtsProvider, googleCloudTtsProvider, systemTtsProvider } from './tts';
 import { createTray } from './tray';
 import { showHistoryWindow } from './windows/historyWindow';
-import { showPopupWindow } from './windows/popupWindow';
+import { growPopupHeightToFit, showPopupWindow } from './windows/popupWindow';
 import { showSettingsWindow } from './windows/settingsWindow';
 
 // The popup is this app's "main window" — the tray and hotkey both funnel
@@ -69,10 +69,23 @@ app.whenReady().then(() => {
     'bing-cloud': bingCloudTtsProvider,
   };
 
-  registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, ttsProviders, shell, clipboard, (updated) => {
-    applyHotkey(updated.hotkeys.captureAndTranslate);
-    applyStartWithWindows(updated.advanced.startWithWindows);
-  });
+  registerIpcHandlers(
+    ipcMain,
+    registry,
+    settingsStore,
+    historyStore,
+    ttsProviders,
+    shell,
+    clipboard,
+    (updated) => {
+      applyHotkey(updated.hotkeys.captureAndTranslate);
+      applyStartWithWindows(updated.advanced.startWithWindows);
+    },
+    (event, desiredContentHeight) => {
+      const win = BrowserWindow.fromWebContents((event as Electron.IpcMainInvokeEvent).sender);
+      if (win) growPopupHeightToFit(win, desiredContentHeight);
+    },
+  );
 
   const settings = settingsStore.load();
   applyHotkey(settings.hotkeys.captureAndTranslate);

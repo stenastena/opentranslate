@@ -66,6 +66,7 @@ interface ElectronAPI {
   };
   popup: {
     onCapturedText(callback: (text: string) => void): void;
+    growToFitContent(desiredContentHeight: number): Promise<void>;
   };
   history: {
     list(): Promise<HistoryEntry[]>;

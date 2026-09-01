@@ -301,6 +301,20 @@ function renderDictionaryArea(result: TabResult | undefined): void {
     renderGenderBadge(translationGenderEl, undefined);
     renderGenderBadge(originalGenderEl, undefined);
   }
+  requestPopupGrowToFitContent();
+}
+
+// Issue #134: called after the dictionary area's visibility/content
+// changes — schedules the measurement for the next frame so
+// document.body.scrollHeight reflects the DOM updates just made above
+// rather than a stale pre-update layout. Safe to call unconditionally:
+// growPopupHeightToFit/computeGrownContentHeight (popupWindow.ts) already
+// no-op when nothing actually grew, e.g. the dictionary area collapsing
+// back to just the button, or reporting "no data" for a short word.
+function requestPopupGrowToFitContent(): void {
+  requestAnimationFrame(() => {
+    void window.electronAPI.popup.growToFitContent(document.body.scrollHeight);
+  });
 }
 
 // Shows the definite article for a specific word (source or translated)

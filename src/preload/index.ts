@@ -13,6 +13,7 @@ const CHANNELS = {
   providerLastSuccessAt: 'provider:last-success-at',
   providerListIds: 'provider:list-ids',
   popupCapturedText: 'popup:captured-text',
+  popupGrowToFitContent: 'popup:grow-to-fit-content',
   historyList: 'history:list',
   historyAdd: 'history:add',
   historyRemove: 'history:remove',
@@ -40,6 +41,7 @@ const electronAPI = {
     onCapturedText: (callback: (text: string) => void) => {
       ipcRenderer.on(CHANNELS.popupCapturedText, (_event, text: string) => callback(text));
     },
+    growToFitContent: (desiredContentHeight: number) => ipcRenderer.invoke(CHANNELS.popupGrowToFitContent, desiredContentHeight),
   },
   history: {
     list: () => ipcRenderer.invoke(CHANNELS.historyList),

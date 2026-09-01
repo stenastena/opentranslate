@@ -102,6 +102,26 @@ describe('googleProvider', () => {
       expect(fallbackUrl).toContain('client=dict-chrome-ex');
     });
 
+    it('gives the primary endpoint a short, reduced retry budget before falling over (issue #135)', async () => {
+      // Retrying the same already-failing primary endpoint with curlGet's
+      // full default policy (3 attempts, 800ms base) before ever trying
+      // the fallback wastes several real seconds once a sustained
+      // rate-limit is in effect — the primary call should ask curlGet for
+      // a much shorter budget instead. The fallback call right after (a
+      // genuine last resort with nowhere else to go) keeps curlGet's
+      // normal full-retry defaults, i.e. no override arguments at all.
+      curlGetMock.mockResolvedValueOnce({ status: 429, body: '' }).mockResolvedValueOnce({ status: 200, body: JSON.stringify(['Hallo Welt']) });
+
+      await googleProvider.translate('hello world', 'en', 'de');
+
+      const [, , primaryMaxAttempts, primaryBaseDelayMs] = curlGetMock.mock.calls[0];
+      expect(primaryMaxAttempts).toBeLessThan(3);
+      expect(primaryBaseDelayMs).toBeLessThan(800);
+      const [, , fallbackMaxAttempts, fallbackBaseDelayMs] = curlGetMock.mock.calls[1];
+      expect(fallbackMaxAttempts).toBeUndefined();
+      expect(fallbackBaseDelayMs).toBeUndefined();
+    });
+
     it('parses the fallback\'s nested [text, detectedLang] shape when the source language is auto', async () => {
       curlGetMock.mockResolvedValueOnce({ status: 429, body: '' }).mockResolvedValueOnce({ status: 200, body: JSON.stringify([['Hello world', 'fr']]) });
 

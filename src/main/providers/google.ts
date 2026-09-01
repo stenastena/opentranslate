@@ -28,6 +28,24 @@ const HEALTH_CHECK_TEXT = 'hello';
 // #94's own finding that this endpoint is unusually easy to rate-limit.
 const rateLimiter = createRateLimiter(300);
 
+// Issue #135: curlGet's default retry policy (3 attempts, 800ms base —
+// up to ~4-5s of pure waiting once jitter is included) makes sense for an
+// endpoint with nowhere else to go, but the primary translate endpoint
+// has somewhere else to go: fetchGoogleFallback below, tried the moment
+// this returns a non-200. Retrying the SAME already-failing endpoint 3
+// times before ever trying the working fallback was measured (live,
+// during a sustained real rate-limit) to cost ~4.7s per call — doubled
+// again by the popup's forward+back-translation pair, matching reports
+// of single-word lookups taking 7-8+ seconds. One quick, short-delay
+// retry still catches a genuinely momentary blip (#94's own finding that
+// some 429s clear within seconds) without paying that worst case before
+// falling over to the fallback. Only applied to the primary
+// (translate.googleapis.com) endpoint — fetchGoogleFallback keeps
+// curlGet's normal full retry policy, since it's the last resort with no
+// further fallback of its own.
+const PRIMARY_RETRY_MAX_ATTEMPTS = 2;
+const PRIMARY_RETRY_BASE_DELAY_MS = 300;
+
 export function __resetGoogleRateLimiterForTests(): void {
   rateLimiter.__resetForTests();
 }
@@ -63,7 +81,7 @@ const CACHE_MAX_ENTRIES = 200;
 const requestCache = new Map<string, CurlResponse>();
 const cacheExpiry = new Map<string, number>();
 
-async function fetchGoogle(url: string, skipCache = false): Promise<CurlResponse> {
+async function fetchGoogle(url: string, skipCache = false, maxAttempts?: number, baseDelayMs?: number): Promise<CurlResponse> {
   if (!skipCache) {
     const expiresAt = cacheExpiry.get(url);
     if (expiresAt !== undefined && expiresAt > Date.now()) {
@@ -71,7 +89,7 @@ async function fetchGoogle(url: string, skipCache = false): Promise<CurlResponse
     }
   }
 
-  const response = await rateLimiter.throttle(() => curlGet(url, { 'User-Agent': CHROME_USER_AGENT }));
+  const response = await rateLimiter.throttle(() => curlGet(url, { 'User-Agent': CHROME_USER_AGENT }, maxAttempts, baseDelayMs));
   if (response.status === 200) {
     if (requestCache.size >= CACHE_MAX_ENTRIES) {
       const oldestKey = requestCache.keys().next().value;
@@ -195,7 +213,7 @@ async function callGoogle(text: string, sourceLang: string, targetLang: string, 
   // confirmed side by side with curl, which passes with the exact same
   // headers (see curlFetch.ts). Shelling out to curl for just this
   // provider sidesteps that fingerprint check.
-  const response = await fetchGoogle(`${ENDPOINT}?${params.toString()}`, skipCache);
+  const response = await fetchGoogle(`${ENDPOINT}?${params.toString()}`, skipCache, PRIMARY_RETRY_MAX_ATTEMPTS, PRIMARY_RETRY_BASE_DELAY_MS);
   if (response.status !== 200) {
     console.error(`[provider:google] request failed with status ${response.status} for text ${JSON.stringify(text)} (${sourceLang}->${targetLang})`, response.body.slice(0, 500));
     // Issue #109: dual-endpoint fallback — degraded (translation only, no

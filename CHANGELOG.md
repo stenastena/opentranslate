@@ -100,6 +100,15 @@ root-cause writeups.
   to clipboard" action (Nothing / Original text / Translated text),
   independent of the existing hotkey-capture clipboard-restore behavior
   (#27).
+- A small copy icon next to each of the popup's Original/Translation/
+  Back-translation fields, for a one-off copy independent of the
+  Advanced "auto-copy after translating" setting above (#128).
+- A ↻ button next to Translate that forces a fresh, non-cached
+  re-translation for the active provider tab — for when a bad cached
+  result would otherwise just repeat on retry (#130).
+- Show Dictionary now auto-grows the popup window's height (never its
+  width) to fit the revealed content instead of clipping it, capped to
+  the display's work area (#134).
 
 ### Performance / Resilience
 - Proactive request pacing (not just reactive backoff): Yandex requests
@@ -164,6 +173,17 @@ root-cause writeups.
 - License switched from MIT to Apache License 2.0, with a NOTICE file so
   attribution is preserved in derivative works even from a plain-copy
   fork (#79).
+- Settings window is now resizable (in addition to, not instead of, its
+  existing scrollbar) (#127).
+- Removed the popup opacity setting entirely — reverts #17 (#131).
+- Removed Yandex from the app (the Services checkbox and the popup's
+  provider tabs) since its endpoint has remained permanently blocked
+  since #70 with no working free route (#75); the provider code itself
+  is kept, unregistered, in case that ever changes (#132).
+- Resizing the popup window now grows the Original/Translation/
+  Back-translation fields symmetrically instead of leaving dead space
+  below them; Show Dictionary and the dictionary panel are never
+  clipped by the window edge as the fields grow (#133).
 
 ### Performance
 - Cut Google request volume: the popup's back-translation call no longer

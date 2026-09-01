@@ -8,6 +8,41 @@ GitHub is the source of truth if the two ever disagree.
 
 ## Current state (as of this update)
 
+**2026-09-01, implementing the 9-issue live-feedback batch (see below),
+project owner said "start implementation, #135 separately after
+interactive verification of everything else":**
+- **Batch A — merged, PR #137:** #127 (Settings window resizable, kept
+  the scrollbar too), #131 (opacity setting fully reverted), #132
+  (Yandex unregistered from `createDefaultRegistry()` and removed from
+  both the Services checkboxes and the popup provider tabs; `yandex.ts`
+  itself kept, unused, per the issue's own note). Issues closed, `main`
+  synced.
+- **Batch B — merged, PR #138:** #128 (a small copy icon next to each of
+  Original/Translation/Back-translation, using the existing
+  `clipboard:write-text` IPC from #27) and #130 (a ↻ "force fresh
+  re-translation" button next to Translate, resetting only the active
+  tab's cached result — designed the concrete UI myself since the issue
+  left the exact form open). Issues closed.
+- **Batch C — PR #139 open, not yet merged (hands-on verification
+  pending):** #133 (the three popup fields — Original/Translation/
+  Back-translation — now use flexbox `flex:1`/`min-height:0` instead of
+  a fixed `height:5em`, so dragging the window's bottom border grows all
+  three symmetrically; Show Dictionary and the dictionary panel got
+  `flex-shrink:0` so they're never clipped by the window edge) and #134
+  (new `popup:grow-to-fit-content` IPC channel — when Show Dictionary
+  reveals content that doesn't fit, the renderer measures
+  `document.body.scrollHeight` and the main process grows the window's
+  *content* height only, via `BrowserWindow.setContentSize`, capped to
+  the display's work area, never shrinking — see
+  `computeGrownContentHeight`/`growPopupHeightToFit` in
+  `popupWindow.ts`).
+- **Still pending:** #129 (history click-to-reload — explicitly
+  backlog-only per the project owner's own framing, not part of this
+  pass) and #136 (configurable "start with Windows"). Then the project
+  owner interactively verifies all of the above in the running app,
+  after which **#135** (translation-latency investigation) starts, per
+  their explicit instruction to keep it separate and last.
+
 **2026-09-01, live hands-on testing round (project owner back, tested the
 whole autonomous stretch's output for real): 9 new issues filed from live
 feedback, none implemented yet** — #127 (Settings window not resizable),

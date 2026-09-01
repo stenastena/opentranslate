@@ -123,6 +123,15 @@ root-cause writeups.
   empty dictionary read as "temporarily on a backup source" (#143).
 
 ### Performance / Resilience
+- Translation latency (#135): the popup no longer waits for the
+  back-translation round trip before showing the primary translation —
+  it renders the moment it's ready, with back-translation filling in a
+  beat later, roughly halving perceived latency on every lookup for
+  every provider. Google's primary endpoint also gets a much shorter
+  retry budget before falling over to its #109 fallback, instead of
+  retrying the same already-failing endpoint with the full default
+  policy — cut per-call latency from ~4.7s to ~1.7-2s during a live
+  sustained rate-limit.
 - Proactive request pacing (not just reactive backoff): Yandex requests
   are now spaced at least 750ms apart, Google 300ms — before ever
   hitting a rate limit, complementing the existing retry-after-429

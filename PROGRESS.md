@@ -67,10 +67,23 @@ interactive verification of everything else":**
      badge on that provider's tab when set, so a Google-rate-limited
      empty dictionary reads as "temporarily on a backup source" instead
      of looking broken.
+  5. **#135 (translation-latency investigation) started early**, at the
+     project owner's own explicit direction mid-testing (rather than
+     waiting for the rest of the batch to finish verification first).
+     Two confirmed causes fixed in PR #145: (a) popup.ts no longer blocks
+     showing the primary translation on the back-translation round trip
+     — roughly halves perceived latency on every lookup, every provider;
+     (b) Google's primary endpoint gets a short 2-attempt/300ms-base
+     retry budget instead of curlGet's full default (3/800ms) before
+     falling over to the #109 fallback — cut per-call latency from
+     ~4.7s to ~1.7-2s during a live sustained rate-limit. **Left open**:
+     DeepL's oneshot endpoint is consistently ~8.5s for a ~500-char
+     paragraph (3 repeated live measurements, 8.4-9.3s) with no
+     retry/backoff logic on our side to tune — looks like genuine
+     backend latency on the free endpoint for larger input, no fix
+     identified yet. Full writeup in the #135 comment thread.
   **Next:** continue interactive verification of the full batch
-  (including #141/#143), after which **#135** (translation-latency
-  investigation) starts, per the project owner's explicit instruction to
-  keep it separate and last.
+  (including #141/#143/#135's fixes).
 
 **2026-09-01, live hands-on testing round (project owner back, tested the
 whole autonomous stretch's output for real): 9 new issues filed from live

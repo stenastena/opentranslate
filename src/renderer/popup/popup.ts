@@ -900,7 +900,12 @@ async function init(): Promise<void> {
   applyAppearance(settings.appearance);
 
   state.providerIds = PROVIDER_ORDER.filter((id) => providerIds.includes(id) && settings.services[id as keyof typeof settings.services]);
-  state.activeProviderId = state.providerIds[0] ?? null;
+  // A preferred default provider wins if it's actually enabled; otherwise
+  // (no preference set, or the preferred one has since been disabled in
+  // Services) falls back to the pre-existing first-enabled-in-PROVIDER_ORDER
+  // behavior.
+  const preferredProvider = settings.services.defaultProvider;
+  state.activeProviderId = (preferredProvider && state.providerIds.includes(preferredProvider) ? preferredProvider : state.providerIds[0]) ?? null;
   invalidateAllResults();
 
   sourceLangSelect.addEventListener('change', () => void handleLanguageChange());

@@ -32,6 +32,7 @@ const serviceCheckboxes = {
   bing: document.getElementById('service-bing') as HTMLInputElement,
   mymemory: document.getElementById('service-mymemory') as HTMLInputElement,
 };
+const defaultProviderSelect = document.getElementById('default-provider-select') as HTMLSelectElement;
 const saveButton = document.getElementById('save-button') as HTMLButtonElement;
 const statusText = document.getElementById('status-text')!;
 const voiceRowsEl = document.getElementById('voice-rows')!;
@@ -287,6 +288,7 @@ async function loadSettings(): Promise<void> {
   serviceCheckboxes.google.checked = settings.services.google;
   serviceCheckboxes.bing.checked = settings.services.bing;
   serviceCheckboxes.mymemory.checked = settings.services.mymemory;
+  defaultProviderSelect.value = settings.services.defaultProvider;
   ttsProviderSelect.value = settings.tts.provider;
   loadedVoiceByLang = settings.tts.voiceByLang;
   applySavedVoiceSelections(loadedVoiceByLang);
@@ -317,6 +319,7 @@ async function handleSave(): Promise<void> {
         google: serviceCheckboxes.google.checked,
         bing: serviceCheckboxes.bing.checked,
         mymemory: serviceCheckboxes.mymemory.checked,
+        defaultProvider: defaultProviderSelect.value as '' | 'deepl' | 'google' | 'bing' | 'mymemory',
       },
       tts: { provider: ttsProviderSelect.value as TTSProviderId, voiceByLang },
       appearance: {

@@ -621,17 +621,32 @@ async function ensureActiveResultLoaded(forceFresh = false): Promise<void> {
     let effectiveSourceLang = state.sourceLang;
     let effectiveTargetLang = state.targetLang;
 
-    if (effectiveSourceLang === 'auto') {
-      if (state.sourceLangOverride) {
-        // A manual correction of a previous (wrong) Auto-Detect pick for
-        // this same captured text — use it directly instead of asking the
-        // provider to detect again (see handleSourceOverrideChange).
-        effectiveSourceLang = state.sourceLangOverride;
-      } else {
-        const detectResult = await window.electronAPI.providers.detectLanguage(providerId, state.originalText);
-        if (!detectResult.ok) throw new Error(detectResult.error);
-        effectiveSourceLang = detectResult.value;
-      }
+    // Issue #135: detectLanguage() is, for every provider, just a full
+    // translate() call to a throwaway pivot language with the translation
+    // itself discarded (see e.g. google.ts's detectLanguage) — every
+    // provider's *normal* translate() response already carries
+    // detectedSourceLang whenever it's called with sourceLang:'auto'.
+    // Calling detectLanguage() separately before the real translate call
+    // was therefore a wholly redundant extra network round trip on every
+    // auto-detected lookup, which is why "forward" reliably measured
+    // slower than back-translation (which never detects). The only case
+    // that genuinely needs the detected language *before* the real
+    // translate call is auto+auto: resolveAutoTargetLang below needs the
+    // real source to pick a target. A fixed target doesn't depend on it,
+    // so that case now detects for free as part of the one translate call
+    // below instead.
+    const needsUpfrontDetection = effectiveSourceLang === 'auto' && !state.sourceLangOverride && effectiveTargetLang === 'auto';
+
+    if (effectiveSourceLang === 'auto' && state.sourceLangOverride) {
+      // A manual correction of a previous (wrong) Auto-Detect pick for
+      // this same captured text — use it directly instead of asking the
+      // provider to detect again (see handleSourceOverrideChange).
+      effectiveSourceLang = state.sourceLangOverride;
+      state.lastDetectedLang = effectiveSourceLang;
+    } else if (needsUpfrontDetection) {
+      const detectResult = await window.electronAPI.providers.detectLanguage(providerId, state.originalText);
+      if (!detectResult.ok) throw new Error(detectResult.error);
+      effectiveSourceLang = detectResult.value;
       state.lastDetectedLang = effectiveSourceLang;
     }
 
@@ -652,6 +667,16 @@ async function ensureActiveResultLoaded(forceFresh = false): Promise<void> {
       skipCache: forceFresh,
     });
     if (!translateResult.ok) throw new Error(translateResult.error);
+
+    // effectiveSourceLang is still literally 'auto' here exactly when
+    // needsUpfrontDetection was false but the source genuinely was
+    // Auto-Detect (fixed target, no override) — the translate call just
+    // made detected it as a side effect; pick that up now instead of
+    // having made a separate request for it.
+    if (effectiveSourceLang === 'auto') {
+      effectiveSourceLang = translateResult.value.detectedSourceLang ?? effectiveSourceLang;
+      state.lastDetectedLang = effectiveSourceLang;
+    }
 
     // Fire-and-forget: a history-write failure shouldn't block showing the
     // translation that's already in hand.

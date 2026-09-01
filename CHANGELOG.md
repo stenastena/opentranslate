@@ -6,6 +6,13 @@ follows [Keep a Changelog](https://keepachangelog.com/), versioning follows
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-09-01
+
+### Added
+- A Help > About OpenTranslate menu item: version, author, license,
+  copyright year, and the GitHub repo link, with an "Open GitHub"
+  button (#154).
+
 ## [0.2.1] - 2026-09-01
 
 ### Added

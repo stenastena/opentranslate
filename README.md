@@ -1,7 +1,12 @@
 # OpenTranslate
 
-**Status: v0.1 (MVP) shipped; v0.2 well underway, not yet released/packaged
-for end users.**
+[![Release](https://img.shields.io/github/v/release/stenastena/opentranslate?label=release)](https://github.com/stenastena/opentranslate/releases/latest)
+[![CI](https://github.com/stenastena/opentranslate/actions/workflows/ci.yml/badge.svg)](https://github.com/stenastena/opentranslate/actions/workflows/ci.yml)
+[![Security audit](https://img.shields.io/badge/security%20audit-passed-brightgreen)](https://github.com/stenastena/opentranslate/issues/150)
+[![Platform](https://img.shields.io/badge/platform-Windows-0078D6)](https://github.com/stenastena/opentranslate/releases/latest)
+[![License](https://img.shields.io/github/license/stenastena/opentranslate)](LICENSE)
+
+**Status: v0.2.1 released — [download the installer](../../releases/latest).**
 
 OpenTranslate is a Windows desktop application that brings back the core
 workflow of the abandoned [QTranslate](https://quest-app.appspot.com/) project:
@@ -9,6 +14,12 @@ it sits in the system tray, and on a global hotkey it captures the currently
 selected text in *any* Windows application and shows a popup with a
 translation, a back-translation, and quick access to multiple translation
 services.
+
+## Install
+
+Download the latest installer from the [Releases page](../../releases/latest)
+and run it (Windows only). See [Development](#development) below to build
+from source instead.
 
 ## What works today
 
@@ -18,7 +29,7 @@ services.
   via an emulated Ctrl+C and the clipboard — the clipboard's prior contents
   are always restored afterward.
 - A popup showing Original / Translation / Back-translation, with one tab
-  per translation service — **DeepL, Yandex Translate, Google Translate,
+  per translation service — **DeepL, Google Translate,
   Microsoft Translator (Bing), MyMemory** — so a broken or rate-limited
   service only shows an error in its own tab. Auto-Detect (using a
   configurable first/second language pair) or manual source/target language
@@ -46,8 +57,8 @@ for the full roadmap.
 
 ## ⚠️ Unofficial endpoints — use at your own risk
 
-Every translation provider (DeepL, Yandex Translate, Google Translate,
-Bing/Microsoft Translator, MyMemory) and every cloud text-to-speech voice
+Every translation provider (DeepL, Google Translate, Bing/Microsoft
+Translator, MyMemory) and every cloud text-to-speech voice
 (Google, Bing) is called through an **unofficial, reverse-engineered web
 endpoint** — no API keys are required for any of them (MyMemory is the one
 exception that's also a real *documented* public API), but none of this is

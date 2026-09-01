@@ -20,7 +20,7 @@ interface AppSettings {
   services: { deepl: boolean; google: boolean; bing: boolean; mymemory: boolean };
   tts: { provider: TTSProviderId; voiceByLang: Record<string, string> };
   appearance: { fontSize: number; fontFamily: string; theme: ThemeMode; customColors: CustomThemeColors };
-  advanced: { copyAction: CopyAction };
+  advanced: { copyAction: CopyAction; startWithWindows: boolean };
 }
 
 // null means the selected provider already played the audio itself

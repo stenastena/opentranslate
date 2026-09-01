@@ -55,6 +55,14 @@ app.whenReady().then(() => {
     }
   }
 
+  // Issue #136: applied on startup and again on every settings save, so
+  // toggling it in Settings takes effect immediately without an app
+  // restart. openAsHidden only affects macOS login items — harmless to
+  // pass unconditionally on Windows, which is this app's only target.
+  function applyStartWithWindows(enabled: boolean): void {
+    app.setLoginItemSettings({ openAtLogin: enabled, openAsHidden: false });
+  }
+
   const ttsProviders = {
     system: systemTtsProvider,
     'google-cloud': googleCloudTtsProvider,
@@ -63,10 +71,12 @@ app.whenReady().then(() => {
 
   registerIpcHandlers(ipcMain, registry, settingsStore, historyStore, ttsProviders, shell, clipboard, (updated) => {
     applyHotkey(updated.hotkeys.captureAndTranslate);
+    applyStartWithWindows(updated.advanced.startWithWindows);
   });
 
   const settings = settingsStore.load();
   applyHotkey(settings.hotkeys.captureAndTranslate);
+  applyStartWithWindows(settings.advanced.startWithWindows);
 
   createTray(showMainWindow);
   installApplicationMenu(

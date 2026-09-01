@@ -5,6 +5,11 @@
   "private": true,
   "license": "Apache-2.0",
   "author": "Sergey Osherov",
+  "homepage": "https://github.com/stenastena/opentranslate",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stenastena/opentranslate.git"
+  },
   "main": "dist/main/index.js",
   "type": "commonjs",
   "scripts": {

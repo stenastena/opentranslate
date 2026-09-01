@@ -6,6 +6,8 @@ follows [Keep a Changelog](https://keepachangelog.com/), versioning follows
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-01
+
 ### Added
 - The popup's position/size now survives app restarts, not just captures
   within one running session (#151).

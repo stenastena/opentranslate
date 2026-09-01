@@ -98,8 +98,17 @@ interactive verification of everything else":**
      the detected language back from the one real translate call
      instead. Live-measured (Bing, "Haus" de->ru): ~5.2s -> ~1.9s.
      Full writeup for both fixes in the #135 comment thread.
+  7. **New feature requested live, implemented immediately: #147**,
+     merged PR #148 — the popup's source/target language dropdowns
+     always reset to Auto/Auto on every fresh capture and app restart.
+     `AppSettings.languages` gained `lastSourceLang`/`lastTargetLang`,
+     persisted on every dropdown change (or swap) and restored on popup
+     init. Since `SettingsStore.update()` only shallow-merges per
+     top-level key, both write sites (popup.ts and settings.ts's Save)
+     now explicitly round-trip these two fields so an unrelated settings
+     save doesn't silently reset them.
   **Next:** continue interactive verification of the full batch
-  (including #141/#143/#135's fixes).
+  (including #141/#143/#147/#135's fixes).
 
 **2026-09-01, live hands-on testing round (project owner back, tested the
 whole autonomous stretch's output for real): 9 new issues filed from live

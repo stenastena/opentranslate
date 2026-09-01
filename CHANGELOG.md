@@ -121,6 +121,9 @@ root-cause writeups.
   degraded fallback source instead of its primary one (currently only
   Google's #109 dual-endpoint fallback) — makes an otherwise-unexplained
   empty dictionary read as "temporarily on a backup source" (#143).
+- The popup's source/target language dropdowns are now remembered across
+  captures and app restarts instead of always resetting to Auto/Auto
+  (#147).
 
 ### Performance / Resilience
 - Translation latency (#135): the popup no longer waits for the

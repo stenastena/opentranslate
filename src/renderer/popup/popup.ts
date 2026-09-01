@@ -107,6 +107,7 @@ const targetLangOverrideSelect = document.getElementById('target-lang-select') a
 const backLangSelect = document.getElementById('back-lang-select') as HTMLSelectElement;
 const swapButton = document.getElementById('swap-langs') as HTMLButtonElement;
 const translateButton = document.getElementById('translate-btn') as HTMLButtonElement;
+const forceRefreshButton = document.getElementById('force-refresh-btn') as HTMLButtonElement;
 const dictionarySection = document.getElementById('dictionary-section') as HTMLDetailsElement;
 const dictionaryContentEl = document.getElementById('dictionary-content')!;
 const loadDictionaryButton = document.getElementById('load-dictionary-btn') as HTMLButtonElement;
@@ -114,6 +115,9 @@ const translationGenderEl = document.getElementById('translation-gender')!;
 const originalGenderEl = document.getElementById('original-gender')!;
 const speakOriginalButton = document.getElementById('speak-original-btn') as HTMLButtonElement;
 const speakTranslationButton = document.getElementById('speak-translation-btn') as HTMLButtonElement;
+const copyOriginalButton = document.getElementById('copy-original-btn') as HTMLButtonElement;
+const copyTranslationButton = document.getElementById('copy-translation-btn') as HTMLButtonElement;
+const copyBackButton = document.getElementById('copy-back-btn') as HTMLButtonElement;
 
 // Only one utterance should ever play at a time; this tracks which of the
 // two speak buttons (if any) is the one currently driving playback, so a
@@ -220,9 +224,13 @@ function renderActiveResult(): void {
     originalTextEl.value = state.originalText;
   }
   speakOriginalButton.disabled = !originalTextEl.value.trim();
+  copyOriginalButton.disabled = !originalTextEl.value.trim();
 
   const providerId = state.activeProviderId;
   const result = providerId ? state.resultsByProvider.get(providerId) : undefined;
+  // Issue #130: only meaningful once there's something to actually
+  // re-fetch, and disabled mid-flight so a slow click can't fire twice.
+  forceRefreshButton.disabled = !providerId || !state.originalText || result?.status === 'loading';
 
   translationTextEl.classList.remove('loading', 'error');
   backTranslationTextEl.classList.remove('loading', 'error');
@@ -264,6 +272,8 @@ function renderActiveResult(): void {
   }
 
   speakTranslationButton.disabled = !result || result.status !== 'ok' || !translationTextEl.value.trim();
+  copyTranslationButton.disabled = !result || result.status !== 'ok' || !translationTextEl.value.trim();
+  copyBackButton.disabled = !result || result.status !== 'ok' || !result.backTranslatedText;
 }
 
 // Dictionary/gender data (Google: issue #76, Bing: issue #119) is only
@@ -517,6 +527,43 @@ async function copyAfterTranslateIfEnabled(originalText: string, translatedText:
   } catch (error) {
     console.error('[popup] failed to copy to clipboard', error);
   }
+}
+
+// Issue #128: a manual, always-available per-field copy — independent of
+// the #27 auto-copy-after-translating setting above, which only ever
+// fires once per completed translation and only copies whichever single
+// field that setting names. Brief checkmark swap so a silent clipboard
+// write doesn't look like the click did nothing.
+async function handleCopyClick(button: HTMLButtonElement, getText: () => string): Promise<void> {
+  const text = getText();
+  if (!text) return;
+  try {
+    await window.electronAPI.clipboard.writeText(text);
+    button.textContent = '\u{2705}';
+    button.classList.add('copied');
+    setTimeout(() => {
+      button.textContent = '\u{1F4CB}';
+      button.classList.remove('copied');
+    }, 1200);
+  } catch (error) {
+    console.error('[popup] failed to copy to clipboard', error);
+  }
+}
+
+// Issue #130: forces the active tab's translation to be re-fetched with
+// skipCache — unlike retranslateFromOriginal (triggered by editing
+// Original), this needs no edit at all, just "the last answer was bad,
+// try again for real". Resets only the *active* provider's result, not
+// every tab (retranslateFromOriginal's invalidateAllResults does that,
+// which would be needlessly disruptive here for tabs the user isn't even
+// looking at).
+async function handleForceRefresh(): Promise<void> {
+  const providerId = state.activeProviderId;
+  if (!providerId || !state.originalText) return;
+  state.resultsByProvider.set(providerId, { status: 'idle' });
+  renderTabs();
+  renderActiveResult();
+  await ensureActiveResultLoaded(true);
 }
 
 // forceFresh bypasses Google's request cache (google.ts, #94) for this
@@ -849,11 +896,16 @@ async function init(): Promise<void> {
   backLangSelect.addEventListener('change', () => void handleBackLangOverrideChange(backLangSelect.value));
   swapButton.addEventListener('click', () => void handleSwap());
   translateButton.addEventListener('click', () => void handleTranslateClick());
+  forceRefreshButton.addEventListener('click', () => void handleForceRefresh());
   speakOriginalButton.addEventListener('click', () => void handleSpeakClick(speakOriginalButton, getOriginalSpeakData));
   speakTranslationButton.addEventListener('click', () => void handleSpeakClick(speakTranslationButton, getTranslationSpeakData));
+  copyOriginalButton.addEventListener('click', () => void handleCopyClick(copyOriginalButton, () => originalTextEl.value.trim()));
+  copyTranslationButton.addEventListener('click', () => void handleCopyClick(copyTranslationButton, () => translationTextEl.value.trim()));
+  copyBackButton.addEventListener('click', () => void handleCopyClick(copyBackButton, () => backTranslationTextEl.textContent?.trim() ?? ''));
   loadDictionaryButton.addEventListener('click', () => void handleLoadDictionary());
   originalTextEl.addEventListener('input', () => {
     speakOriginalButton.disabled = !originalTextEl.value.trim();
+    copyOriginalButton.disabled = !originalTextEl.value.trim();
   });
 
   window.electronAPI.popup.onCapturedText((text) => {

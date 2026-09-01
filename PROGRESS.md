@@ -36,11 +36,27 @@ added), tracked in and closed as #150:
   **Deliberately left unfixed** — both would need a major-version bump
   risking real breakage, per the project owner's own "don't force a
   fix that breaks compatibility, document the decision instead"
-  instruction. Dependabot has since opened its own PR #149 (Electron
-  33->39) independently — left open/unmerged for the same reason; a
-  future dedicated tooling-upgrade pass (with real compatibility
-  testing of `koffi`'s native FFI/SendInput code) should evaluate it,
-  not this one-time pass.
+  instruction.
+- **Follow-up, same day**: Dependabot opened its own PR #149 (Electron
+  33.4.11 -> 39.8.10) independently. Per the project owner's explicit
+  "review and decide" request, actually tested it rather than deciding
+  on CI alone: checked out the branch, `npm ci`, full build + all 206
+  unit tests (unchanged), and — since CI here never exercises the real
+  Electron runtime — manually launched `npm run dev` to confirm the app
+  actually starts and stays stable, specifically that `koffi`'s native
+  `user32.dll` FFI load (the biggest native-module compat risk for a
+  6-major jump) succeeds without crashing. It did. **Closed anyway**
+  (`@dependabot ignore this major version`): `npm audit` reported the
+  *exact same* vulnerability counts on that branch as on `main` — the
+  flagged CVEs live in `electron-builder`'s/`vitest`'s dependency trees
+  (untouched by an Electron-only bump) or need Electron 44.x, five
+  majors further than this PR goes. Zero security benefit for real
+  compatibility risk, and 39.x is itself already end-of-support per its
+  own release notes. Full reasoning posted on PR #149's own thread.
+  Recommendation stands: a real Electron upgrade should be its own
+  dedicated effort targeting a current, supported version, with full
+  hands-on QA of hotkey capture/tray/all three windows — not a
+  reflexive dependency bump.
 - Full writeup with per-item reasoning in the #150 comment thread.
 
 **2026-09-01, v0.2.0 build + repo housekeeping, per the project owner's

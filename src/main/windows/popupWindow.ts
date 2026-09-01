@@ -51,6 +51,47 @@ export function resolveCursorAnchor(cursorX: number, cursorY: number, width: num
   return clampToWorkArea(x, y, width, height, workArea);
 }
 
+// Issue #134: pure geometry for growing (never shrinking) the popup's
+// content height to fit newly revealed content (Show Dictionary) —
+// factored out from growPopupHeightToFit the same way clampToWorkArea is
+// above, so the capping math is unit-testable without a real Electron
+// BrowserWindow. currentY/chromeHeight describe the window's current top
+// edge and its fixed (title bar/border) overhead outside the content
+// area; together with the work area they determine how far the content
+// can grow downward before the window's bottom edge would leave the
+// screen. A desiredContentHeight at or below the current height is a
+// no-op — something (a shorter dictionary entry) collapsing shouldn't
+// visibly snap the window smaller out from under the user.
+export function computeGrownContentHeight(
+  desiredContentHeight: number,
+  currentContentHeight: number,
+  currentY: number,
+  chromeHeight: number,
+  workArea: WorkArea,
+): number {
+  if (desiredContentHeight <= currentContentHeight) return currentContentHeight;
+  const maxContentHeight = workArea.y + workArea.height - currentY - chromeHeight;
+  // Clamp the desired growth to whatever room is left before the bottom
+  // edge leaves the screen — but never below the current height: if the
+  // window is already positioned such that even its current size exceeds
+  // that room (maxContentHeight < currentContentHeight), there's nothing
+  // to shrink back to here, so leave it exactly as it is.
+  return Math.max(currentContentHeight, Math.min(desiredContentHeight, maxContentHeight));
+}
+
+// Only the height ever changes — width, x, and y are left exactly as they
+// are (setContentSize keeps the window's top-left corner anchored), so the
+// window's bottom edge moves down and its width/the translation fields'
+// width never do, per issue #134.
+export function growPopupHeightToFit(win: BrowserWindow, desiredContentHeight: number): void {
+  const [contentWidth, currentContentHeight] = win.getContentSize();
+  const bounds = win.getBounds();
+  const chromeHeight = bounds.height - currentContentHeight;
+  const workArea = screen.getDisplayMatching(bounds).workArea;
+  const newContentHeight = computeGrownContentHeight(desiredContentHeight, currentContentHeight, bounds.y, chromeHeight, workArea);
+  if (newContentHeight > currentContentHeight) win.setContentSize(contentWidth, newContentHeight);
+}
+
 function resolvePopupPosition(bounds: { x: number; y: number } | null, width: number, height: number): { x: number; y: number } {
   if (bounds) {
     return clampToWorkArea(bounds.x, bounds.y, width, height, screen.getDisplayNearestPoint(bounds).workArea);

@@ -80,6 +80,7 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .lang-bar select {
@@ -121,6 +122,7 @@ body {
   display: flex;
   gap: 4px;
   border-bottom: 1px solid var(--om-border);
+  flex-shrink: 0;
 }
 
 .tab {
@@ -143,8 +145,23 @@ body {
   color: var(--om-error);
 }
 
+/* Issue #133: the three sections used to be laid out at their content's
+   natural height, so dragging the window's bottom border only added blank
+   space below them instead of growing the fields themselves. flex:1 on
+   each section (against #app's flex column) makes them share any extra
+   height equally; min-height:0 is required for a flex item to actually
+   shrink/grow past its content's intrinsic size instead of that content
+   forcing a taller minimum than the flex box would otherwise allow. */
+.section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .section h2 {
   margin: 0 0 2px;
+  flex-shrink: 0;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -217,7 +234,11 @@ body {
 
 .text-block {
   min-height: 3em;
-  height: 5em;
+  /* Issue #133: was a fixed height:5em — grows with its .section instead,
+     so the three fields expand together when the window is resized. The
+     manual `resize: vertical` handle below still lets one field be pulled
+     taller than its siblings for a single session, same as before. */
+  flex: 1 1 auto;
   max-height: 70vh;
   white-space: pre-wrap;
   word-break: break-word;
@@ -250,6 +271,9 @@ body {
 
 .load-dictionary-btn {
   align-self: flex-start;
+  /* Issue #7: must never be squeezed out or overlapped by the window edge
+     when the .section fields above grow to fill available height. */
+  flex-shrink: 0;
   border: 1px solid var(--om-border);
   background: var(--om-bg-control);
   border-radius: 4px;
@@ -272,6 +296,7 @@ body {
   border: 1px solid var(--om-border);
   border-radius: 4px;
   padding: 6px 8px;
+  flex-shrink: 0;
 }
 
 .dictionary-section summary {

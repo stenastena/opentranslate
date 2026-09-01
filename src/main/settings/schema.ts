@@ -95,6 +95,24 @@ export interface CustomThemeColors {
 // hasn't opened Advanced settings.
 export type CopyAction = 'none' | 'original' | 'translation';
 
+export interface WindowBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface PopupSettings {
+  // Issue #151: the popup's last position/size, remembered across app
+  // restarts — popupWindow.ts's own in-memory `lastBounds` already
+  // remembered it across captures/tabs within one running session, but
+  // reset on every restart since it was never persisted anywhere. null
+  // until the user has ever moved/resized the popup at least once (a
+  // fresh install falls back to the existing cursor-anchored default
+  // size/position, unchanged).
+  lastBounds: WindowBounds | null;
+}
+
 export interface AdvancedSettings {
   copyAction: CopyAction;
   // Issue #136: mirrors Electron's app.setLoginItemSettings({ openAtLogin
@@ -110,6 +128,7 @@ export interface AppSettings {
   tts: TTSSettings;
   appearance: AppearanceSettings;
   advanced: AdvancedSettings;
+  popup: PopupSettings;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -136,4 +155,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
     customColors: { background: '#ffffff', text: '#1a1a1a', accent: '#2b6cb0' },
   },
   advanced: { copyAction: 'none', startWithWindows: false },
+  popup: { lastBounds: null },
 };

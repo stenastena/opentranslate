@@ -1,13 +1,33 @@
 import { BrowserWindow, screen } from 'electron';
 import { join } from 'node:path';
 import { CHANNELS } from '../ipc/channels';
+import { WindowBounds } from '../settings';
 
 let popupWindow: BrowserWindow | null = null;
 
 // Where the user last moved/resized the popup to. Reused as the anchor for
 // the next popup instead of always defaulting back to the cursor position —
 // once the user has settled on a spot/size they like, keep opening there.
-let lastBounds: { x: number; y: number; width: number; height: number } | null = null;
+// Primed from persisted settings at startup (see primeLastBounds) so this
+// survives app restarts too, not just captures within one running session.
+let lastBounds: WindowBounds | null = null;
+
+// Issue #151: called once at startup (main/index.ts) with whatever bounds
+// were persisted from the previous session — a fresh install / anyone who
+// has never moved the popup gets null, unchanged first-launch behavior.
+export function primeLastBounds(bounds: WindowBounds | null): void {
+  lastBounds = bounds;
+}
+
+// Fires once per completed move/resize (not continuously — see
+// showPopupWindow's use of the 'resized'/'moved' events below) so
+// main/index.ts can persist it to settings without hammering disk I/O on
+// every intermediate frame of a drag.
+let onBoundsSettled: ((bounds: WindowBounds) => void) | null = null;
+
+export function onPopupBoundsSettled(callback: (bounds: WindowBounds) => void): void {
+  onBoundsSettled = callback;
+}
 
 const DEFAULT_WIDTH = 480;
 const DEFAULT_HEIGHT = 360;
@@ -169,6 +189,15 @@ export function showPopupWindow(capturedText?: string): BrowserWindow {
   };
   win.on('resize', persistBounds);
   win.on('move', persistBounds);
+
+  // 'resized'/'moved' (Windows-only, matching this app's only target OS)
+  // fire once when the operation actually finishes, unlike 'resize'/'move'
+  // above which fire continuously through every intermediate frame of a
+  // drag — the right granularity for a disk write, so dragging the window
+  // doesn't hammer settings.json dozens of times per second.
+  const notifyBoundsSettled = () => onBoundsSettled?.(win.getBounds());
+  win.on('resized', notifyBoundsSettled);
+  win.on('moved', notifyBoundsSettled);
 
   win.on('closed', () => {
     if (popupWindow === win) popupWindow = null;

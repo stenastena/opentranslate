@@ -10,7 +10,7 @@ import { captureSelectedText } from './textCapture';
 import { bingCloudTtsProvider, googleCloudTtsProvider, systemTtsProvider } from './tts';
 import { createTray } from './tray';
 import { showHistoryWindow } from './windows/historyWindow';
-import { growPopupHeightToFit, showPopupWindow } from './windows/popupWindow';
+import { growPopupHeightToFit, onPopupBoundsSettled, primeLastBounds, showPopupWindow } from './windows/popupWindow';
 import { showSettingsWindow } from './windows/settingsWindow';
 
 // The popup is this app's "main window" — the tray and hotkey both funnel
@@ -95,6 +95,14 @@ app.whenReady().then(() => {
   const settings = settingsStore.load();
   applyHotkey(settings.hotkeys.captureAndTranslate);
   applyStartWithWindows(settings.advanced.startWithWindows);
+
+  // Issue #151: remember the popup's position/size across app restarts,
+  // not just across captures within one running session (which
+  // popupWindow.ts's own in-memory tracking already did).
+  primeLastBounds(settings.popup.lastBounds);
+  onPopupBoundsSettled((bounds) => {
+    settingsStore.update({ popup: { lastBounds: bounds } });
+  });
 
   createTray(showMainWindow);
   installApplicationMenu(

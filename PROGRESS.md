@@ -8,6 +8,21 @@ GitHub is the source of truth if the two ever disagree.
 
 ## Current state (as of this update)
 
+**2026-09-01, v0.2.1 build**: bumped for a real installer the project
+owner could reinstall to test #151 (window-bounds persistence) and #136
+(start-with-Windows) together across one OS reboot. `package.json`
+0.2.0 -> 0.2.1; CHANGELOG's `[Unreleased]` closed out as `[0.2.1]`.
+Also fixed a small pre-existing drift: `package-lock.json`'s top-level
+`version`/`license` fields still said `0.1.0`/`MIT` (never synced during
+the 0.2.0 bump either) — corrected via `npm install`, no dependency
+changes. `npm run package` produced `release\OpenTranslate Setup
+0.2.1.exe` successfully (same local `winCodeSign` cache workaround,
+still intact). No GitHub Release published — confirmed with the project
+owner that this project has never published one for any version (the
+repo is public, but `release/` is gitignored and `gh release list` is
+empty even for 0.1.0/0.2.0) — installers have always been local build
+artifacts only; publishing one would need explicit go-ahead.
+
 **2026-09-01, #151 shipped (PR #153)**: the popup's position/size now
 persists across app restarts (`AppSettings.popup.lastBounds`, primed at
 startup and written on the Windows-only `resized`/`moved` events so a

@@ -131,7 +131,14 @@ root-cause writeups.
   retry budget before falling over to its #109 fallback, instead of
   retrying the same already-failing endpoint with the full default
   policy — cut per-call latency from ~4.7s to ~1.7-2s during a live
-  sustained rate-limit.
+  sustained rate-limit. `detectLanguage()` (itself a full extra
+  translate-call round trip for every provider) is also now skipped
+  whenever a real translate call is about to happen anyway with
+  `sourceLang:'auto'` and a fixed (non-Auto) target — the detected
+  language comes back for free in that same response instead. This is
+  exactly why "forward" translation reliably measured slower than
+  back-translation before: live-measured (Bing, "Haus" de->ru) at ~5.2s
+  before, ~1.9s after.
 - Proactive request pacing (not just reactive backoff): Yandex requests
   are now spaced at least 750ms apart, Google 300ms — before ever
   hitting a rate limit, complementing the existing retry-after-429

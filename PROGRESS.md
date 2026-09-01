@@ -81,7 +81,23 @@ interactive verification of everything else":**
      paragraph (3 repeated live measurements, 8.4-9.3s) with no
      retry/backoff logic on our side to tune — looks like genuine
      backend latency on the free endpoint for larger input, no fix
-     identified yet. Full writeup in the #135 comment thread.
+     identified yet.
+  6. **Third #135 fix, from the project owner's own follow-up
+     observation** ("forward translation is consistently slower than
+     back-translation, same for every provider — why?"), PR #146:
+     `detectLanguage()` is, for all four providers, a full separate
+     `translate()` call to a throwaway pivot language with the
+     translation discarded — every provider's *normal* translate()
+     response already carries `detectedSourceLang` when called with
+     `sourceLang:'auto'`. The forward path was needlessly paying for
+     both (detect, then translate); back-translation never detects, so
+     it only ever paid for one — exactly the asymmetry observed, and
+     universal across providers because it's popup.ts's shared logic.
+     Now only detects upfront when genuinely required (auto source
+     *and* auto target); the common auto-source/fixed-target case reads
+     the detected language back from the one real translate call
+     instead. Live-measured (Bing, "Haus" de->ru): ~5.2s -> ~1.9s.
+     Full writeup for both fixes in the #135 comment thread.
   **Next:** continue interactive verification of the full batch
   (including #141/#143/#135's fixes).
 

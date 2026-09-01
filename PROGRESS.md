@@ -107,8 +107,10 @@ interactive verification of everything else":**
      top-level key, both write sites (popup.ts and settings.ts's Save)
      now explicitly round-trip these two fields so an unrelated settings
      save doesn't silently reset them.
-  **Next:** continue interactive verification of the full batch
-  (including #141/#143/#147/#135's fixes).
+  **#147 confirmed working by the project owner's own hands-on testing**
+  in the running app (2026-09-01).
+  **Next:** continue interactive verification of the rest of the batch
+  (#141/#143/#135's fixes still unconfirmed).
 
 **2026-09-01, live hands-on testing round (project owner back, tested the
 whole autonomous stretch's output for real): 9 new issues filed from live

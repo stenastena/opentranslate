@@ -220,4 +220,20 @@ describe('registerIpcHandlers', () => {
     await ipcMain.invoke(CHANNELS.clipboardWriteText, 'Привет, мир!');
     expect(clipboard.writeText).toHaveBeenCalledWith('Привет, мир!');
   });
+
+  it('popup:grow-to-fit-content is a no-op when no callback was injected', () => {
+    // The default beforeEach registration above omits the optional last
+    // argument — this should not throw, just do nothing.
+    expect(() => ipcMain.invoke(CHANNELS.popupGrowToFitContent, 500)).not.toThrow();
+  });
+
+  it('popup:grow-to-fit-content forwards the raw event and desired height to the injected callback (issue #134)', async () => {
+    const growPopupToFitContent = vi.fn();
+    const anotherIpcMain = new FakeIpcMain();
+    registerIpcHandlers(anotherIpcMain, registry, settingsStore, historyStore, ttsProviders, shell, clipboard, undefined, growPopupToFitContent);
+
+    await anotherIpcMain.invoke(CHANNELS.popupGrowToFitContent, 640);
+
+    expect(growPopupToFitContent).toHaveBeenCalledWith({}, 640);
+  });
 });

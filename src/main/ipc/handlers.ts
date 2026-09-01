@@ -49,6 +49,12 @@ export function registerIpcHandlers(
   shell: ShellLike,
   clipboard: ClipboardLike,
   onSettingsUpdated?: (settings: AppSettings) => void,
+  // Issue #134: resolves which BrowserWindow sent the request from the raw
+  // ipc event (needs Electron's BrowserWindow.fromWebContents, which would
+  // pull a real Electron dependency into this otherwise-electron-free,
+  // unit-testable module) — injected the same way shell/clipboard are, and
+  // left optional so existing tests that don't care about it need no changes.
+  growPopupToFitContent?: (event: unknown, desiredContentHeight: number) => void,
 ): void {
   ipcMain.handle(CHANNELS.settingsGet, () => settingsStore.load());
 
@@ -111,5 +117,9 @@ export function registerIpcHandlers(
   // clipboard module directly under contextIsolation.
   ipcMain.handle(CHANNELS.clipboardWriteText, (_event, text: string) => {
     clipboard.writeText(text);
+  });
+
+  ipcMain.handle(CHANNELS.popupGrowToFitContent, (event, desiredContentHeight: number) => {
+    growPopupToFitContent?.(event, desiredContentHeight);
   });
 }

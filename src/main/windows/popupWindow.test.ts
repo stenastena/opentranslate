@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampToWorkArea, resolveCursorAnchor } from './popupWindow';
+import { clampToWorkArea, computeGrownContentHeight, resolveCursorAnchor } from './popupWindow';
 
 const WORK_AREA = { x: 0, y: 0, width: 1920, height: 1080 };
 
@@ -65,5 +65,37 @@ describe('resolveCursorAnchor', () => {
     const result = resolveCursorAnchor(-100, 400, 480, 360, secondary);
     expect(result.x + 480).toBeLessThanOrEqual(secondary.x + secondary.width);
     expect(result.x).toBeGreaterThanOrEqual(secondary.x);
+  });
+});
+
+describe('computeGrownContentHeight', () => {
+  const CHROME_HEIGHT = 39; // a typical Windows title bar + border overhead
+
+  it('grows to the desired height when there is room', () => {
+    expect(computeGrownContentHeight(500, 320, 100, CHROME_HEIGHT, WORK_AREA)).toBe(500);
+  });
+
+  it('never shrinks below the current height', () => {
+    expect(computeGrownContentHeight(200, 320, 100, CHROME_HEIGHT, WORK_AREA)).toBe(320);
+  });
+
+  it('is a no-op when the desired height exactly equals the current height', () => {
+    expect(computeGrownContentHeight(320, 320, 100, CHROME_HEIGHT, WORK_AREA)).toBe(320);
+  });
+
+  it('caps growth so the window bottom edge stays within the work area', () => {
+    // Window top at y=900 in a 1080-tall work area leaves only
+    // 1080 - 900 - 39 = 141px of content height before the window would
+    // run off the bottom of the screen.
+    const result = computeGrownContentHeight(800, 100, 900, CHROME_HEIGHT, WORK_AREA);
+    expect(result).toBe(141);
+  });
+
+  it('never caps below the current height even if the window is already near the screen edge', () => {
+    // If the window is already positioned such that its current height
+    // leaves no more room, the cap must not force it smaller than it
+    // already is.
+    const result = computeGrownContentHeight(800, 320, 1000, CHROME_HEIGHT, WORK_AREA);
+    expect(result).toBe(320);
   });
 });

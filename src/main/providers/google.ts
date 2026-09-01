@@ -215,7 +215,11 @@ async function callGoogle(text: string, sourceLang: string, targetLang: string, 
   // provider sidesteps that fingerprint check.
   const response = await fetchGoogle(`${ENDPOINT}?${params.toString()}`, skipCache, PRIMARY_RETRY_MAX_ATTEMPTS, PRIMARY_RETRY_BASE_DELAY_MS);
   if (response.status !== 200) {
-    console.error(`[provider:google] request failed with status ${response.status} for text ${JSON.stringify(text)} (${sourceLang}->${targetLang})`, response.body.slice(0, 500));
+    // Security audit (2026-09-01): log the input length, not the actual
+    // text — this fires routinely under rate-limiting (see #94/#109), and
+    // the text being translated may be sensitive; response.body here is
+    // Google's own error page (e.g. "automated queries"), not user data.
+    console.error(`[provider:google] request failed with status ${response.status} for ${text.length}-char input (${sourceLang}->${targetLang})`, response.body.slice(0, 500));
     // Issue #109: dual-endpoint fallback — degraded (translation only, no
     // dictionary/gender data) beats a hard error while the primary
     // endpoint is down/rate-limited.

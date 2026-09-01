@@ -36,6 +36,13 @@ interface TabResult {
   // for providers other than Google, which never populate dictionary/
   // gender regardless.
   dictionaryStatus?: 'idle' | 'loading' | 'loaded';
+  // Mirrors TranslationResult.usedFallback (providers/types.ts) — true
+  // when this result came from a degraded fallback source instead of the
+  // provider's primary one (currently only Google's #109 dual-endpoint
+  // fallback sets it). Surfaced as a small badge on the tab (renderTabs)
+  // so a resulting empty dictionary reads as "temporarily on a backup
+  // source" rather than looking like missing/broken data.
+  usedFallback?: boolean;
 }
 
 interface State {
@@ -207,6 +214,13 @@ function renderTabs(): void {
     button.type = 'button';
     button.className = 'tab' + (providerId === state.activeProviderId ? ' active' : '') + (result?.status === 'error' ? ' error' : '');
     button.textContent = PROVIDER_LABELS[providerId] ?? providerId;
+    if (result?.usedFallback) {
+      const badge = document.createElement('span');
+      badge.className = 'fallback-badge';
+      badge.textContent = '\u{1F504}';
+      badge.title = 'Using a backup source right now — the primary one is temporarily unavailable. Some data (like the dictionary) may be missing until it recovers.';
+      button.appendChild(badge);
+    }
     button.addEventListener('click', () => {
       state.activeProviderId = providerId;
       renderTabs();
@@ -659,6 +673,7 @@ async function ensureActiveResultLoaded(forceFresh = false): Promise<void> {
       targetLang: effectiveTargetLang,
       backLang,
       dictionaryStatus: 'idle',
+      usedFallback: translateResult.value.usedFallback || (backResult.ok && backResult.value.usedFallback),
     });
 
     if (providerId === state.activeProviderId) {
@@ -701,8 +716,12 @@ async function handleLoadDictionary(): Promise<void> {
     genderArticle: fullResult.ok ? fullResult.value.genderArticle : undefined,
     sourceGenderArticle: fullResult.ok ? fullResult.value.sourceGenderArticle : undefined,
     dictionaryStatus: 'loaded',
+    usedFallback: current.usedFallback || (fullResult.ok && fullResult.value.usedFallback),
   });
-  if (providerId === state.activeProviderId) renderActiveResult();
+  if (providerId === state.activeProviderId) {
+    renderTabs();
+    renderActiveResult();
+  }
 }
 
 // The first translation for a captured selection happens automatically;

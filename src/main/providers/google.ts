@@ -106,11 +106,11 @@ function parseFallbackResult(raw: string): TranslationResult {
   const first = data[0];
   if (typeof first === 'string') {
     if (!first) throw new Error('empty translation');
-    return { translatedText: first };
+    return { translatedText: first, usedFallback: true };
   }
   const [translatedText, detectedSourceLang] = first;
   if (!translatedText) throw new Error('empty translation');
-  return { translatedText, detectedSourceLang };
+  return { translatedText, detectedSourceLang, usedFallback: true };
 }
 
 // Only ever called after the primary endpoint has already failed (see

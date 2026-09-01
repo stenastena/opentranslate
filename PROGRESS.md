@@ -17,11 +17,22 @@ Also fixed a small pre-existing drift: `package-lock.json`'s top-level
 the 0.2.0 bump either) — corrected via `npm install`, no dependency
 changes. `npm run package` produced `release\OpenTranslate Setup
 0.2.1.exe` successfully (same local `winCodeSign` cache workaround,
-still intact). No GitHub Release published — confirmed with the project
-owner that this project has never published one for any version (the
-repo is public, but `release/` is gitignored and `gh release list` is
-empty even for 0.1.0/0.2.0) — installers have always been local build
-artifacts only; publishing one would need explicit go-ahead.
+still intact).
+
+**2026-09-01, first-ever public release + README refresh**, per the
+project owner's explicit go-ahead ("давай публиковать одну последнюю
+сборку публично" — publish just the latest build publicly): tagged
+`v0.2.1` and published a [GitHub
+Release](https://github.com/stenastena/opentranslate/releases/tag/v0.2.1)
+with the installer attached — this repo's very first published release
+(0.1.0/0.2.0 never got one; installers had always been local-only build
+artifacts before this). README.md updated to match: 5 badges (latest
+release, CI status, one-time security-audit-passed linking to #150,
+Windows platform, license), a new "Install" section pointing at the
+Releases page, an updated status line (was still "v0.2 well underway,
+not yet released"), and two stale "Yandex Translate" mentions removed
+(unregistered/removed in #132, but the README still listed it as an
+active provider).
 
 **2026-09-01, #151 shipped (PR #153)**: the popup's position/size now
 persists across app restarts (`AppSettings.popup.lastBounds`, primed at

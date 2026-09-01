@@ -28,7 +28,9 @@ whether #109's new Google 300ms proactive throttle is a contributor).
 All milestone v0.2. Next: work through these with the project owner
 available for real hands-on testing this time, starting with the
 quick/unambiguous ones (#127, #131, #132) before the layout work
-(#133/#134).
+(#133/#134). **#136** (configurable "start with Windows", via Electron's
+built-in `app.setLoginItemSettings`) was filed just after, same batch,
+also not started.
 
 **v0.1 (MVP) is functionally done.** All real-machine bugs found in testing
 are fixed and merged (#67/#68/#69/#70, plus #81/#84 found during this

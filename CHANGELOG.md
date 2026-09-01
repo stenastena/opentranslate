@@ -109,6 +109,9 @@ root-cause writeups.
 - Show Dictionary now auto-grows the popup window's height (never its
   width) to fit the revealed content instead of clipping it, capped to
   the display's work area (#134).
+- Settings → Advanced: "Start OpenTranslate when Windows starts",
+  backed by Electron's `app.setLoginItemSettings` and applied
+  immediately on save, no restart needed (#136).
 
 ### Performance / Resilience
 - Proactive request pacing (not just reactive backoff): Yandex requests

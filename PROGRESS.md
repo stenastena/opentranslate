@@ -23,23 +23,27 @@ interactive verification of everything else":**
   re-translation" button next to Translate, resetting only the active
   tab's cached result — designed the concrete UI myself since the issue
   left the exact form open). Issues closed.
-- **Batch C — PR #139 open, not yet merged (hands-on verification
-  pending):** #133 (the three popup fields — Original/Translation/
-  Back-translation — now use flexbox `flex:1`/`min-height:0` instead of
-  a fixed `height:5em`, so dragging the window's bottom border grows all
-  three symmetrically; Show Dictionary and the dictionary panel got
-  `flex-shrink:0` so they're never clipped by the window edge) and #134
-  (new `popup:grow-to-fit-content` IPC channel — when Show Dictionary
-  reveals content that doesn't fit, the renderer measures
+- **Batch C — merged, PR #139:** #133 (the three popup fields —
+  Original/Translation/Back-translation — now use flexbox
+  `flex:1`/`min-height:0` instead of a fixed `height:5em`, so dragging
+  the window's bottom border grows all three symmetrically; Show
+  Dictionary and the dictionary panel got `flex-shrink:0` so they're
+  never clipped by the window edge) and #134 (new
+  `popup:grow-to-fit-content` IPC channel — when Show Dictionary reveals
+  content that doesn't fit, the renderer measures
   `document.body.scrollHeight` and the main process grows the window's
   *content* height only, via `BrowserWindow.setContentSize`, capped to
   the display's work area, never shrinking — see
   `computeGrownContentHeight`/`growPopupHeightToFit` in
-  `popupWindow.ts`).
-- **Still pending:** #129 (history click-to-reload — explicitly
-  backlog-only per the project owner's own framing, not part of this
-  pass) and #136 (configurable "start with Windows"). Then the project
-  owner interactively verifies all of the above in the running app,
+  `popupWindow.ts`). Issues closed.
+- **Batch D — merged, PR #140:** #136 (Advanced Settings gained a "Start
+  OpenTranslate when Windows starts" checkbox, backed by
+  `app.setLoginItemSettings`, applied on startup and again on every
+  settings save so it takes effect without a restart). Issue closed.
+- **All 8 non-#135, non-#129 issues from the live-feedback batch are now
+  implemented and merged to `main`.** #129 (history click-to-reload)
+  stays backlog-only per the project owner's own framing. **Next:** the
+  project owner interactively verifies this batch in the running app,
   after which **#135** (translation-latency investigation) starts, per
   their explicit instruction to keep it separate and last.
 

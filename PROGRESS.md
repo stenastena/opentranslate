@@ -8,6 +8,19 @@ GitHub is the source of truth if the two ever disagree.
 
 ## Current state (as of this update)
 
+**2026-09-01, #154 shipped (PR #155) + v0.2.2 released**: a Help > About
+OpenTranslate menu item, requested directly by the project owner —
+version (via `app.getVersion()`, so it never needs updating by hand),
+author, license, copyright year, and the GitHub repo link with an "Open
+GitHub" button. Uses a plain `dialog.showMessageBoxSync` rather than
+Electron's native about-panel APIs, which only work on macOS/Linux, not
+this Windows-only app. Visually confirmed working by the project owner
+in the running dev app ("Нормально"). `package.json` gained
+`homepage`/`repository` fields. Version bumped 0.2.1 -> 0.2.2 per the
+project owner's explicit "make a new release" request; tagged and
+published as [v0.2.2](https://github.com/stenastena/opentranslate/releases/tag/v0.2.2)
+the same way as v0.2.1.
+
 **2026-09-01, v0.2.1 build**: bumped for a real installer the project
 owner could reinstall to test #151 (window-bounds persistence) and #136
 (start-with-Windows) together across one OS reboot. `package.json`

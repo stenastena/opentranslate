@@ -1,6 +1,6 @@
 {
   "name": "opentranslate",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Tray-based Windows desktop translator: capture selected text with a global hotkey and translate it via DeepL, Google, Bing and MyMemory.",
   "private": true,
   "license": "Apache-2.0",

@@ -6,6 +6,8 @@ follows [Keep a Changelog](https://keepachangelog.com/), versioning follows
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-09-05
+
 ### Fixed
 - Google translation had been silently stuck on the #109 degraded
   fallback (no dictionary data) for several days — the primary

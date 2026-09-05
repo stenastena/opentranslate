@@ -6,6 +6,13 @@ follows [Keep a Changelog](https://keepachangelog.com/), versioning follows
 
 ## [Unreleased]
 
+### Fixed
+- Google translation had been silently stuck on the #109 degraded
+  fallback (no dictionary data) for several days — the primary
+  endpoint's `client=gtx` parameter appears to be specifically,
+  indefinitely blocked. Switched to `client=at`, which returns the same
+  response shape with real dictionary data (#161).
+
 ## [0.2.2] - 2026-09-01
 
 ### Added

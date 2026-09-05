@@ -8,6 +8,46 @@ GitHub is the source of truth if the two ever disagree.
 
 ## Current state (as of this update)
 
+**2026-09-05, two bugs reported live, both investigated same day:**
+- **#159 — popup takes up to ~10s to appear on hotkey, "first time or
+  after long disuse"**: root-caused to `popupWindow.ts` destroying and
+  rebuilding the entire `BrowserWindow` (fresh renderer process, full
+  HTML/JS/CSS reload from disk) on *every* hotkey capture — cost varies
+  hugely with how warm Windows' file cache is at that moment. Fixed in
+  PR #160 (**not yet merged** — awaiting the project owner's hands-on
+  confirmation, since triggering the global hotkey isn't something
+  automatable from here): the window is now created once and reused for
+  the app's whole lifetime; Escape/Alt+F4/the taskbar close button hide
+  it instead of destroying it (an `isQuitting` flag set from
+  `before-quit` still lets a genuine Exit fully quit). Handled the one
+  side effect this created — `applyAppearance` used to rely on the
+  popup being rebuilt every capture to pick up Settings changes; now
+  `main/index.ts` explicitly reloads the popup's renderer on save.
+  **Partial confirmation so far**: repeat captures right after the first
+  are "явно быстрее" (clearly faster); the very first capture after
+  launch was ~3s in one observation — better than the previously
+  reported up to 10s, but the project owner wants to keep watching it
+  before calling this fully resolved. If the first-ever capture stays
+  slow after more observation, that would point to a separate
+  contributor (e.g. Windows Defender scanning on first execution) worth
+  investigating on its own.
+- **#161 — Google permanently on the #109 fallback (no dictionary) for
+  days, not a temporary rate limit**: this had been flagged before the
+  v0.2.1 release and dismissed (by me) as a short-lived rate limit —
+  that was wrong, confirmed live it had been consistently 429ing for
+  multiple days with no `Retry-After` header at all. Root cause: the
+  primary endpoint's `client=gtx` param — the id nearly every
+  open-source Google-Translate-without-a-key tool uses — appears to be
+  specifically, indefinitely blocked. Tried other `client` values
+  live: `t`/`te` -> 403, `at` -> 200, in the *exact same* `dj=1` shape
+  `googleDictionary.ts` already parses. **Fixed and merged**: swapped
+  `client=gtx` -> `client=at` in all 3 places `google.ts` uses it — no
+  parser changes needed. Verified end-to-end (not just unit tests):
+  `check-providers` now shows Google succeeding via the primary endpoint
+  in ~300ms (was falling back at ~2.7-4.8s), and a direct
+  `translate('house','en','de')` call returns real dictionary data and
+  `usedFallback: undefined` again.
+
 **2026-09-01, #154 shipped (PR #155) + v0.2.2 released**: a Help > About
 OpenTranslate menu item, requested directly by the project owner —
 version (via `app.getVersion()`, so it never needs updating by hand),

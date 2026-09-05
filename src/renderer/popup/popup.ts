@@ -983,8 +983,11 @@ async function handleSwap(): Promise<void> {
 
 // Issue #116: applied once at popup init, not live-pushed to an
 // already-open popup if Settings changes elsewhere — matches how every
-// other setting here already behaves (e.g. voiceByLang), and the popup is
-// normally closed/reopened per capture anyway.
+// other setting here already behaves (e.g. voiceByLang). Since #159, the
+// popup window persists across captures instead of being rebuilt each
+// time, so this now relies on main/index.ts explicitly reloading this
+// renderer (popupWindow.ts's reloadPopupWindow) whenever settings are
+// saved, rather than a fresh init() happening naturally on every capture.
 function applyAppearance(appearance: { fontSize: number; fontFamily: string; theme: ThemeMode; customColors: CustomThemeColors }): void {
   document.documentElement.style.setProperty('--content-font-size', `${appearance.fontSize}px`);
   document.documentElement.style.setProperty('--content-font-family', fontStackFor(appearance.fontFamily));

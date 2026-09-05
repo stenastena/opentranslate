@@ -5,6 +5,32 @@ import { WindowBounds } from '../settings';
 
 let popupWindow: BrowserWindow | null = null;
 
+// Issue #159: the popup used to be destroyed and rebuilt from scratch
+// (a brand new BrowserWindow + a full HTML/JS/CSS reload into a fresh
+// renderer process) on every single hotkey capture — see the old
+// `popupWindow?.close()` this replaced. That's real, avoidable work on
+// the app's single hottest path, and its cost varies a lot with how warm
+// Windows' file-cache/working-set for the app's own files happens to be
+// at that moment — fully warm (just used a moment ago) it's barely
+// noticeable, but stone cold (first capture after launch, or after a
+// long idle stretch where Windows has trimmed/evicted those pages under
+// memory pressure) it can run into several seconds, confirmed against
+// the project owner's own report of up to ~10s specifically in exactly
+// those two situations. Now the window is created once and reused —
+// 'close' (the X button, Alt+F4, Escape) just hides it instead of
+// destroying it, so every capture after the first one reuses the same
+// already-loaded, already-warm renderer process and only pays for
+// pushing the new captured text over IPC, not for rebuilding a window.
+// Set from main/index.ts's own 'before-quit' handler (not registered
+// here directly — this module must stay importable without a real
+// Electron runtime for popupWindow.test.ts's pure-function tests, and
+// calling any real electron API eagerly at module-load time would break
+// that under vitest's plain-Node environment).
+let isQuitting = false;
+export function setQuitting(value: boolean): void {
+  isQuitting = value;
+}
+
 // Where the user last moved/resized the popup to. Reused as the anchor for
 // the next popup instead of always defaulting back to the cursor position —
 // once the user has settled on a spot/size they like, keep opening there.
@@ -27,6 +53,18 @@ let onBoundsSettled: ((bounds: WindowBounds) => void) | null = null;
 
 export function onPopupBoundsSettled(callback: (bounds: WindowBounds) => void): void {
   onBoundsSettled = callback;
+}
+
+// Issue #159 follow-up: popup.ts's own `applyAppearance` comment used to
+// say settings changes only take effect "the popup is normally closed/
+// reopened per capture anyway" — no longer true now that the window (and
+// its renderer) persists indefinitely instead of being rebuilt every
+// capture. Call this from main/index.ts's settings-updated callback so a
+// theme/font/default-provider/etc. change made in Settings still shows up
+// on the next capture instead of only after a full app restart. A no-op
+// if the popup has never been created yet — nothing to refresh.
+export function reloadPopupWindow(): void {
+  popupWindow?.webContents.reload();
 }
 
 const DEFAULT_WIDTH = 480;
@@ -121,18 +159,22 @@ function resolvePopupPosition(bounds: { x: number; y: number } | null, width: nu
 }
 
 // capturedText omitted (undefined) means "just make sure the main window is
-// visible" — the tray's/hotkey-with-no-selection's case — which brings an
+// visible" — the tray's/hotkey-with-no-selection's case, which brings an
 // already-open popup to front without discarding whatever's in progress
-// there, rather than always destroying and recreating it. Passing an
-// explicit string (including '') means a fresh capture that should replace
-// whatever the popup was showing.
+// there. Passing an explicit string (including '') means a fresh capture
+// that should replace whatever the popup was showing — handled by pushing
+// it over IPC to the existing renderer (see popup.ts's onCapturedText,
+// which already fully resets per-capture state) rather than rebuilding
+// the window, per #159.
 export function showPopupWindow(capturedText?: string): BrowserWindow {
-  if (popupWindow && capturedText === undefined) {
+  if (popupWindow) {
     popupWindow.show();
     popupWindow.focus();
+    if (capturedText !== undefined) {
+      popupWindow.webContents.send(CHANNELS.popupCapturedText, capturedText);
+    }
     return popupWindow;
   }
-  popupWindow?.close();
 
   const width = lastBounds?.width ?? DEFAULT_WIDTH;
   const height = lastBounds?.height ?? DEFAULT_HEIGHT;
@@ -181,7 +223,20 @@ export function showPopupWindow(capturedText?: string): BrowserWindow {
   });
 
   win.webContents.on('before-input-event', (_event, input) => {
-    if (input.key === 'Escape') win.close();
+    if (input.key === 'Escape') win.hide();
+  });
+
+  // Issue #159: the window persists for the app's whole lifetime now
+  // (see the top-of-file comment) — the taskbar close button and Alt+F4
+  // both fire 'close', which by default would destroy it; intercepted so
+  // they hide it instead, same as Escape. Only a genuine app quit (tray
+  // Exit / File > Exit, both app.quit()) is allowed through, via the
+  // isQuitting flag set from 'before-quit'.
+  win.on('close', (event) => {
+    if (!isQuitting) {
+      event.preventDefault();
+      win.hide();
+    }
   });
 
   const persistBounds = () => {

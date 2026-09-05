@@ -8,6 +8,13 @@ GitHub is the source of truth if the two ever disagree.
 
 ## Current state (as of this update)
 
+**2026-09-05, v0.2.3 released** — the #161 Google-`client=at` fix,
+published per the project owner's explicit "release" request:
+[v0.2.3](https://github.com/stenastena/opentranslate/releases/tag/v0.2.3).
+#159 (popup-recreation fix) deliberately **not** included — still
+unmerged on its own branch/PR (#160), awaiting further hands-on
+confirmation per the project owner's own "надо проверять дальше".
+
 **2026-09-05, two bugs reported live, both investigated same day:**
 - **#159 — popup takes up to ~10s to appear on hotkey, "first time or
   after long disuse"**: root-caused to `popupWindow.ts` destroying and

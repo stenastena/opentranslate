@@ -19,6 +19,22 @@ const ENDPOINT = 'https://translate.googleapis.com/translate_a/single';
 const FALLBACK_ENDPOINT = 'https://clients5.google.com/translate_a/t';
 const HEALTH_CHECK_TEXT = 'hello';
 
+// Issue #160 (2026-09-05): ENDPOINT's `client=gtx` — the id nearly every
+// open-source Google-Translate-without-an-API-key tool uses, this app
+// included until now — was found to have gone from "occasionally
+// rate-limited" (#94/#109's framing) to consistently 429ing for several
+// days straight, live-confirmed via `curl` (no Retry-After header, so no
+// signal on when/whether it clears). Tried several other `client` values
+// against the same ENDPOINT: `t`/`te` got 403, but `at` returned 200 with
+// a response in the exact same dj=1 shape googleDictionary.ts already
+// parses (sentences/src/dict/synsets/definitions/examples/
+// alternative_translations all present, same field names/nesting —
+// verified live for both a single word and a full sentence) — so this is
+// a same-shape client swap, not a new parser. `dt=at` below (alternative
+// translations, one of the requested *data types*) is an unrelated
+// coincidence of naming, not the same thing as this `client` id.
+const CLIENT = 'at';
+
 // Issue #109: proactive self-throttling, a light one — this endpoint
 // already has #94's retry-after-429 and 5-minute response cache, so this
 // is just extra insurance against a rapid-fire *burst* of new (cache-miss)
@@ -182,16 +198,16 @@ async function requestGoogle(params: URLSearchParams, skipCache = false): Promis
 // fetchGoogle's cache like everything else here, so repeating the same
 // lookup doesn't repeat the cost.
 async function findTranslationGender(word: string, targetLang: string, skipCache: boolean): Promise<string | undefined> {
-  const glossData = await requestGoogle(new URLSearchParams({ client: 'gtx', sl: targetLang, tl: 'en', dt: 't', dj: '1', q: word }), skipCache);
+  const glossData = await requestGoogle(new URLSearchParams({ client: CLIENT, sl: targetLang, tl: 'en', dt: 't', dj: '1', q: word }), skipCache);
   const gloss = (glossData?.sentences ?? []).map((s) => s.trans ?? '').join('').trim();
   if (!gloss) return undefined;
 
-  const dictData = await requestGoogle(new URLSearchParams({ client: 'gtx', sl: 'en', tl: targetLang, dt: 'bd', dj: '1', q: gloss }), skipCache);
+  const dictData = await requestGoogle(new URLSearchParams({ client: CLIENT, sl: 'en', tl: targetLang, dt: 'bd', dj: '1', q: gloss }), skipCache);
   return dictData ? findArticleForWord(dictData, word) : undefined;
 }
 
 async function callGoogle(text: string, sourceLang: string, targetLang: string, includeExtras = true, skipCache = false): Promise<TranslationResult> {
-  const params = new URLSearchParams({ client: 'gtx', sl: sourceLang, tl: targetLang, dj: '1' });
+  const params = new URLSearchParams({ client: CLIENT, sl: sourceLang, tl: targetLang, dj: '1' });
   // dt=t is the plain translation; the rest (issue #76) ask for the
   // dictionary breakdown Google's own clients show for single-word lookups
   // — bd (translations by part of speech), ss (synonyms), md (definitions),

@@ -10,7 +10,7 @@ import { captureSelectedText } from './textCapture';
 import { bingCloudTtsProvider, googleCloudTtsProvider, systemTtsProvider } from './tts';
 import { createTray } from './tray';
 import { showHistoryWindow } from './windows/historyWindow';
-import { growPopupHeightToFit, onPopupBoundsSettled, primeLastBounds, showPopupWindow } from './windows/popupWindow';
+import { growPopupHeightToFit, onPopupBoundsSettled, primeLastBounds, reloadPopupWindow, setQuitting, showPopupWindow } from './windows/popupWindow';
 import { showSettingsWindow } from './windows/settingsWindow';
 
 // The popup is this app's "main window" — the tray and hotkey both funnel
@@ -48,6 +48,13 @@ app.on('window-all-closed', () => {
 });
 
 app.on('will-quit', unregisterAllHotkeys);
+
+// Issue #159: the popup window now hides instead of closing (so captures
+// after the first one reuse its already-loaded renderer instead of
+// paying to rebuild it) — this lets a genuine quit (tray Exit / File >
+// Exit) actually close it instead of being blocked by that same
+// hide-not-close interception.
+app.on('before-quit', () => setQuitting(true));
 
 app.whenReady().then(() => {
   const registry = createDefaultRegistry();
@@ -107,6 +114,14 @@ app.whenReady().then(() => {
     (updated) => {
       applyHotkey(updated.hotkeys.captureAndTranslate);
       applyStartWithWindows(updated.advanced.startWithWindows);
+      // Issue #159: the popup window now persists and is reused across
+      // captures instead of being rebuilt from scratch each time (the
+      // fix for the slow-hotkey-appearance bug) — its renderer no longer
+      // naturally re-reads settings on every capture the way a freshly
+      // built one used to, so a theme/font/default-provider/etc. change
+      // needs this explicit nudge to actually show up before the next
+      // full app restart.
+      reloadPopupWindow();
     },
     (event, desiredContentHeight) => {
       const win = BrowserWindow.fromWebContents((event as Electron.IpcMainInvokeEvent).sender);

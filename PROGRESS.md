@@ -15,6 +15,20 @@ published per the project owner's explicit "release" request:
 unmerged on its own branch/PR (#160), awaiting further hands-on
 confirmation per the project owner's own "надо проверять дальше".
 
+**2026-09-05, v0.2.4 released, #159 merged** — the project owner
+explicitly asked for "релиз с обоими фиксами" (a release with both
+fixes), overriding the earlier wait-for-more-observation caution. PR
+#160 merged (CI green, mergeable), issue #159 closed.
+[v0.2.4](https://github.com/stenastena/opentranslate/releases/tag/v0.2.4)
+published with both #159 and #161. Note: I had restarted the dev app
+right after v0.2.3 purely to keep the still-testing #159 branch in sync
+with the just-released version/docs — the project owner pointed out
+that wasn't something they'd asked for ("я же просил только релиз
+выпустить"). Going forward: don't restart the dev app as a side effect
+of an unrelated request (a release, a doc update) — only when the user
+is about to test something that specifically needs the rebuild, or when
+they ask.
+
 **2026-09-05, two bugs reported live, both investigated same day:**
 - **#159 — popup takes up to ~10s to appear on hotkey, "first time or
   after long disuse"**: root-caused to `popupWindow.ts` destroying and

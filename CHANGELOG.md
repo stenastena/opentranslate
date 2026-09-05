@@ -6,6 +6,19 @@ follows [Keep a Changelog](https://keepachangelog.com/), versioning follows
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-09-05
+
+### Fixed
+- The popup could take up to ~10 seconds to appear on the hotkey,
+  especially the first capture after launch or after a long idle period
+  — every capture was destroying and rebuilding the entire popup window
+  (a fresh renderer process, reloading its HTML/JS/CSS from disk) rather
+  than reusing it. The window is now created once and reused for the
+  app's whole lifetime; closing it (Escape, Alt+F4, the title-bar close
+  button) hides it instead of destroying it. Settings changes still take
+  effect immediately — the popup's renderer now gets an explicit reload
+  on save, instead of relying on being rebuilt every capture (#159).
+
 ## [0.2.3] - 2026-09-05
 
 ### Fixed

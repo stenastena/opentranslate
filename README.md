@@ -6,7 +6,7 @@
 [![Platform](https://img.shields.io/badge/platform-Windows-0078D6)](https://github.com/stenastena/opentranslate/releases/latest)
 [![License](https://img.shields.io/github/license/stenastena/opentranslate)](LICENSE)
 
-**Status: v0.2.1 released — [download the installer](../../releases/latest).**
+**Status: released — [download the installer](../../releases/latest).**
 
 OpenTranslate is a Windows desktop application that brings back the core
 workflow of the abandoned [QTranslate](https://quest-app.appspot.com/) project:
